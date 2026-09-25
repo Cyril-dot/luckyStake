@@ -854,3 +854,13 @@ html,body,#root{max-width:100%;overflow-x:hidden}img,video,svg{max-width:100%}pr
 /* Ticket history/detail pages intentionally use a clean headerless shell. */
 .headerless-page{min-height:100vh;padding-bottom:24px}
 @media(max-width:560px){.headerless-page{padding-bottom:78px}}
+
+/* The ticket-details subheader is part of the page flow, not the global fixed site header. */
+.ls-ticket-page .ls-ticket-header{
+  position:static!important;
+  top:auto!important;
+  left:auto!important;
+  right:auto!important;
+  width:auto!important;
+  z-index:auto!important;
+}
