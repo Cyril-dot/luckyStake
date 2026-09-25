@@ -1,0 +1,18 @@
+import { useState } from 'react';
+import type { MatchRow } from './api';
+import { fallbackCrest, formatKickoff, formatKickoffDate, isFinishedMatch, isLiveStatus, liveClock } from './api';
+
+type Props = { match: MatchRow; onDetails: () => void; onStake: (selection: string, odd: string) => void; selected?: string };
+
+function TeamLogo({ src, name, side, admin }: { src?: string; name: string; side: 'home' | 'away'; admin: boolean }) { const [failed, setFailed] = useState(false); const fallback = admin ? fallbackCrest(name, side) : ''; const image = failed ? fallback : (src || fallback); return <>{image ? <img className="league-stack-logo" src={image} alt="" onError={() => setFailed(true)} /> : <span className="league-stack-logo-fallback" style={{ display: 'grid' }}>{name.slice(0, 2).toUpperCase()}</span>}</>; }
+
+export default function LeagueStackCard({ match, onDetails, onStake, selected }: Props) {
+  const live = isLiveStatus(match.status); const ended = isFinishedMatch(match); const admin = Boolean(match.isAdmin || match.featured); const hasDraw = !['basketball', 'baseball', 'nfl', 'mma'].includes(match.sport || 'football');
+  const odds: Array<[string, string]> = hasDraw ? [['1', match.homeOdds || '—'], ['X', match.drawOdds || '—'], ['2', match.awayOdds || '—']] : [['1', match.homeOdds || '—'], ['2', match.awayOdds || '—']];
+  const select = (key: string, value: string) => { if (!ended && value !== '—') onStake(key === '1' ? match.homeTeam : key === '2' ? match.awayTeam : 'Draw', value); };
+  return <article className={`league-stack-card${live ? ' is-live' : ''}${admin ? ' is-featured' : ''}${ended ? ' is-ended' : ''}`}>
+    <div className="league-stack-head"><span className="league-stack-league"><span className="material-symbols-rounded">emoji_events</span>{match.league || 'Sports market'}</span>{live ? <span className="league-stack-live"><i /> Live</span> : admin ? <span className="league-stack-kickoff"><span className="material-symbols-rounded">schedule</span>{formatKickoffDate(match.kickoffAt)} · {formatKickoff(match.kickoffAt)}</span> : ended ? <span className="league-stack-ended">FT</span> : <span className="league-stack-kickoff"><span className="material-symbols-rounded">schedule</span>{formatKickoffDate(match.kickoffAt)} · {formatKickoff(match.kickoffAt)}</span>}</div>
+    <button className="league-stack-fixture" onClick={onDetails}><span className="league-stack-team"><TeamLogo src={match.displayHomeLogo || match.homeLogo} name={match.homeTeam} side="home" admin={admin} /><strong>{match.homeTeam}</strong></span><span className="league-stack-center">{live ? <><strong>{match.scoreHome ?? 0} — {match.scoreAway ?? 0}</strong><small><span className="material-symbols-rounded">timer</span>{liveClock(match)}</small></> : ended ? <><strong>FT</strong><small>Final score</small></> : <><strong>VS</strong><small>Match details</small></>}</span><span className="league-stack-team away"><TeamLogo src={match.displayAwayLogo || match.awayLogo} name={match.awayTeam} side="away" admin={admin} /><strong>{match.awayTeam}</strong></span></button>
+    {ended ? <button className="league-stack-details" onClick={onDetails}>View final score and match details <span className="material-symbols-rounded">arrow_forward</span></button> : <div className="league-stack-market"><span>Match result</span><div className="league-stack-odds">{odds.map(([key, value]) => <button key={key} className={selected === (key === '1' ? match.homeTeam : key === '2' ? match.awayTeam : 'Draw') ? 'selected' : ''} disabled={value === '—'} onClick={() => select(key, value)}><small>{key}</small><b>{value}</b></button>)}</div></div>}
+  </article>;
+}

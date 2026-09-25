@@ -1,0 +1,3509 @@
+[
+  {
+    "namespace": "server",
+    "method": "GET",
+    "path": "/api/logo-proxy?url={allowed-image-url}",
+    "source_line": 21,
+    "source": "server/index.ts"
+  },
+  {
+    "namespace": "auth",
+    "method": "POST",
+    "path": "/api/auth/login",
+    "source_line": 282,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "auth",
+    "method": "POST",
+    "path": "/api/auth/register",
+    "source_line": 284,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "auth",
+    "method": "POST",
+    "path": "/api/auth/logout",
+    "source_line": 285,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "auth",
+    "method": "POST",
+    "path": "/api/auth/request-password-reset",
+    "source_line": 286,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "auth",
+    "method": "POST",
+    "path": "/api/auth/reset-password",
+    "source_line": 287,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "user",
+    "method": "GET",
+    "path": "/api/users/me",
+    "source_line": 295,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "user",
+    "method": "PATCH",
+    "path": "/api/users/me",
+    "source_line": 296,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "wallet",
+    "method": "GET",
+    "path": "/api/wallet",
+    "source_line": 304,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "wallet",
+    "method": "GET",
+    "path": "/api/wallet/transactions${qs({ page, size })}",
+    "source_line": 305,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "wallet",
+    "method": "POST",
+    "path": "/api/wallet/withdraw",
+    "source_line": 306,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "withdrawals",
+    "method": "GET",
+    "path": "/api/wallet/withdrawals${qs({ page, size })}",
+    "source_line": 310,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "withdrawals",
+    "method": "POST",
+    "path": "/api/wallet/withdrawals",
+    "source_line": 312,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "withdrawals",
+    "method": "GET",
+    "path": "/api/wallet/withdrawals/${id}",
+    "source_line": 313,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "deposits",
+    "method": "POST",
+    "path": "/api/wallet/deposit/stripe/intent",
+    "source_line": 470,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "deposits",
+    "method": "POST",
+    "path": "/api/wallet/deposit/paystack/init",
+    "source_line": 473,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "deposits",
+    "method": "POST",
+    "path": "/api/wallet/deposit/flutterwave/gh/v4/init",
+    "source_line": 478,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "deposits",
+    "method": "POST",
+    "path": "/api/wallet/deposit/flutterwave/gh/v4/verify",
+    "source_line": 481,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "deposits",
+    "method": "POST",
+    "path": "/api/wallet/deposit/flutterwave/v4/ng-bank/init",
+    "source_line": 486,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "deposits",
+    "method": "POST",
+    "path": "/api/wallet/deposit/flutterwave/v4/ng-bank/init/bank-transfer",
+    "source_line": 491,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "deposits",
+    "method": "GET",
+    "path": "/api/wallet/deposit/flutterwave/v4/ng-ussd/banks",
+    "source_line": 497,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "deposits",
+    "method": "POST",
+    "path": "/api/wallet/deposit/flutterwave/v4/ng-ussd/init",
+    "source_line": 500,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "deposits",
+    "method": "POST",
+    "path": "/api/wallet/deposit/flutterwave/v4/ng-opay/init",
+    "source_line": 505,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "deposits",
+    "method": "GET",
+    "path": "/api/wallet/deposit/flutterwave/v4/ng/verify${qs({ ref: reference })}",
+    "source_line": 512,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "bets",
+    "method": "GET",
+    "path": "/api/bets${qs({ page, size })}",
+    "source_line": 527,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "bets",
+    "method": "POST",
+    "path": "/api/bets",
+    "source_line": 529,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "bets",
+    "method": "GET",
+    "path": "/api/bets/${id}",
+    "source_line": 530,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "bets",
+    "method": "POST",
+    "path": "/api/bets/${encodeURIComponent(id)}/cashout",
+    "source_line": 531,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "bets",
+    "method": "GET",
+    "path": "/api/bets/unseen-wins",
+    "source_line": 532,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "bets",
+    "method": "POST",
+    "path": "/api/bets/${id}/dismiss-win",
+    "source_line": 533,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "webhooks",
+    "method": "POST",
+    "path": "/api/webhooks/stripe",
+    "source_line": 541,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "webhooks",
+    "method": "POST",
+    "path": "/api/webhooks/paystack",
+    "source_line": 542,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "games",
+    "method": "POST",
+    "path": "/api/games/${game}/play",
+    "source_line": 550,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "games",
+    "method": "POST",
+    "path": "/api/games/${game}/cashout",
+    "source_line": 551,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "games",
+    "method": "GET",
+    "path": "/api/games/${game}/current-round",
+    "source_line": 552,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "games",
+    "method": "GET",
+    "path": "/api/games/history${qs({ limit })}",
+    "source_line": 553,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "booking",
+    "method": "POST",
+    "path": "/api/booking/redeem",
+    "source_line": 589,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "adminBooking",
+    "method": "GET",
+    "path": "/api/admin/booking-codes${qs({ page, size })}",
+    "source_line": 593,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "adminBooking",
+    "method": "POST",
+    "path": "/api/admin/booking-codes",
+    "source_line": 594,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "adminBooking",
+    "method": "GET",
+    "path": "/api/admin/booking-codes/${id}",
+    "source_line": 597,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "geo",
+    "method": "GET",
+    "path": "/api/geo/currency",
+    "source_line": 605,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootball",
+    "method": "GET",
+    "path": "/api/public/football/matches",
+    "source_line": 613,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootball",
+    "method": "GET",
+    "path": "/api/public/football/matches/upcoming",
+    "source_line": 614,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootball",
+    "method": "GET",
+    "path": "/api/public/football/matches/today",
+    "source_line": 615,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootball",
+    "method": "GET",
+    "path": "/api/public/football/matches/live",
+    "source_line": 616,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootball",
+    "method": "GET",
+    "path": "/api/public/football/matches/future",
+    "source_line": 617,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootball",
+    "method": "GET",
+    "path": "/api/public/football/matches/results${qs({ limit })}",
+    "source_line": 618,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootball",
+    "method": "GET",
+    "path": "/api/public/football/matches/featured",
+    "source_line": 619,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootball",
+    "method": "GET",
+    "path": "/api/public/football/matches/with-odds",
+    "source_line": 620,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootball",
+    "method": "GET",
+    "path": "/api/public/football/matches/with-all-odds",
+    "source_line": 621,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootball",
+    "method": "GET",
+    "path": "/api/public/football/matches/top6/upcoming",
+    "source_line": 622,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootball",
+    "method": "GET",
+    "path": "/api/public/football/matches/top6/today",
+    "source_line": 623,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootball",
+    "method": "GET",
+    "path": "/api/public/football/matches/top6/live",
+    "source_line": 624,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootball",
+    "method": "GET",
+    "path": "/api/public/football/matches/cups/upcoming",
+    "source_line": 625,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootball",
+    "method": "GET",
+    "path": "/api/public/football/matches/cups/today",
+    "source_line": 626,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootball",
+    "method": "GET",
+    "path": "/api/public/football/matches/cups/live",
+    "source_line": 627,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootball",
+    "method": "GET",
+    "path": "/api/public/football/matches/all-cups/upcoming",
+    "source_line": 628,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootball",
+    "method": "GET",
+    "path": "/api/public/football/matches/all-cups/today",
+    "source_line": 629,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootball",
+    "method": "GET",
+    "path": "/api/public/football/matches/all-cups/live",
+    "source_line": 630,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootball",
+    "method": "GET",
+    "path": "/api/public/football/matches/${id}",
+    "source_line": 631,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootball",
+    "method": "GET",
+    "path": "/api/public/football/matches/${id}/stats",
+    "source_line": 632,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootball",
+    "method": "GET",
+    "path": "/api/public/football/matches/${id}/prediction",
+    "source_line": 633,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootball",
+    "method": "GET",
+    "path": "/api/public/football/matches/${id}/odds",
+    "source_line": 634,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootball",
+    "method": "GET",
+    "path": "/api/public/football/matches/${id}/odds/raw",
+    "source_line": 635,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootball",
+    "method": "GET",
+    "path": "/api/public/football/matches/${id}/odds/all",
+    "source_line": 636,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootball",
+    "method": "GET",
+    "path": "/api/public/football/matches/${id}/odds/handicap",
+    "source_line": 637,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootball",
+    "method": "GET",
+    "path": "/api/public/football/matches/${id}/odds/half-time",
+    "source_line": 638,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootball",
+    "method": "GET",
+    "path": "/api/public/football/matches/${id}/odds/correct-score",
+    "source_line": 639,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootball",
+    "method": "GET",
+    "path": "/api/public/football/matches/${id}/odds/goalscorer",
+    "source_line": 640,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootball",
+    "method": "GET",
+    "path": "/api/public/football/matches/${id}/odds/espn",
+    "source_line": 641,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootball",
+    "method": "GET",
+    "path": "/api/public/football/matches/${id}/odds/cache-status",
+    "source_line": 642,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootball",
+    "method": "GET",
+    "path": "/api/public/football/matches/${id}/lineups",
+    "source_line": 643,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootball",
+    "method": "GET",
+    "path": "/api/public/football/matches/${id}/h2h",
+    "source_line": 644,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootball",
+    "method": "GET",
+    "path": "/api/public/football/matches/${id}/events",
+    "source_line": 645,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootball",
+    "method": "GET",
+    "path": "/api/public/football/matches/${id}/detail",
+    "source_line": 646,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootball",
+    "method": "GET",
+    "path": "/api/public/football/matches/${id}/form",
+    "source_line": 647,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootball",
+    "method": "GET",
+    "path": "/api/public/football/matches/${id}/news",
+    "source_line": 648,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootball",
+    "method": "GET",
+    "path": "/api/public/football/matches/${id}/videos",
+    "source_line": 649,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootball",
+    "method": "GET",
+    "path": "/api/public/football/matches/${id}/venue",
+    "source_line": 650,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootballLeagues",
+    "method": "GET",
+    "path": "/api/public/football/leagues/${league}/upcoming",
+    "source_line": 654,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootballLeagues",
+    "method": "GET",
+    "path": "/api/public/football/leagues/${league}/today",
+    "source_line": 655,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootballLeagues",
+    "method": "GET",
+    "path": "/api/public/football/leagues/${league}/live",
+    "source_line": 656,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootballLeagues",
+    "method": "GET",
+    "path": "/api/public/football/leagues/top6/${league}/upcoming",
+    "source_line": 657,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootballLeagues",
+    "method": "GET",
+    "path": "/api/public/football/leagues/top6/${league}/today",
+    "source_line": 658,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootballLeagues",
+    "method": "GET",
+    "path": "/api/public/football/leagues/top6/${league}/live",
+    "source_line": 659,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootballLeagues",
+    "method": "GET",
+    "path": "/api/public/football/leagues/top6/${league}/results/finished",
+    "source_line": 660,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootballLeagues",
+    "method": "GET",
+    "path": "/api/public/football/leagues/top6/${league}/teams",
+    "source_line": 661,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootballLeagues",
+    "method": "GET",
+    "path": "/api/public/football/leagues/top6/${league}/teams/${teamId}/schedule",
+    "source_line": 662,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootballLeagues",
+    "method": "GET",
+    "path": "/api/public/football/leagues/top6/${league}/fixtures/date/${date}",
+    "source_line": 663,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootballCups",
+    "method": "GET",
+    "path": "/api/public/football/cups/${cup}/upcoming",
+    "source_line": 667,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootballCups",
+    "method": "GET",
+    "path": "/api/public/football/cups/${cup}/today",
+    "source_line": 668,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootballCups",
+    "method": "GET",
+    "path": "/api/public/football/cups/${cup}/live",
+    "source_line": 669,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootballCups",
+    "method": "GET",
+    "path": "/api/public/football/cups/${cup}/results/finished",
+    "source_line": 670,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootballCups",
+    "method": "GET",
+    "path": "/api/public/football/cups/${cup}/matches/${eventId}/detail",
+    "source_line": 671,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootballCups",
+    "method": "GET",
+    "path": "/api/public/football/cups/fixtures/date/${date}",
+    "source_line": 672,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootballTeams",
+    "method": "GET",
+    "path": "/api/public/football/teams/${team}/upcoming",
+    "source_line": 676,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootballTeams",
+    "method": "GET",
+    "path": "/api/public/football/teams/${team}/results",
+    "source_line": 677,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootballTeams",
+    "method": "GET",
+    "path": "/api/public/football/teams/${team}/live",
+    "source_line": 678,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootballStandings",
+    "method": "GET",
+    "path": "/api/public/football/standings/${competitionId}",
+    "source_line": 682,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootballStandings",
+    "method": "GET",
+    "path": "/api/public/football/standings/top6",
+    "source_line": 683,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootballStandings",
+    "method": "GET",
+    "path": "/api/public/football/standings/leagues/${league}",
+    "source_line": 684,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootballStandings",
+    "method": "GET",
+    "path": "/api/public/football/standings/leagues/top6/${league}",
+    "source_line": 685,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootballStandings",
+    "method": "GET",
+    "path": "/api/public/football/standings/cups/${cup}",
+    "source_line": 686,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootballScorers",
+    "method": "GET",
+    "path": "/api/public/football/scorers/${competitionId}",
+    "source_line": 690,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootballScorers",
+    "method": "GET",
+    "path": "/api/public/football/scorers/leagues/${league}",
+    "source_line": 691,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootballScorers",
+    "method": "GET",
+    "path": "/api/public/football/scorers/leagues/top6/${league}",
+    "source_line": 692,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootballLivescore",
+    "method": "GET",
+    "path": "/api/public/football/livescore/live",
+    "source_line": 696,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootballLivescore",
+    "method": "GET",
+    "path": "/api/public/football/livescore/today",
+    "source_line": 697,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootballLivescore",
+    "method": "GET",
+    "path": "/api/public/football/livescore/fixtures",
+    "source_line": 698,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootballLivescore",
+    "method": "GET",
+    "path": "/api/public/football/livescore/all-leagues/today",
+    "source_line": 699,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootballLivescore",
+    "method": "GET",
+    "path": "/api/public/football/livescore/all-cups/today",
+    "source_line": 700,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootballLivescore",
+    "method": "GET",
+    "path": "/api/public/football/livescore/top6/live",
+    "source_line": 701,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootballLivescore",
+    "method": "GET",
+    "path": "/api/public/football/livescore/top6/fixtures",
+    "source_line": 702,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootballLivescore",
+    "method": "GET",
+    "path": "/api/public/football/livescore/top6/all-fixtures",
+    "source_line": 703,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootballLivescore",
+    "method": "GET",
+    "path": "/api/public/football/livescore/leagues/top6/${league}/live",
+    "source_line": 704,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootballLivescore",
+    "method": "GET",
+    "path": "/api/public/football/livescore/leagues/top6/${league}/fixtures",
+    "source_line": 705,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootballLivescore",
+    "method": "GET",
+    "path": "/api/public/football/livescore/cups/live",
+    "source_line": 706,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootballLivescore",
+    "method": "GET",
+    "path": "/api/public/football/livescore/cups/fixtures",
+    "source_line": 707,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootballLivescore",
+    "method": "GET",
+    "path": "/api/public/football/livescore/cups/${cup}/live",
+    "source_line": 708,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicFootballLivescore",
+    "method": "GET",
+    "path": "/api/public/football/livescore/cups/${cup}/fixtures",
+    "source_line": 709,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicBasketball",
+    "method": "GET",
+    "path": "/api/public/basketball/matches",
+    "source_line": 717,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicBasketball",
+    "method": "GET",
+    "path": "/api/public/basketball/matches/upcoming",
+    "source_line": 718,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicBasketball",
+    "method": "GET",
+    "path": "/api/public/basketball/matches/today",
+    "source_line": 719,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicBasketball",
+    "method": "GET",
+    "path": "/api/public/basketball/matches/live",
+    "source_line": 720,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicBasketball",
+    "method": "GET",
+    "path": "/api/public/basketball/matches/future",
+    "source_line": 721,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicBasketball",
+    "method": "GET",
+    "path": "/api/public/basketball/matches/results${qs({ limit })}",
+    "source_line": 722,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicBasketball",
+    "method": "GET",
+    "path": "/api/public/basketball/matches/with-odds",
+    "source_line": 723,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicBasketball",
+    "method": "GET",
+    "path": "/api/public/basketball/matches/with-all-odds",
+    "source_line": 724,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicBasketball",
+    "method": "GET",
+    "path": "/api/public/basketball/matches/${id}",
+    "source_line": 725,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicBasketball",
+    "method": "GET",
+    "path": "/api/public/basketball/matches/${id}/odds",
+    "source_line": 726,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicBasketball",
+    "method": "GET",
+    "path": "/api/public/basketball/matches/${id}/odds/all",
+    "source_line": 727,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicBasketball",
+    "method": "GET",
+    "path": "/api/public/basketball/matches/${id}/odds/moneyline",
+    "source_line": 728,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicBasketball",
+    "method": "GET",
+    "path": "/api/public/basketball/matches/${id}/odds/spread",
+    "source_line": 729,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicBasketball",
+    "method": "GET",
+    "path": "/api/public/basketball/matches/${id}/odds/total",
+    "source_line": 730,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicBasketball",
+    "method": "GET",
+    "path": "/api/public/basketball/matches/${id}/odds/quarters",
+    "source_line": 731,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicBasketball",
+    "method": "GET",
+    "path": "/api/public/basketball/matches/${id}/odds/margin",
+    "source_line": 732,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicBasketball",
+    "method": "GET",
+    "path": "/api/public/basketball/matches/${id}/stats",
+    "source_line": 733,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicBasketball",
+    "method": "GET",
+    "path": "/api/public/basketball/matches/${id}/lineups",
+    "source_line": 734,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicBasketball",
+    "method": "GET",
+    "path": "/api/public/basketball/matches/${id}/h2h",
+    "source_line": 735,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicBasketball",
+    "method": "GET",
+    "path": "/api/public/basketball/matches/${id}/events",
+    "source_line": 736,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicBasketball",
+    "method": "GET",
+    "path": "/api/public/basketball/matches/${id}/detail",
+    "source_line": 737,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicBasketball",
+    "method": "GET",
+    "path": "/api/public/basketball/standings",
+    "source_line": 738,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicBasketball",
+    "method": "GET",
+    "path": "/api/public/basketball/teams",
+    "source_line": 739,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicBasketball",
+    "method": "GET",
+    "path": "/api/public/basketball/teams/${team}/upcoming",
+    "source_line": 740,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicBasketball",
+    "method": "GET",
+    "path": "/api/public/basketball/teams/${team}/results",
+    "source_line": 741,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicBasketball",
+    "method": "GET",
+    "path": "/api/public/basketball/teams/${team}/live",
+    "source_line": 742,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicBasketball",
+    "method": "GET",
+    "path": "/api/public/basketball/teams/${teamId}/schedule",
+    "source_line": 743,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicBasketball",
+    "method": "GET",
+    "path": "/api/public/basketball/teams/${teamId}/roster",
+    "source_line": 744,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicBasketball",
+    "method": "GET",
+    "path": "/api/public/basketball/teams/${teamId}/info",
+    "source_line": 745,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicBasketball",
+    "method": "GET",
+    "path": "/api/public/basketball/espn/upcoming",
+    "source_line": 746,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicBasketball",
+    "method": "GET",
+    "path": "/api/public/basketball/espn/today",
+    "source_line": 747,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicBasketball",
+    "method": "GET",
+    "path": "/api/public/basketball/espn/live",
+    "source_line": 748,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicBasketball",
+    "method": "GET",
+    "path": "/api/public/basketball/espn/game/${espnGameId}",
+    "source_line": 749,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicNfl",
+    "method": "GET",
+    "path": "/api/public/nfl/matches",
+    "source_line": 757,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicNfl",
+    "method": "GET",
+    "path": "/api/public/nfl/matches/upcoming",
+    "source_line": 758,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicNfl",
+    "method": "GET",
+    "path": "/api/public/nfl/matches/today",
+    "source_line": 759,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicNfl",
+    "method": "GET",
+    "path": "/api/public/nfl/matches/live",
+    "source_line": 760,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicNfl",
+    "method": "GET",
+    "path": "/api/public/nfl/matches/results",
+    "source_line": 761,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicNfl",
+    "method": "GET",
+    "path": "/api/public/nfl/matches/with-odds",
+    "source_line": 762,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicNfl",
+    "method": "GET",
+    "path": "/api/public/nfl/matches/${id}",
+    "source_line": 763,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicNfl",
+    "method": "GET",
+    "path": "/api/public/nfl/matches/${id}/odds",
+    "source_line": 764,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicNfl",
+    "method": "GET",
+    "path": "/api/public/nfl/matches/${id}/odds/all",
+    "source_line": 765,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicNfl",
+    "method": "GET",
+    "path": "/api/public/nfl/matches/${id}/score",
+    "source_line": 766,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicNfl",
+    "method": "GET",
+    "path": "/api/public/nfl/matches/${id}/detail",
+    "source_line": 767,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicNfl",
+    "method": "GET",
+    "path": "/api/public/nfl/standings",
+    "source_line": 768,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicNfl",
+    "method": "GET",
+    "path": "/api/public/nfl/espn/week",
+    "source_line": 769,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicNfl",
+    "method": "GET",
+    "path": "/api/public/nfl/espn/week/${week}${qs({ seasonType })}",
+    "source_line": 770,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicNfl",
+    "method": "GET",
+    "path": "/api/public/nfl/espn/upcoming",
+    "source_line": 771,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicNfl",
+    "method": "GET",
+    "path": "/api/public/nfl/espn/live",
+    "source_line": 772,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicNfl",
+    "method": "GET",
+    "path": "/api/public/nfl/espn/finished",
+    "source_line": 773,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicNfl",
+    "method": "GET",
+    "path": "/api/public/nfl/espn/date/${date}",
+    "source_line": 774,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicBaseball",
+    "method": "GET",
+    "path": "/api/public/baseball/matches",
+    "source_line": 782,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicBaseball",
+    "method": "GET",
+    "path": "/api/public/baseball/matches/upcoming",
+    "source_line": 783,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicBaseball",
+    "method": "GET",
+    "path": "/api/public/baseball/matches/today",
+    "source_line": 784,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicBaseball",
+    "method": "GET",
+    "path": "/api/public/baseball/matches/live",
+    "source_line": 785,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicBaseball",
+    "method": "GET",
+    "path": "/api/public/baseball/matches/results${qs({ limit })}",
+    "source_line": 786,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicBaseball",
+    "method": "GET",
+    "path": "/api/public/baseball/matches/${id}",
+    "source_line": 787,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicBaseball",
+    "method": "GET",
+    "path": "/api/public/baseball/matches/${id}/odds",
+    "source_line": 788,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicBaseball",
+    "method": "GET",
+    "path": "/api/public/baseball/matches/${id}/odds/persisted",
+    "source_line": 789,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicBaseball",
+    "method": "GET",
+    "path": "/api/public/baseball/matches/${id}/score",
+    "source_line": 790,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicBaseball",
+    "method": "GET",
+    "path": "/api/public/baseball/matches/${id}/detail",
+    "source_line": 791,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicBaseball",
+    "method": "GET",
+    "path": "/api/public/baseball/standings",
+    "source_line": 792,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicBaseball",
+    "method": "GET",
+    "path": "/api/public/baseball/teams/${team}/upcoming",
+    "source_line": 793,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicBaseball",
+    "method": "GET",
+    "path": "/api/public/baseball/teams/${team}/results",
+    "source_line": 794,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicBaseball",
+    "method": "GET",
+    "path": "/api/public/baseball/teams/${team}/live",
+    "source_line": 795,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicBaseball",
+    "method": "GET",
+    "path": "/api/public/baseball/espn/upcoming",
+    "source_line": 796,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicBaseball",
+    "method": "GET",
+    "path": "/api/public/baseball/espn/today",
+    "source_line": 797,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicBaseball",
+    "method": "GET",
+    "path": "/api/public/baseball/espn/live",
+    "source_line": 798,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicBaseball",
+    "method": "GET",
+    "path": "/api/public/baseball/espn/game/${espnGameId}",
+    "source_line": 799,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicMma",
+    "method": "GET",
+    "path": "/api/public/mma/matches",
+    "source_line": 807,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicMma",
+    "method": "GET",
+    "path": "/api/public/mma/matches/upcoming",
+    "source_line": 808,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicMma",
+    "method": "GET",
+    "path": "/api/public/mma/matches/live",
+    "source_line": 809,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicMma",
+    "method": "GET",
+    "path": "/api/public/mma/matches/results${qs({ limit })}",
+    "source_line": 810,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicMma",
+    "method": "GET",
+    "path": "/api/public/mma/matches/featured",
+    "source_line": 811,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicMma",
+    "method": "GET",
+    "path": "/api/public/mma/matches/with-odds",
+    "source_line": 812,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicMma",
+    "method": "GET",
+    "path": "/api/public/mma/matches/${id}",
+    "source_line": 813,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicMma",
+    "method": "GET",
+    "path": "/api/public/mma/matches/${id}/odds",
+    "source_line": 814,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicMma",
+    "method": "GET",
+    "path": "/api/public/mma/matches/${id}/odds/all",
+    "source_line": 815,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicMma",
+    "method": "GET",
+    "path": "/api/public/mma/matches/${id}/score",
+    "source_line": 816,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicMma",
+    "method": "GET",
+    "path": "/api/public/mma/matches/${id}/detail",
+    "source_line": 817,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicMma",
+    "method": "GET",
+    "path": "/api/public/mma/matches/${id}/events",
+    "source_line": 818,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicMma",
+    "method": "GET",
+    "path": "/api/public/mma/matches/${id}/full",
+    "source_line": 819,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicMma",
+    "method": "GET",
+    "path": "/api/public/mma/matches/${id}/fight-card",
+    "source_line": 820,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicMma",
+    "method": "GET",
+    "path": "/api/public/mma/fighters/${athleteId}",
+    "source_line": 821,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicMma",
+    "method": "GET",
+    "path": "/api/public/mma/espn/events",
+    "source_line": 822,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicMma",
+    "method": "GET",
+    "path": "/api/public/mma/espn/events/upcoming",
+    "source_line": 823,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicMma",
+    "method": "GET",
+    "path": "/api/public/mma/espn/events/live",
+    "source_line": 824,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicMma",
+    "method": "GET",
+    "path": "/api/public/mma/espn/events/finished",
+    "source_line": 825,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicTennis",
+    "method": "GET",
+    "path": "/api/public/tennis/matches",
+    "source_line": 833,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicTennis",
+    "method": "GET",
+    "path": "/api/public/tennis/matches/upcoming",
+    "source_line": 834,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicTennis",
+    "method": "GET",
+    "path": "/api/public/tennis/matches/live",
+    "source_line": 835,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicTennis",
+    "method": "GET",
+    "path": "/api/public/tennis/matches/results${qs({ limit })}",
+    "source_line": 836,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicTennis",
+    "method": "GET",
+    "path": "/api/public/tennis/matches/featured",
+    "source_line": 837,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicTennis",
+    "method": "GET",
+    "path": "/api/public/tennis/matches/with-odds",
+    "source_line": 838,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicTennis",
+    "method": "GET",
+    "path": "/api/public/tennis/matches/${id}",
+    "source_line": 839,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicTennis",
+    "method": "GET",
+    "path": "/api/public/tennis/matches/${id}/odds",
+    "source_line": 840,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicTennis",
+    "method": "GET",
+    "path": "/api/public/tennis/matches/${id}/score",
+    "source_line": 841,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicTennis",
+    "method": "GET",
+    "path": "/api/public/tennis/matches/${id}/events",
+    "source_line": 842,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicTennis",
+    "method": "GET",
+    "path": "/api/public/tennis/matches/${id}/detail",
+    "source_line": 843,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicTennis",
+    "method": "GET",
+    "path": "/api/public/tennis/atp/matches",
+    "source_line": 844,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicTennis",
+    "method": "GET",
+    "path": "/api/public/tennis/atp/live",
+    "source_line": 845,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicTennis",
+    "method": "GET",
+    "path": "/api/public/tennis/atp/upcoming",
+    "source_line": 846,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicTennis",
+    "method": "GET",
+    "path": "/api/public/tennis/atp/tournaments",
+    "source_line": 847,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicTennis",
+    "method": "GET",
+    "path": "/api/public/tennis/atp/rankings",
+    "source_line": 848,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicTennis",
+    "method": "GET",
+    "path": "/api/public/tennis/wta/matches",
+    "source_line": 849,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicTennis",
+    "method": "GET",
+    "path": "/api/public/tennis/wta/live",
+    "source_line": 850,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicTennis",
+    "method": "GET",
+    "path": "/api/public/tennis/wta/upcoming",
+    "source_line": 851,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicTennis",
+    "method": "GET",
+    "path": "/api/public/tennis/wta/tournaments",
+    "source_line": 852,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicTennis",
+    "method": "GET",
+    "path": "/api/public/tennis/wta/rankings",
+    "source_line": 853,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicTennis",
+    "method": "GET",
+    "path": "/api/public/tennis/tours/${tour}/upcoming",
+    "source_line": 854,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicTennis",
+    "method": "GET",
+    "path": "/api/public/tennis/tours/${tour}/live",
+    "source_line": 855,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicAdminMatches",
+    "method": "GET",
+    "path": "/api/public/admin-matches",
+    "source_line": 863,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicAdminMatches",
+    "method": "GET",
+    "path": "/api/public/admin-matches/upcoming",
+    "source_line": 864,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicAdminMatches",
+    "method": "GET",
+    "path": "/api/public/admin-matches/live",
+    "source_line": 865,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicAdminMatches",
+    "method": "GET",
+    "path": "/api/public/admin-matches/${id}",
+    "source_line": 866,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicAdminMatches",
+    "method": "GET",
+    "path": "/api/public/admin-matches/${id}/odds",
+    "source_line": 867,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicAdminMatches",
+    "method": "GET",
+    "path": "/api/public/admin-matches/${id}/odds/all",
+    "source_line": 868,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicConfig",
+    "method": "GET",
+    "path": "/api/public/config",
+    "source_line": 876,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicPredictions",
+    "method": "GET",
+    "path": "/api/predictions/public${qs({ page, size })}",
+    "source_line": 880,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "publicPredictions",
+    "method": "GET",
+    "path": "/api/tip/${id}",
+    "source_line": 881,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "affiliate",
+    "method": "GET",
+    "path": "/api/affiliate/stats",
+    "source_line": 889,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "affiliate",
+    "method": "GET",
+    "path": "/api/affiliate/balance",
+    "source_line": 890,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "affiliate",
+    "method": "GET",
+    "path": "/api/affiliate/referred-users",
+    "source_line": 891,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "affiliate",
+    "method": "GET",
+    "path": "/api/affiliate/links",
+    "source_line": 892,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "affiliate",
+    "method": "POST",
+    "path": "/api/affiliate/links",
+    "source_line": 893,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "affiliate",
+    "method": "GET",
+    "path": "/api/affiliate/withdrawals${qs({ page, size })}",
+    "source_line": 894,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "affiliate",
+    "method": "POST",
+    "path": "/api/affiliate/withdraw",
+    "source_line": 895,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "support",
+    "method": "GET",
+    "path": "/api/upgrade-chats/${chatId}/messages",
+    "source_line": 903,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "support",
+    "method": "POST",
+    "path": "/api/upgrade-chats/${chatId}/messages",
+    "source_line": 904,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "adminUpgrade",
+    "method": "POST",
+    "path": "/api/user/upgrade-to-admin/paystack/init",
+    "source_line": 913,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "matches",
+    "method": "GET",
+    "path": "/api/matches/${id}",
+    "source_line": 921,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "matches",
+    "method": "GET",
+    "path": "/api/matches/upcoming",
+    "source_line": 922,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "matches",
+    "method": "GET",
+    "path": "/api/matches/today",
+    "source_line": 923,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "matches",
+    "method": "GET",
+    "path": "/api/matches/live",
+    "source_line": 924,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "matches",
+    "method": "GET",
+    "path": "/api/matches/future",
+    "source_line": 925,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "matches",
+    "method": "GET",
+    "path": "/api/matches/results${qs({ limit })}",
+    "source_line": 926,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "matches",
+    "method": "GET",
+    "path": "/api/matches/top6/upcoming",
+    "source_line": 927,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "matches",
+    "method": "GET",
+    "path": "/api/matches/top6/today",
+    "source_line": 928,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "matches",
+    "method": "GET",
+    "path": "/api/matches/top6/live",
+    "source_line": 929,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "matches",
+    "method": "GET",
+    "path": "/api/matches/cups/upcoming",
+    "source_line": 930,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "matches",
+    "method": "GET",
+    "path": "/api/matches/cups/today",
+    "source_line": 931,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "matches",
+    "method": "GET",
+    "path": "/api/matches/cups/live",
+    "source_line": 932,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "matches",
+    "method": "GET",
+    "path": "/api/matches/all-cups/upcoming",
+    "source_line": 933,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "matches",
+    "method": "GET",
+    "path": "/api/matches/all-cups/today",
+    "source_line": 934,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "matches",
+    "method": "GET",
+    "path": "/api/matches/all-cups/live",
+    "source_line": 935,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "matches",
+    "method": "GET",
+    "path": "/api/matches/${id}/stats",
+    "source_line": 936,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "matches",
+    "method": "GET",
+    "path": "/api/matches/${id}/prediction",
+    "source_line": 937,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "matches",
+    "method": "GET",
+    "path": "/api/matches/${id}/odds",
+    "source_line": 938,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "matches",
+    "method": "GET",
+    "path": "/api/matches/${id}/odds/live",
+    "source_line": 939,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "matches",
+    "method": "GET",
+    "path": "/api/matches/${id}/odds/all",
+    "source_line": 940,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "matches",
+    "method": "GET",
+    "path": "/api/matches/${id}/odds/handicap",
+    "source_line": 941,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "matches",
+    "method": "GET",
+    "path": "/api/matches/${id}/odds/half-time",
+    "source_line": 942,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "matches",
+    "method": "GET",
+    "path": "/api/matches/${id}/odds/correct-score",
+    "source_line": 943,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "matches",
+    "method": "GET",
+    "path": "/api/matches/${id}/lineups",
+    "source_line": 944,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "matches",
+    "method": "GET",
+    "path": "/api/matches/${id}/h2h",
+    "source_line": 945,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "matches",
+    "method": "GET",
+    "path": "/api/matches/${id}/events",
+    "source_line": 946,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "matches",
+    "method": "GET",
+    "path": "/api/matches/${id}/detail",
+    "source_line": 947,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "livescore",
+    "method": "GET",
+    "path": "/api/livescore/live",
+    "source_line": 955,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "livescore",
+    "method": "GET",
+    "path": "/api/livescore/today",
+    "source_line": 956,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "livescore",
+    "method": "GET",
+    "path": "/api/livescore/fixtures",
+    "source_line": 957,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "livescore",
+    "method": "GET",
+    "path": "/api/livescore/top6/live",
+    "source_line": 958,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "livescore",
+    "method": "GET",
+    "path": "/api/livescore/top6/fixtures",
+    "source_line": 959,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "livescore",
+    "method": "GET",
+    "path": "/api/livescore/top6/all-fixtures",
+    "source_line": 960,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "livescore",
+    "method": "GET",
+    "path": "/api/livescore/leagues/top6/${league}/live",
+    "source_line": 961,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "livescore",
+    "method": "GET",
+    "path": "/api/livescore/leagues/top6/${league}/fixtures",
+    "source_line": 962,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "livescore",
+    "method": "GET",
+    "path": "/api/livescore/cups/live",
+    "source_line": 963,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "livescore",
+    "method": "GET",
+    "path": "/api/livescore/cups/fixtures",
+    "source_line": 964,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "livescore",
+    "method": "GET",
+    "path": "/api/livescore/cups/${cup}/live",
+    "source_line": 965,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "livescore",
+    "method": "GET",
+    "path": "/api/livescore/cups/${cup}/fixtures",
+    "source_line": 966,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "standings",
+    "method": "GET",
+    "path": "/api/standings/${competitionId}",
+    "source_line": 974,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "standings",
+    "method": "GET",
+    "path": "/api/standings/top6",
+    "source_line": 975,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "standings",
+    "method": "GET",
+    "path": "/api/standings/leagues/${league}",
+    "source_line": 976,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "standings",
+    "method": "GET",
+    "path": "/api/standings/leagues/top6/${league}",
+    "source_line": 977,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "standings",
+    "method": "GET",
+    "path": "/api/standings/cups/${cup}",
+    "source_line": 978,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "scorers",
+    "method": "GET",
+    "path": "/api/scorers/${competitionId}",
+    "source_line": 982,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "scorers",
+    "method": "GET",
+    "path": "/api/scorers/leagues/${league}",
+    "source_line": 983,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "scorers",
+    "method": "GET",
+    "path": "/api/scorers/leagues/top6/${league}",
+    "source_line": 984,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "teams",
+    "method": "GET",
+    "path": "/api/teams/name/${team}/upcoming",
+    "source_line": 988,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "teams",
+    "method": "GET",
+    "path": "/api/teams/name/${team}/results",
+    "source_line": 989,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "teams",
+    "method": "GET",
+    "path": "/api/teams/name/${team}/live",
+    "source_line": 990,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "teams",
+    "method": "GET",
+    "path": "/api/teams/id/${teamId}/matches",
+    "source_line": 991,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "teams",
+    "method": "GET",
+    "path": "/api/teams/id/${teamId}/live",
+    "source_line": 992,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "teams",
+    "method": "GET",
+    "path": "/api/teams/id/${teamId}/fixtures",
+    "source_line": 993,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "leagues",
+    "method": "GET",
+    "path": "/api/leagues/${league}/upcoming",
+    "source_line": 997,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "leagues",
+    "method": "GET",
+    "path": "/api/leagues/${league}/today",
+    "source_line": 998,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "leagues",
+    "method": "GET",
+    "path": "/api/leagues/${league}/live",
+    "source_line": 999,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "leagues",
+    "method": "GET",
+    "path": "/api/leagues/top6/${league}/upcoming",
+    "source_line": 1000,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "leagues",
+    "method": "GET",
+    "path": "/api/leagues/top6/${league}/today",
+    "source_line": 1001,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "leagues",
+    "method": "GET",
+    "path": "/api/leagues/top6/${league}/live",
+    "source_line": 1002,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "cups",
+    "method": "GET",
+    "path": "/api/cups/${cup}/upcoming",
+    "source_line": 1006,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "cups",
+    "method": "GET",
+    "path": "/api/cups/${cup}/today",
+    "source_line": 1007,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "cups",
+    "method": "GET",
+    "path": "/api/cups/${cup}/live",
+    "source_line": 1008,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "nba",
+    "method": "GET",
+    "path": "/api/nba/matches/upcoming",
+    "source_line": 1016,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "nba",
+    "method": "GET",
+    "path": "/api/nba/matches/today",
+    "source_line": 1017,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "nba",
+    "method": "GET",
+    "path": "/api/nba/matches/live",
+    "source_line": 1018,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "nba",
+    "method": "GET",
+    "path": "/api/nba/matches/future",
+    "source_line": 1019,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "nba",
+    "method": "GET",
+    "path": "/api/nba/matches/results${qs({ limit })}",
+    "source_line": 1020,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "nba",
+    "method": "GET",
+    "path": "/api/nba/matches/${id}",
+    "source_line": 1021,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "nba",
+    "method": "GET",
+    "path": "/api/nba/matches/${id}/odds",
+    "source_line": 1022,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "nba",
+    "method": "GET",
+    "path": "/api/nba/matches/${id}/odds/all",
+    "source_line": 1023,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "nba",
+    "method": "GET",
+    "path": "/api/nba/matches/${id}/odds/moneyline",
+    "source_line": 1024,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "nba",
+    "method": "GET",
+    "path": "/api/nba/matches/${id}/odds/spread",
+    "source_line": 1025,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "nba",
+    "method": "GET",
+    "path": "/api/nba/matches/${id}/odds/total",
+    "source_line": 1026,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "nba",
+    "method": "GET",
+    "path": "/api/nba/matches/${id}/odds/quarters",
+    "source_line": 1027,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "nba",
+    "method": "GET",
+    "path": "/api/nba/matches/${id}/odds/margin",
+    "source_line": 1028,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "nba",
+    "method": "GET",
+    "path": "/api/nba/matches/${id}/score",
+    "source_line": 1029,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "nba",
+    "method": "GET",
+    "path": "/api/nba/matches/${id}/stats",
+    "source_line": 1030,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "nba",
+    "method": "GET",
+    "path": "/api/nba/matches/${id}/lineups",
+    "source_line": 1031,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "nba",
+    "method": "GET",
+    "path": "/api/nba/matches/${id}/h2h",
+    "source_line": 1032,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "nba",
+    "method": "GET",
+    "path": "/api/nba/matches/${id}/events",
+    "source_line": 1033,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "nba",
+    "method": "GET",
+    "path": "/api/nba/matches/${id}/detail",
+    "source_line": 1034,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "nba",
+    "method": "GET",
+    "path": "/api/nba/matches/${id}/detail/full",
+    "source_line": 1035,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "nba",
+    "method": "GET",
+    "path": "/api/nba/standings",
+    "source_line": 1036,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "nba",
+    "method": "GET",
+    "path": "/api/nba/teams",
+    "source_line": 1037,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "nba",
+    "method": "GET",
+    "path": "/api/nba/teams/${team}/upcoming",
+    "source_line": 1038,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "nba",
+    "method": "GET",
+    "path": "/api/nba/teams/${team}/results",
+    "source_line": 1039,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "nba",
+    "method": "GET",
+    "path": "/api/nba/teams/${team}/live",
+    "source_line": 1040,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "nba",
+    "method": "GET",
+    "path": "/api/nba/teams/${teamId}/schedule",
+    "source_line": 1041,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "nba",
+    "method": "GET",
+    "path": "/api/nba/teams/${teamId}/roster",
+    "source_line": 1042,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "nba",
+    "method": "GET",
+    "path": "/api/nba/teams/${teamId}/info",
+    "source_line": 1043,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "nba",
+    "method": "GET",
+    "path": "/api/nba/espn/upcoming",
+    "source_line": 1044,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "nba",
+    "method": "GET",
+    "path": "/api/nba/espn/today",
+    "source_line": 1045,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "nba",
+    "method": "GET",
+    "path": "/api/nba/espn/live",
+    "source_line": 1046,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "nba",
+    "method": "GET",
+    "path": "/api/nba/espn/game/${espnGameId}",
+    "source_line": 1047,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "nfl",
+    "method": "GET",
+    "path": "/api/nfl/matches/upcoming",
+    "source_line": 1055,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "nfl",
+    "method": "GET",
+    "path": "/api/nfl/matches/today",
+    "source_line": 1056,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "nfl",
+    "method": "GET",
+    "path": "/api/nfl/matches/live",
+    "source_line": 1057,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "nfl",
+    "method": "GET",
+    "path": "/api/nfl/matches/results",
+    "source_line": 1058,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "nfl",
+    "method": "GET",
+    "path": "/api/nfl/matches/${id}",
+    "source_line": 1059,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "nfl",
+    "method": "GET",
+    "path": "/api/nfl/matches/${id}/odds",
+    "source_line": 1060,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "nfl",
+    "method": "GET",
+    "path": "/api/nfl/matches/${id}/odds/db",
+    "source_line": 1061,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "nfl",
+    "method": "GET",
+    "path": "/api/nfl/matches/${id}/odds/all",
+    "source_line": 1062,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "nfl",
+    "method": "GET",
+    "path": "/api/nfl/matches/${id}/score",
+    "source_line": 1063,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "nfl",
+    "method": "GET",
+    "path": "/api/nfl/matches/${id}/detail",
+    "source_line": 1064,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "nfl",
+    "method": "GET",
+    "path": "/api/nfl/matches/espn/${espnGameId}/full",
+    "source_line": 1065,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "nfl",
+    "method": "GET",
+    "path": "/api/nfl/standings",
+    "source_line": 1066,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "nfl",
+    "method": "GET",
+    "path": "/api/nfl/teams",
+    "source_line": 1067,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "nfl",
+    "method": "GET",
+    "path": "/api/nfl/teams/${teamId}",
+    "source_line": 1068,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "nfl",
+    "method": "GET",
+    "path": "/api/nfl/teams/${teamId}/schedule",
+    "source_line": 1069,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "nfl",
+    "method": "GET",
+    "path": "/api/nfl/teams/${teamId}/roster",
+    "source_line": 1070,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "nfl",
+    "method": "GET",
+    "path": "/api/nfl/espn/week",
+    "source_line": 1071,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "nfl",
+    "method": "GET",
+    "path": "/api/nfl/espn/week/${week}${qs({ seasonType })}",
+    "source_line": 1072,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "nfl",
+    "method": "GET",
+    "path": "/api/nfl/espn/upcoming",
+    "source_line": 1073,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "nfl",
+    "method": "GET",
+    "path": "/api/nfl/espn/live",
+    "source_line": 1074,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "nfl",
+    "method": "GET",
+    "path": "/api/nfl/espn/finished",
+    "source_line": 1075,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "nfl",
+    "method": "GET",
+    "path": "/api/nfl/espn/date/${date}",
+    "source_line": 1076,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "baseball",
+    "method": "GET",
+    "path": "/api/baseball/matches/upcoming",
+    "source_line": 1084,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "baseball",
+    "method": "GET",
+    "path": "/api/baseball/matches/today",
+    "source_line": 1085,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "baseball",
+    "method": "GET",
+    "path": "/api/baseball/matches/live",
+    "source_line": 1086,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "baseball",
+    "method": "GET",
+    "path": "/api/baseball/matches/results${qs({ limit })}",
+    "source_line": 1087,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "baseball",
+    "method": "GET",
+    "path": "/api/baseball/matches/${id}",
+    "source_line": 1088,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "baseball",
+    "method": "GET",
+    "path": "/api/baseball/matches/${id}/odds",
+    "source_line": 1089,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "baseball",
+    "method": "GET",
+    "path": "/api/baseball/matches/${id}/odds/persisted",
+    "source_line": 1090,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "baseball",
+    "method": "GET",
+    "path": "/api/baseball/matches/${id}/score",
+    "source_line": 1091,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "baseball",
+    "method": "GET",
+    "path": "/api/baseball/matches/${id}/detail",
+    "source_line": 1092,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "baseball",
+    "method": "GET",
+    "path": "/api/baseball/standings",
+    "source_line": 1093,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "baseball",
+    "method": "GET",
+    "path": "/api/baseball/teams/${team}/upcoming",
+    "source_line": 1094,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "baseball",
+    "method": "GET",
+    "path": "/api/baseball/teams/${team}/results",
+    "source_line": 1095,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "baseball",
+    "method": "GET",
+    "path": "/api/baseball/teams/${team}/live",
+    "source_line": 1096,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "baseball",
+    "method": "GET",
+    "path": "/api/baseball/espn/upcoming",
+    "source_line": 1097,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "baseball",
+    "method": "GET",
+    "path": "/api/baseball/espn/today",
+    "source_line": 1098,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "baseball",
+    "method": "GET",
+    "path": "/api/baseball/espn/live",
+    "source_line": 1099,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "baseball",
+    "method": "GET",
+    "path": "/api/baseball/espn/game/${espnGameId}",
+    "source_line": 1100,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "mma",
+    "method": "GET",
+    "path": "/api/mma/matches/upcoming",
+    "source_line": 1108,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "mma",
+    "method": "GET",
+    "path": "/api/mma/matches/live",
+    "source_line": 1109,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "mma",
+    "method": "GET",
+    "path": "/api/mma/matches/results${qs({ limit })}",
+    "source_line": 1110,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "mma",
+    "method": "GET",
+    "path": "/api/mma/matches/featured",
+    "source_line": 1111,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "mma",
+    "method": "GET",
+    "path": "/api/mma/matches/${id}",
+    "source_line": 1112,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "mma",
+    "method": "GET",
+    "path": "/api/mma/matches/${id}/odds",
+    "source_line": 1113,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "mma",
+    "method": "GET",
+    "path": "/api/mma/matches/${id}/odds/all",
+    "source_line": 1114,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "mma",
+    "method": "GET",
+    "path": "/api/mma/matches/${id}/score",
+    "source_line": 1115,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "mma",
+    "method": "GET",
+    "path": "/api/mma/matches/${id}/detail",
+    "source_line": 1116,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "mma",
+    "method": "GET",
+    "path": "/api/mma/matches/${id}/events",
+    "source_line": 1117,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "mma",
+    "method": "GET",
+    "path": "/api/mma/matches/${id}/full",
+    "source_line": 1118,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "mma",
+    "method": "GET",
+    "path": "/api/mma/matches/${id}/fight-card",
+    "source_line": 1119,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "mma",
+    "method": "GET",
+    "path": "/api/mma/fighters/${athleteId}",
+    "source_line": 1120,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "mma",
+    "method": "GET",
+    "path": "/api/mma/espn/events",
+    "source_line": 1121,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "mma",
+    "method": "GET",
+    "path": "/api/mma/espn/events/upcoming",
+    "source_line": 1122,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "mma",
+    "method": "GET",
+    "path": "/api/mma/espn/events/live",
+    "source_line": 1123,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "mma",
+    "method": "GET",
+    "path": "/api/mma/espn/events/finished",
+    "source_line": 1124,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "tennis",
+    "method": "GET",
+    "path": "/api/tennis/matches/upcoming",
+    "source_line": 1128,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "tennis",
+    "method": "GET",
+    "path": "/api/tennis/matches/live",
+    "source_line": 1129,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "tennis",
+    "method": "GET",
+    "path": "/api/tennis/matches/results${qs({ limit })}",
+    "source_line": 1130,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "tennis",
+    "method": "GET",
+    "path": "/api/tennis/matches/featured",
+    "source_line": 1131,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "tennis",
+    "method": "GET",
+    "path": "/api/tennis/matches/${id}",
+    "source_line": 1132,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "tennis",
+    "method": "GET",
+    "path": "/api/tennis/matches/${id}/odds",
+    "source_line": 1133,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "tennis",
+    "method": "GET",
+    "path": "/api/tennis/matches/${id}/odds/db",
+    "source_line": 1134,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "tennis",
+    "method": "GET",
+    "path": "/api/tennis/matches/${id}/score",
+    "source_line": 1135,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "tennis",
+    "method": "GET",
+    "path": "/api/tennis/matches/${id}/events",
+    "source_line": 1136,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "tennis",
+    "method": "GET",
+    "path": "/api/tennis/matches/${id}/detail",
+    "source_line": 1137,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "tennis",
+    "method": "GET",
+    "path": "/api/tennis/matches/${id}/full-detail",
+    "source_line": 1138,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "tennis",
+    "method": "GET",
+    "path": "/api/tennis/atp/matches",
+    "source_line": 1139,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "tennis",
+    "method": "GET",
+    "path": "/api/tennis/atp/live",
+    "source_line": 1140,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "tennis",
+    "method": "GET",
+    "path": "/api/tennis/atp/upcoming",
+    "source_line": 1141,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "tennis",
+    "method": "GET",
+    "path": "/api/tennis/atp/tournaments",
+    "source_line": 1142,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "tennis",
+    "method": "GET",
+    "path": "/api/tennis/atp/rankings",
+    "source_line": 1143,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "tennis",
+    "method": "GET",
+    "path": "/api/tennis/wta/matches",
+    "source_line": 1144,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "tennis",
+    "method": "GET",
+    "path": "/api/tennis/wta/live",
+    "source_line": 1145,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "tennis",
+    "method": "GET",
+    "path": "/api/tennis/wta/upcoming",
+    "source_line": 1146,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "tennis",
+    "method": "GET",
+    "path": "/api/tennis/wta/tournaments",
+    "source_line": 1147,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "tennis",
+    "method": "GET",
+    "path": "/api/tennis/wta/rankings",
+    "source_line": 1148,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "tennis",
+    "method": "GET",
+    "path": "/api/tennis/tours/${tour}/upcoming",
+    "source_line": 1149,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "tennis",
+    "method": "GET",
+    "path": "/api/tennis/tours/${tour}/live",
+    "source_line": 1150,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "adminMatches",
+    "method": "GET",
+    "path": "/api/admin/matches",
+    "source_line": 1158,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "adminMatches",
+    "method": "POST",
+    "path": "/api/admin/matches",
+    "source_line": 1159,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "adminMatches",
+    "method": "GET",
+    "path": "/api/admin/matches/${id}",
+    "source_line": 1160,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "adminMatches",
+    "method": "PATCH",
+    "path": "/api/admin/matches/${id}/status",
+    "source_line": 1161,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "adminMatches",
+    "method": "PATCH",
+    "path": "/api/admin/matches/${id}/score",
+    "source_line": 1162,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "adminMatchSchedule",
+    "method": "POST",
+    "path": "/admin/matches/auto",
+    "source_line": 1178,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "adminMatchSchedule",
+    "method": "GET",
+    "path": "/admin/matches/auto/${matchId}",
+    "source_line": 1179,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "adminMatchSchedule",
+    "method": "DELETE",
+    "path": "/admin/matches/auto/${matchId}",
+    "source_line": 1180,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "adminPredictions",
+    "method": "GET",
+    "path": "/api/admin/predictions${qs({ page, size })}",
+    "source_line": 1184,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "adminPredictions",
+    "method": "POST",
+    "path": "/api/admin/predictions/run",
+    "source_line": 1185,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "adminPredictions",
+    "method": "POST",
+    "path": "/api/admin/predictions/${id}/share",
+    "source_line": 1186,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "adminPredictions",
+    "method": "POST",
+    "path": "/api/admin/predictions/${id}/unpublish",
+    "source_line": 1187,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "adminCrash",
+    "method": "GET",
+    "path": "/api/admin/crash/schedule/${game}${qs({ limit })}",
+    "source_line": 1191,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "adminCrash",
+    "method": "POST",
+    "path": "/api/admin/crash/schedule/${game}/generate",
+    "source_line": 1192,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "adminCrash",
+    "method": "PATCH",
+    "path": "/api/admin/crash/schedule/${id}/override",
+    "source_line": 1193,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "adminCrash",
+    "method": "GET",
+    "path": "/api/admin/crash/history/${game}${qs({ page, size })}",
+    "source_line": 1194,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "adminAffiliate",
+    "method": "GET",
+    "path": "/api/admin/affiliate/stats",
+    "source_line": 1198,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "adminAffiliate",
+    "method": "GET",
+    "path": "/api/admin/affiliate/referred-users",
+    "source_line": 1199,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "adminAffiliate",
+    "method": "GET",
+    "path": "/api/admin/affiliate/links",
+    "source_line": 1200,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "adminAffiliate",
+    "method": "POST",
+    "path": "/api/admin/affiliate/links",
+    "source_line": 1201,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "adminAffiliate",
+    "method": "GET",
+    "path": "/api/admin/affiliate/payout-window",
+    "source_line": 1202,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "adminAffiliate",
+    "method": "POST",
+    "path": "/api/admin/affiliate/payout-request",
+    "source_line": 1203,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "adminAffiliate",
+    "method": "GET",
+    "path": "/api/admin/affiliate/payout-requests${qs({ page, size })}",
+    "source_line": 1204,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "adminAffiliateInsights",
+    "method": "GET",
+    "path": "/api/admin/affiliate/commission/daily${qs({ days })}",
+    "source_line": 1208,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "adminAffiliateInsights",
+    "method": "GET",
+    "path": "/api/admin/affiliate/commission/weekly${qs({ weeks })}",
+    "source_line": 1209,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "adminAffiliateInsights",
+    "method": "GET",
+    "path": "/api/admin/affiliate/commission/monthly${qs({ months })}",
+    "source_line": 1210,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "adminAffiliateInsights",
+    "method": "GET",
+    "path": "/api/admin/affiliate/deposits/by-country/daily${qs({ days })}",
+    "source_line": 1211,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "adminAffiliateInsights",
+    "method": "GET",
+    "path": "/api/admin/affiliate/deposits/by-country/weekly${qs({ weeks })}",
+    "source_line": 1212,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "adminAffiliateInsights",
+    "method": "GET",
+    "path": "/api/admin/affiliate/deposits/by-country/monthly${qs({ months })}",
+    "source_line": 1213,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "adminAffiliateInsights",
+    "method": "GET",
+    "path": "/api/admin/affiliate/deposits/by-country/totals${qs({ days })}",
+    "source_line": 1214,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "adminReferralLinks",
+    "method": "GET",
+    "path": "/api/admin/referral-links",
+    "source_line": 1218,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "adminReferralLinks",
+    "method": "POST",
+    "path": "/api/admin/referral-links",
+    "source_line": 1219,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "adminReferralLinks",
+    "method": "GET",
+    "path": "/api/admin/referred-users",
+    "source_line": 1220,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "adminAnalytics",
+    "method": "GET",
+    "path": "/api/admin/analytics${qs({ range })}",
+    "source_line": 1224,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "adminAnalytics",
+    "method": "GET",
+    "path": "/api/admin/audit-log${qs({ page, size })}",
+    "source_line": 1225,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "superAdminUpgradeChats",
+    "method": "GET",
+    "path": "/api/super-admin/upgrade-chats",
+    "source_line": 1233,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "superAdminUpgradeChats",
+    "method": "GET",
+    "path": "/api/super-admin/upgrade-chats/pending",
+    "source_line": 1234,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "superAdminUpgradeChats",
+    "method": "GET",
+    "path": "/api/super-admin/upgrade-chats/${chatId}/messages",
+    "source_line": 1235,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "superAdminUpgradeChats",
+    "method": "POST",
+    "path": "/api/super-admin/upgrade-chats/${chatId}/messages",
+    "source_line": 1236,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "superAdminUpgradeChats",
+    "method": "POST",
+    "path": "/api/super-admin/upgrade-chats/${chatId}/set-commission",
+    "source_line": 1237,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "superAdminPayouts",
+    "method": "GET",
+    "path": "/api/super-admin/payout-requests",
+    "source_line": 1241,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "superAdminPayouts",
+    "method": "POST",
+    "path": "/api/super-admin/payout-requests/${id}/approve",
+    "source_line": 1242,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "superAdminPayouts",
+    "method": "POST",
+    "path": "/api/super-admin/payout-requests/${id}/reject",
+    "source_line": 1243,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "superAdminPayouts",
+    "method": "POST",
+    "path": "/api/super-admin/payout-requests/${id}/mark-paid",
+    "source_line": 1244,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "superAdminAffiliateWithdrawals",
+    "method": "GET",
+    "path": "/api/super-admin/affiliate-withdrawals/pending",
+    "source_line": 1248,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "superAdminAffiliateWithdrawals",
+    "method": "GET",
+    "path": "/api/super-admin/affiliate-withdrawals${qs({ page, size, status })}",
+    "source_line": 1249,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "superAdminAffiliateWithdrawals",
+    "method": "POST",
+    "path": "/api/super-admin/affiliate-withdrawals/${id}/process",
+    "source_line": 1250,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "superAdminAffiliateWithdrawals",
+    "method": "POST",
+    "path": "/api/super-admin/affiliate-withdrawals/${id}/reject",
+    "source_line": 1251,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "superAdmin",
+    "method": "GET",
+    "path": "/api/super-admin/admins",
+    "source_line": 1255,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "superAdmin",
+    "method": "GET",
+    "path": "/api/super-admin/admins/with-commission",
+    "source_line": 1258,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "superAdmin",
+    "method": "POST",
+    "path": "/api/super-admin/admins",
+    "source_line": 1266,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "superAdmin",
+    "method": "POST",
+    "path": "/api/super-admin/admins/with-commission",
+    "source_line": 1267,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "superAdmin",
+    "method": "GET",
+    "path": "/api/super-admin/admins/${adminId}",
+    "source_line": 1268,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "superAdmin",
+    "method": "PATCH",
+    "path": "/api/super-admin/admins/${adminId}/commission-rate",
+    "source_line": 1269,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "superAdmin",
+    "method": "POST",
+    "path": "/api/super-admin/admins/${adminId}/add-funds",
+    "source_line": 1270,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "superAdmin",
+    "method": "GET",
+    "path": "/api/super-admin/users${qs({ page, size, search, role })}",
+    "source_line": 1271,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "superAdmin",
+    "method": "GET",
+    "path": "/api/super-admin/users/${userId}",
+    "source_line": 1272,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "superAdmin",
+    "method": "POST",
+    "path": "/api/super-admin/users/${userId}/add-funds",
+    "source_line": 1273,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "superAdmin",
+    "method": "GET",
+    "path": "/api/super-admin/users/${encodeURIComponent(userId)}/deposits${qs({ page, size })}",
+    "source_line": 1274,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "superAdmin",
+    "method": "POST",
+    "path": "/api/v1/super-admin/users/${encodeURIComponent(userId)}/${action}",
+    "source_line": 1275,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "superAdmin",
+    "method": "GET",
+    "path": "/api/super-admin/metrics",
+    "source_line": 1276,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "superAdmin",
+    "method": "GET",
+    "path": "/api/super-admin/metrics/deposits",
+    "source_line": 1277,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "superAdmin",
+    "method": "GET",
+    "path": "/api/super-admin/transactions${qs({ page, size, kind, status, walletId, from, to })}",
+    "source_line": 1279,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "superAdmin",
+    "method": "GET",
+    "path": "/api/super-admin/audit-log${qs({ page, size })}",
+    "source_line": 1280,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "superAdmin",
+    "method": "GET",
+    "path": "/api/super-admin/predictions${qs({ page, size })}",
+    "source_line": 1281,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "superAdmin",
+    "method": "GET",
+    "path": "/api/super-admin/commission/country-report/daily${qs({ days })}",
+    "source_line": 1282,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "superAdmin",
+    "method": "GET",
+    "path": "/api/super-admin/commission/country-report/weekly${qs({ weeks })}",
+    "source_line": 1283,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "superAdminDeposits",
+    "method": "GET",
+    "path": "/api/admin/binance-deposits${pending ? \"/pending\" : \"\"}${qs({ page, size })}",
+    "source_line": 1287,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "superAdminDeposits",
+    "method": "GET",
+    "path": "/api/admin/bank-deposits${pending ? \"/pending\" : \"\"}${qs({ page, size, sort: \"createdAt,desc\" })}",
+    "source_line": 1288,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "superAdminDeposits",
+    "method": "GET",
+    "path": "/api/admin/simple-deposits${pending ? \"/pending\" : \"\"}${qs({ page, size })}",
+    "source_line": 1289,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "superAdminDeposits",
+    "method": "POST",
+    "path": "/api/admin/${kind === \"binance\" ? \"binance\" : kind}-deposits/${encodeURIComponent(id)}/approve",
+    "source_line": 1290,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "superAdminDeposits",
+    "method": "POST",
+    "path": "/api/admin/${kind === \"binance\" ? \"binance\" : kind}-deposits/${encodeURIComponent(id)}/reject",
+    "source_line": 1291,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "superAdminWithdrawals",
+    "method": "GET",
+    "path": "/api/wallet/withdrawals/admin/all${qs({ page, size })}",
+    "source_line": 1295,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "superAdminWithdrawals",
+    "method": "POST",
+    "path": "/api/wallet/withdrawals/admin/${encodeURIComponent(id)}/approve",
+    "source_line": 1298,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "superAdminWithdrawals",
+    "method": "POST",
+    "path": "/api/wallet/withdrawals/super-admin/${encodeURIComponent(id)}/approve",
+    "source_line": 1299,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "superAdminWithdrawals",
+    "method": "POST",
+    "path": "/api/wallet/withdrawals/admin/${encodeURIComponent(id)}/reject",
+    "source_line": 1300,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "superAdminWithdrawals",
+    "method": "POST",
+    "path": "/api/wallet/withdrawals/super-admin/${encodeURIComponent(id)}/settle",
+    "source_line": 1301,
+    "source": "client/src/lib/api.ts"
+  },
+  {
+    "namespace": "superAdminWithdrawals",
+    "method": "POST",
+    "path": "/api/wallet/withdrawals/super-admin/${encodeURIComponent(id)}/mark-failed",
+    "source_line": 1302,
+    "source": "client/src/lib/api.ts"
+  }
+]
