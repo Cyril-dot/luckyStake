@@ -870,3 +870,160 @@ html,body,#root{max-width:100%;overflow-x:hidden}img,video,svg{max-width:100%}pr
 .admin-sidebar{position:sticky;top:104px;height:calc(100vh - 104px);display:flex;flex-direction:column;padding:22px 13px 18px;background:rgba(27,19,39,.96);border-right:1px solid #3e2e51;z-index:20}.admin-brand{display:flex;align-items:center;gap:10px;padding:0 10px 23px;border-bottom:1px solid #3e2e51}.admin-brand-mark{display:grid;place-items:center;width:35px;height:35px;border-radius:11px;background:var(--lime);color:#151018;font:900 21px/1 'Barlow Condensed'}.admin-brand strong{display:block;font:800 20px/1 'Barlow Condensed';letter-spacing:.02em}.admin-brand strong span{color:var(--lime)}.admin-brand small{display:block;margin-top:4px;color:#aa9dbb;font-size:9px;text-transform:uppercase;letter-spacing:.1em}.admin-sidebar nav{display:grid;gap:4px;padding-top:19px}.admin-sidebar nav button,.admin-exit{display:flex;align-items:center;gap:11px;min-height:42px;padding:0 11px;border:0;border-radius:8px;background:transparent;color:#b9abc5;text-decoration:none;font:700 12px 'Rajdhani';text-align:left;cursor:pointer}.admin-sidebar nav button:hover,.admin-sidebar nav button.active{background:rgba(214,238,70,.12);color:var(--lime)}.admin-sidebar nav button .material-symbols-rounded,.admin-exit .material-symbols-rounded{font-size:19px}.admin-exit{margin-top:auto;border-top:1px solid #3e2e51;border-radius:0;padding-top:18px;color:#9485a1}.admin-main{min-width:0;padding:36px clamp(18px,4vw,54px) 70px}.admin-stack{max-width:1240px;margin:auto}.admin-intro{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin-bottom:26px}.admin-eyebrow{color:var(--lime);font-size:10px;font-weight:800;letter-spacing:.16em}.admin-intro h1{margin:8px 0 5px;font:800 clamp(32px,4vw,47px)/.95 'Barlow Condensed';letter-spacing:-.01em}.admin-intro p{margin:0;color:#a99bb3;font-size:13px}.admin-refresh{display:grid;place-items:center;width:42px;height:42px;border:1px solid #59446d;border-radius:9px;background:#21182e;color:var(--lime);cursor:pointer}.admin-spin{animation:admin-spin .7s linear infinite}@keyframes admin-spin{to{transform:rotate(360deg)}}.admin-stat-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:17px}.admin-stat{position:relative;display:grid;gap:8px;min-height:130px;padding:17px;text-align:left;border:1px solid #4d3a5e;border-radius:11px;background:linear-gradient(145deg,#2b2039,#1c1527);color:#fff;cursor:pointer;transition:transform .18s,border-color .18s}.admin-stat:hover{transform:translateY(-2px);border-color:var(--lime)}.admin-stat>.material-symbols-rounded:first-child{color:var(--lime);font-size:21px}.admin-stat small{color:#a99bb3;font-size:11px}.admin-stat strong{font:800 25px 'Barlow Condensed'}.admin-stat-arrow{position:absolute;right:13px;bottom:17px;color:#756484;font-size:17px}.admin-two-col{display:grid;grid-template-columns:1.2fr .8fr;gap:16px}.admin-panel{margin-bottom:16px;padding:19px;border:1px solid #49375b;border-radius:12px;background:rgba(31,23,43,.83);box-shadow:0 14px 35px rgba(0,0,0,.13)}.admin-panel-title{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}.admin-panel-title h2{margin:0;font:800 20px 'Barlow Condensed'}.admin-quick-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.admin-button{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:35px;padding:0 12px;border:1px solid #5a456b;border-radius:7px;background:#281c38;color:#ddd2e3;font:700 11px 'Rajdhani';cursor:pointer}.admin-button:hover{border-color:var(--lime);color:var(--lime)}.admin-button.primary{background:var(--lime);border-color:var(--lime);color:#18121e}.admin-button.danger{border-color:#824d63;color:#ffb2c1}.admin-button .material-symbols-rounded{font-size:16px}.admin-status-list{display:grid;gap:0}.admin-status-list>div{display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid #382a46;font-size:12px}.admin-status-list>div:last-child{border-bottom:0}.admin-status-list span{color:#a99bb3}.admin-status-list b{font-size:12px}.admin-status-list .online{color:#bfe84d}.admin-status-list i{display:inline-block;width:7px;height:7px;margin-right:5px;border-radius:50%;background:#bfe84d}.admin-notice{display:flex;align-items:center;gap:8px;margin:-8px 0 17px;padding:10px 12px;border-radius:7px;font-size:12px}.admin-notice.is-error{background:rgba(174,64,91,.16);border:1px solid #854459;color:#ffb7c5}.admin-notice.is-success{background:rgba(155,205,50,.11);border:1px solid #5b7132;color:#d8f36a}.admin-form-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr)) auto;gap:9px}.admin-form-grid input,.admin-toolbar input{min-width:0;height:38px;padding:0 11px;border:1px solid #514064;border-radius:7px;background:#181220;color:#fff;outline:0;font:500 12px 'Rajdhani'}.admin-form-grid input:focus,.admin-toolbar input:focus{border-color:var(--lime)}.admin-table-wrap{overflow:auto}.admin-table{width:100%;min-width:690px;border-collapse:collapse;font-size:11px}.admin-table th{padding:10px;text-align:left;color:#a899b2;font-size:10px;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid #4a3859}.admin-table td{padding:12px 10px;border-bottom:1px solid #30243e;color:#e8e0eb;white-space:nowrap}.admin-table tr:hover td{background:rgba(255,255,255,.025)}.admin-table code{color:#c8ef54;font-size:10px}.admin-empty{text-align:center!important;padding:30px!important;color:#9888a4!important}.admin-actions{display:flex;gap:5px}.admin-actions .admin-button{min-height:28px;padding:0 8px;font-size:10px}.admin-toolbar{display:flex;gap:8px;margin-bottom:14px}.admin-toolbar input{flex:1}.admin-mobile-bar,.admin-backdrop{display:none}
 @media(max-width:850px){.admin-app{display:block;min-height:calc(100vh - 104px)}.admin-sidebar{position:fixed;top:0;left:0;width:250px;height:100vh;transform:translateX(-102%);transition:transform .22s ease;box-shadow:16px 0 40px rgba(0,0,0,.35)}.admin-sidebar.open{transform:translateX(0)}.admin-backdrop{display:block;position:fixed;inset:0;z-index:19;border:0;background:rgba(0,0,0,.58)}.admin-main{padding:0 14px 76px}.admin-mobile-bar{display:flex;align-items:center;gap:12px;min-height:56px;margin:0 -14px 22px;padding:0 14px;border-bottom:1px solid #3e2e51;background:#1b1327}.admin-mobile-bar button{display:grid;place-items:center;width:35px;height:35px;border:0;background:transparent;color:var(--lime)}.admin-mobile-bar strong{font:800 18px 'Barlow Condensed'}.admin-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.admin-two-col{grid-template-columns:1fr}.admin-form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.admin-form-grid .admin-button{grid-column:1/-1}}
 @media(max-width:520px){.admin-intro h1{font-size:35px}.admin-stat{min-height:112px;padding:13px}.admin-stat strong{font-size:22px}.admin-panel{padding:14px}.admin-form-grid{grid-template-columns:1fr}.admin-quick-grid{grid-template-columns:1fr}.admin-toolbar{flex-direction:column}.admin-toolbar .admin-button{width:100%}}
+
+/* ============================================================
+   Revision 07 · Preview polish pass (mobile-first craft layer)
+   Touch targets, press feedback, carousel edges, type rhythm,
+   skeleton loading, cedi glyph fix, reduced motion.
+   Palette unchanged — existing tokens only.
+   ============================================================ */
+
+/* Cedi glyph: Barlow/Rajdhani lack U+20B5, so fall back cleanly instead of rendering a broken composite */
+@font-face{font-family:'Cedi Fallback';src:local('Segoe UI'),local('Roboto'),local('Helvetica Neue'),local('Arial');font-weight:100 900;font-display:swap;unicode-range:U+20B5}
+.glass-card-balance strong,.wallet-balance-row strong,.account-timeline-balance strong,.wallet-stat-grid b,.slip-return-row strong,.currency-prefix,.balance-currency,.withdrawal-summary strong{font-family:'Cedi Fallback','Barlow Condensed','Rajdhani','DM Sans',sans-serif!important}
+
+/* base rendering + focus */
+html{-webkit-text-size-adjust:100%}
+body{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overscroll-behavior-y:none}
+a,button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+:focus-visible{outline:2px solid var(--lime);outline-offset:2px;border-radius:6px}
+h1,h2,h3{text-wrap:balance}
+.league-stack-odds b,.aurora-odds-row b,.odds b,.slip-pick strong,.standalone-return strong{font-variant-numeric:tabular-nums}
+
+/* press feedback — springy tactile response */
+.mobile-bottom-item{transition:transform .18s cubic-bezier(.34,1.56,.64,1),color .18s ease}
+.mobile-bottom-item:active{transform:scale(.86)}
+.home-slip-button{transition:transform .25s cubic-bezier(.34,1.56,.64,1),box-shadow .25s ease}
+.home-slip-button:active{transform:scale(.88)}
+.odds button,.league-stack-odds button,.aurora-odds-row button,.sports-match-actions button,.aurora-sport-rail button,.aurora-feed-tabs button,.league-row a,.top-sports-carousel a,.icon-row a,.game-card,.game,.hero a,.drawer-place,.wallet-panel-cta,.broadcast-submit,.primary,.signup{transition:transform .16s ease,background .16s ease,border-color .16s ease,color .16s ease,box-shadow .16s ease}
+.odds button:active:not(:disabled),.league-stack-odds button:active:not(:disabled),.aurora-odds-row button:active,.league-row a:active,.top-sports-carousel a:active,.icon-row a:active,.game-card:active,.game:active,.aurora-sport-rail button:active,.aurora-feed-tabs button:active{transform:scale(.96)}
+.primary:active,.signup:active,.broadcast-submit:active,.drawer-place:active,.wallet-panel-cta:active{transform:translateY(1px) scale(.99)}
+
+/* live indicator pulse */
+@keyframes pulse-live-dot{0%,100%{box-shadow:0 0 8px #ff5369,0 0 0 0 rgba(255,83,105,.5)}50%{box-shadow:0 0 8px #ff5369,0 0 0 5px rgba(255,83,105,0)}}
+.league-stack-live i{animation:pulse-live-dot 1.6s ease-out infinite}
+.aurora-card-meta .aurora-live-dot{animation:pulse-live-dot 1.6s ease-out infinite}
+
+/* carousels — clipped edges read as intentional scroll affordances */
+@media(max-width:560px){
+  .top-sports-carousel,.league-row-carousel,.casino-carousel{-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 18px,#000 calc(100% - 30px),transparent 100%);mask-image:linear-gradient(90deg,transparent 0,#000 18px,#000 calc(100% - 30px),transparent 100%);scroll-padding-inline:14px}
+  .home-today-carousel,.home-live-carousel,.featured-matches-carousel{-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 10px,#000 calc(100% - 22px),transparent 100%);mask-image:linear-gradient(90deg,transparent 0,#000 10px,#000 calc(100% - 22px),transparent 100%);scroll-padding-inline:12px}
+  .aurora-sport-rail{-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 12px,#000 calc(100% - 24px),transparent 100%);mask-image:linear-gradient(90deg,transparent 0,#000 12px,#000 calc(100% - 24px),transparent 100%);scroll-padding-inline:10px}
+}
+
+/* header + navigation hit areas */
+@media(max-width:850px){
+  .mobile-menu-button{min-width:44px;min-height:44px}
+  .mobile-account-link{min-height:40px}
+  .mobile-bottom-nav{height:calc(68px + env(safe-area-inset-bottom))}
+  .mobile-bottom-item{min-height:52px}
+  .mobile-bottom-item .material-symbols-rounded{font-size:24px}
+  .mobile-bottom-item.active small{color:#fff}
+  .mobile-bottom-item.active:before{content:'';position:absolute;inset:4px 16% auto;height:40px;border-radius:12px;background:rgba(214,238,70,.09)}
+  .home-slip-button{bottom:calc(90px + env(safe-area-inset-bottom));box-shadow:0 10px 26px rgba(0,0,0,.45),0 0 0 4px rgba(32,27,41,.55)}
+}
+
+/* section rhythm */
+.box,.league-strip,.feature-panel{border-radius:12px}
+@media(max-width:560px){.box{padding:14px 12px;margin-top:14px}.section-title{margin-bottom:12px}}
+
+/* hero CTA */
+.hero h1{letter-spacing:-.01em}
+.hero a{display:inline-flex;align-items:center;min-height:42px;padding:10px 18px;margin-top:12px;border:1px solid var(--lime);border-radius:999px;color:var(--lime);font-weight:800;font-size:13px}
+.hero a:hover{background:var(--lime);color:#211b29}
+.hero a:active{transform:scale(.97)}
+.top-sports-grid strong{max-width:calc(100% - 16px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(max-width:560px){.top-sports-carousel>a strong{font-size:15px}}
+
+/* match cards (home feed) */
+.league-stack-card{border-radius:12px;overflow:hidden}
+.league-stack-head{min-height:40px}
+.league-stack-fixture{min-height:86px}
+.league-stack-odds{gap:6px}
+.league-stack-odds button{min-height:42px;border-radius:7px}
+.league-stack-details{min-height:44px}
+@media(max-width:560px){
+  .league-stack-team strong{font-size:15px!important;line-height:1.08!important;white-space:normal!important;display:-webkit-box!important;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden!important;text-overflow:ellipsis!important;overflow-wrap:break-word!important;word-break:normal!important}
+  .league-stack-logo,.league-stack-logo-fallback{width:28px!important;height:28px!important;flex-basis:28px!important}
+}
+
+/* sports page cards */
+.aurora-match-card{border-radius:12px}
+.aurora-card-fixture{min-height:74px}
+.aurora-team img{background:#2b2138;border-radius:50%;padding:5px;box-sizing:border-box}
+.aurora-team strong{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;white-space:normal;overflow:hidden;text-overflow:ellipsis;line-height:1.15;overflow-wrap:break-word}
+.aurora-odds-row button{min-height:40px;border-radius:7px}
+.aurora-details-link{min-height:36px;align-items:center}
+.aurora-empty{border-radius:12px;padding:52px 20px}
+.aurora-section-heading>span{font-variant-numeric:tabular-nums}
+
+/* skeleton loading (fixtures) */
+.aurora-skeleton-grid{min-height:220px}
+.aurora-skeleton-card{position:relative;overflow:hidden;display:grid;gap:12px;align-content:start;min-height:150px;padding:16px;background:#251d32;border:1px solid #403052;border-radius:12px}
+.aurora-skeleton-card:before,.aurora-skeleton-card>div{border-radius:8px;background:#332843}
+.aurora-skeleton-card:before{content:'';height:12px}
+.aurora-skeleton-card>div{height:38px}
+.aurora-skeleton-card>div:last-child{height:26px}
+.aurora-skeleton-card:after{content:'';position:absolute;inset:0;background:linear-gradient(100deg,transparent 20%,rgba(255,255,255,.05) 50%,transparent 80%);animation:aurora-shimmer 1.4s ease-in-out infinite}
+@keyframes aurora-shimmer{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+
+/* bet slip sheet */
+@media(max-width:560px){
+  .slip-drawer:before{content:'';display:block;width:40px;height:4px;margin:0 auto 12px;border-radius:2px;background:#5b466c}
+  .drawer-place{min-height:48px;border-radius:9px}
+  .drawer-slip input{min-height:46px}
+}
+
+/* auth form */
+.broadcast-auth-card input:not([type=checkbox]){min-height:46px;transition:border-color .18s ease,box-shadow .18s ease}
+.broadcast-auth-card input:focus{border-color:var(--lime)!important;box-shadow:0 0 0 3px rgba(214,238,70,.14)}
+.broadcast-submit{min-height:48px}
+
+/* account page */
+.account-timeline-avatar{font:800 20px 'Barlow Condensed',sans-serif;color:var(--lime);letter-spacing:.04em}
+
+/* footer */
+footer{overflow-wrap:anywhere}
+footer>*{min-width:0}
+footer a{transition:color .16s ease}
+footer a:hover{color:#fff}
+@media(max-width:560px){footer{row-gap:22px}}
+
+/* slip FAB tucks away over the footer */
+.home-slip-button{transition:transform .25s cubic-bezier(.34,1.56,.64,1),box-shadow .25s ease,opacity .25s ease}
+.home-slip-button.slip-button-tuck{opacity:0;transform:translateY(14px) scale(.85);pointer-events:none}
+
+/* match details — empty markets state */
+.glass-detail-markets-empty{display:grid;justify-items:center;gap:8px;text-align:center;padding:48px 20px;border:1px dashed #4b3b59;border-radius:12px;background:#211a2d;color:#95889e;font-size:12px}
+.glass-detail-markets-empty .material-symbols-rounded{font-size:30px;color:var(--lime)}
+.glass-detail-markets-empty strong{color:#fff;font-size:16px}
+.glass-detail-markets-empty span{max-width:280px;line-height:1.5}
+.glass-detail-markets-empty a{display:inline-flex;align-items:center;min-height:40px;margin-top:8px;padding:0 18px;border:1px solid var(--lime);border-radius:999px;color:var(--lime);font-weight:800;font-size:12px}
+
+/* wallet — stat grid hole + transactions empty state */
+.wallet-stat-grid>span:nth-child(3){grid-column:1/-1}
+.wallet-tx-empty{display:grid;justify-items:center;gap:6px;text-align:center;padding:34px 16px;margin-top:14px;border:1px dashed #4b3b59;border-radius:12px;color:#95889e;font-size:12px}
+.wallet-tx-empty .material-symbols-rounded{font-size:28px;color:var(--lime)}
+.wallet-tx-empty strong{color:#fff;font-size:14px}
+.wallet-tx-empty span:last-child{max-width:260px;line-height:1.5}
+
+/* auth live ticker — clipped edge reads as a continuing broadcast */
+.broadcast-ticker{scrollbar-width:none}
+.broadcast-ticker::-webkit-scrollbar{display:none}
+@media(max-width:560px){.broadcast-ticker{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 44px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 44px),transparent)}}
+
+/* reduced motion */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+}
+
+/* Revision 08 · Restore document scrolling on touch devices */
+@media (max-width: 850px) {
+  /* overflow-x:hidden turned html/body/#root into nested scroll containers and froze document scroll; clip keeps the horizontal guard without stealing the scrollport */
+  html, body, #root { overflow-x: clip; overflow-y: visible; }
+  body { min-height: 100%; }
+  .react-main { overflow-x: clip; }
+}
+
+/* A vertical swipe that started on the sports rail was swallowed by pan-x */
+.top-sports-carousel, .icon-row, .home-today-carousel, .home-live-carousel, .league-row-carousel, .casino-carousel, .featured-matches-carousel, .aurora-sport-rail, .top-sports-grid { touch-action: pan-x pan-y; }
