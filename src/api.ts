@@ -1,4 +1,4 @@
-export const DEFAULT_API = 'https://futballbackend-production-15ee.up.railway.app';
+export const DEFAULT_API = 'https://futballbackend-production-b06a.up.railway.app';
 const browserHost = typeof window === 'undefined' ? '' : window.location.hostname;
 const useLocalProxy = import.meta.env.DEV && !/^(localhost|127\.0\.0\.1)$/.test(browserHost);
 export const API_BASE = () => localStorage.getItem('luckystakeApiBaseUrl') || (useLocalProxy ? '' : DEFAULT_API);

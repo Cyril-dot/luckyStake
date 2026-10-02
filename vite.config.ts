@@ -9,7 +9,7 @@ export default defineConfig({
     allowedHosts: true,
     proxy: {
       '/api': {
-        target: 'https://futballbackend-production-15ee.up.railway.app',
+        target: 'https://futballbackend-production-b06a.up.railway.app',
         changeOrigin: true,
         secure: true,
       },
