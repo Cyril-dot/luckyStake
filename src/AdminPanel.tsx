@@ -71,7 +71,8 @@ function Button({ children, onClick, tone = 'secondary' }: { children: React.Rea
 function ReferralLinkCard({ link, onCopied }: { link: any; onCopied: () => void }) {
   const [copied, setCopied] = useState(false);
   const url = String(link.url ?? link.link ?? '');
-  const fullUrl = url.startsWith('http') ? url : `https://www.luckysttake.site${url.startsWith('/') ? '' : '/'}${url}`;
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  const fullUrl = url.startsWith('http') ? url : `${origin}${url.startsWith('/') ? '' : '/'}${url}`;
   const copy = async () => {
     try { await navigator.clipboard.writeText(fullUrl); } catch { try { const t = document.createElement('textarea'); t.value = fullUrl; document.body.appendChild(t); t.select(); document.execCommand('copy'); t.remove(); } catch {} }
     setCopied(true); onCopied(); setTimeout(() => setCopied(false), 2000);
