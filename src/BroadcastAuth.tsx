@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { api, setToken } from './api';
 
 export default function BroadcastAuth({ initialMode }: { initialMode: 'login' | 'register' }) {
@@ -7,17 +7,25 @@ export default function BroadcastAuth({ initialMode }: { initialMode: 'login' | 
   const [password, setPassword] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [referralCode, setReferralCode] = useState('');
   const [accepted, setAccepted] = useState(false);
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
   const register = mode === 'register';
+
+  // Referral links point at /signup?ref=CODE — pre-fill so attribution isn't lost.
+  useEffect(() => {
+    if (!register) return;
+    const ref = new URLSearchParams(window.location.search).get('ref');
+    if (ref && ref.trim()) setReferralCode(current => current || ref.trim());
+  }, [register]);
 
   async function submit() {
     if (register && !accepted) { setMessage('Please accept the terms and responsible play policy.'); return; }
     setBusy(true); setMessage('');
     try {
       const path = register ? '/api/auth/register' : '/api/auth/login';
-      const body = register ? { email, password, firstName: firstName || 'Lucky', lastName: lastName || 'Player' } : { email, password };
+      const body = register ? { email, password, firstName: firstName || 'Lucky', lastName: lastName || 'Player', ...(referralCode.trim() ? { ref: referralCode.trim() } : {}) } : { email, password };
       const result = await api<Record<string, unknown>>('POST', path, body);
       const token = result.accessToken || result.access_token || result.token;
       if (typeof token === 'string') setToken(token);
