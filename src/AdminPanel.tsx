@@ -63,6 +63,13 @@ function Intro({ title, description, onRefresh, loading }: { title: string; desc
 function Panel({ title, action, children }: { title: string; action?: React.ReactNode; children: React.ReactNode }) { return <section className="admin-panel"><div className="admin-panel-title"><h2>{title}</h2>{action}</div>{children}</section>; }
 function Table({ data, columns, actions }: { data: Row[]; columns: string[]; actions?: (row: Row) => React.ReactNode }) { return <div className="admin-table-wrap"><table className="admin-table"><thead><tr>{columns.map(column => <th key={column}>{column.replace(/([A-Z])/g, ' $1')}</th>)}{actions && <th>Actions</th>}</tr></thead><tbody>{data.length === 0 ? <tr><td className="admin-empty" colSpan={columns.length + (actions ? 1 : 0)}>No records found.</td></tr> : data.map((row, index) => <tr key={idOf(row) || String(index)}>{columns.map(column => <td key={column}>{column === 'id' ? <code>{text(row[column])}</code> : text(row[column])}</td>)}{actions && <td><div className="admin-actions">{actions(row)}</div></td>}</tr>)}</tbody></table></div>; }
 function Button({ children, onClick, tone = 'secondary' }: { children: React.ReactNode; onClick?: () => void; tone?: 'primary' | 'secondary' | 'danger' }) { return <button className={`admin-button ${tone}`} onClick={onClick}>{children}</button>; }
+function PromptDialog({ title, label, initial, onSubmit, onClose }: { title: string; label: string; initial?: string; onSubmit: (v: string) => void; onClose: () => void }) {
+  const [val, setVal] = useState(initial ?? '');
+  return <div className="admin-modal-scrim" onClick={onClose}><div className="admin-modal" onClick={e => e.stopPropagation()}>
+    <h3>{title}</h3><label>{label}<input autoFocus value={val} onChange={e => setVal(e.target.value)} onKeyDown={e => e.key === 'Enter' && val.trim() && onSubmit(val.trim())} /></label>
+    <div className="admin-modal-actions"><Button onClick={onClose}>Cancel</Button><Button tone="primary" onClick={() => val.trim() && onSubmit(val.trim())}>Confirm</Button></div>
+  </div></div>;
+}
 
 // ============================================================================
 // REGULAR ADMIN TABS
@@ -515,21 +522,22 @@ function SuperAdmins() {
       await load();
     } catch (e) { setError(e instanceof Error ? e.message : 'Could not create administrator'); }
   };
-  const updateRate = async (row: Row) => {
-    const value = window.prompt('Commission rate (%)', String(row.commissionRate ?? ''));
-    if (value === null) return;
-    const rate = Number(value);
-    if (!Number.isFinite(rate) || rate < 0 || rate > 100) { setError('Commission rate must be between 0% and 100%.'); return; }
-    try { await api('PATCH', `/api/super-admin/admins/${encodeURIComponent(idOf(row))}/commission-rate`, { commissionRate: rate }); setMessage('Commission rate updated.'); await load(); }
-    catch (e) { setError(e instanceof Error ? e.message : 'Could not update rate'); }
+  const [prompt, setPrompt] = useState<null | { title: string; label: string; initial: string; onSubmit: (v: string) => void }>(null);
+  const updateRate = (row: Row) => {
+    setPrompt({ title: 'Edit commission rate', label: `Rate for ${labelOf(row)} (%)`, initial: String(row.commissionRate ?? ''),
+      onSubmit: async (value) => { setPrompt(null);
+        const rate = Number(value);
+        if (!Number.isFinite(rate) || rate < 0 || rate > 100) { setError('Commission rate must be between 0% and 100%.'); return; }
+        try { await api('PATCH', `/api/super-admin/admins/${encodeURIComponent(idOf(row))}/commission-rate`, { commissionRate: rate }); setMessage('Commission rate updated.'); await load(); }
+        catch (e) { setError(e instanceof Error ? e.message : 'Could not update rate'); } } });
   };
-  const addFunds = async (row: Row) => {
-    const value = window.prompt('Amount to add (GHS)', '100');
-    if (value === null) return;
-    const amount = Number(value);
-    if (!Number.isFinite(amount) || amount <= 0) { setError('Enter a valid amount.'); return; }
-    try { await api('POST', `/api/super-admin/admins/${encodeURIComponent(idOf(row))}/add-funds`, { amount }); setMessage('Funds added.'); await load(); }
-    catch (e) { setError(e instanceof Error ? e.message : 'Could not add funds'); }
+  const addFunds = (row: Row) => {
+    setPrompt({ title: 'Top up administrator', label: `Amount to add for ${labelOf(row)} (GHS)`, initial: '100',
+      onSubmit: async (value) => { setPrompt(null);
+        const amount = Number(value);
+        if (!Number.isFinite(amount) || amount <= 0) { setError('Enter a valid amount.'); return; }
+        try { await api('POST', `/api/super-admin/admins/${encodeURIComponent(idOf(row))}/add-funds`, { amount }); setMessage('Funds added.'); await load(); }
+        catch (e) { setError(e instanceof Error ? e.message : 'Could not add funds'); } } });
   };
   return <div className="admin-stack">
     <Intro title="Administrators" description="Create staff accounts, manage commission rates, and top up funds." onRefresh={load} loading={loading} />
@@ -546,6 +554,7 @@ function SuperAdmins() {
     <Panel title="Administrator accounts">
       <Table data={data} columns={['id', 'name', 'email', 'role', 'commissionRate', 'balance', 'status']} actions={row => <><Button onClick={() => updateRate(row)}>Edit rate</Button><Button onClick={() => addFunds(row)}>Top up</Button></>} />
     </Panel>
+    {prompt && <PromptDialog title={prompt.title} label={prompt.label} initial={prompt.initial} onSubmit={prompt.onSubmit} onClose={() => setPrompt(null)} />}
   </div>;
 }
 
@@ -553,6 +562,7 @@ function SuperUsers() {
   const [data, setData] = useState<Row[]>([]);
   const [search, setSearch] = useState('');
   const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const load = async () => {
     setLoading(true);
@@ -570,17 +580,18 @@ function SuperUsers() {
     try { await api('POST', `/api/v1/super-admin/users/${encodeURIComponent(id)}/${active ? 'deactivate' : 'activate'}`); await load(); }
     catch (e) { setError(e instanceof Error ? e.message : 'Could not update user'); }
   };
-  const credit = async (row: Row) => {
-    const value = window.prompt('Amount to credit (GHS)', '50');
-    if (value === null) return;
+  const [creditPrompt, setCreditPrompt] = useState<null | { row: Row }>(null);
+  const credit = (row: Row) => { setCreditPrompt({ row }); };
+  const doCredit = async (value: string) => {
+    const row = creditPrompt?.row; setCreditPrompt(null); if (!row) return;
     const amount = Number(value);
     if (!Number.isFinite(amount) || amount <= 0) { setError('Enter a valid amount.'); return; }
-    try { await api('POST', `/api/super-admin/users/${encodeURIComponent(idOf(row))}/add-funds`, { amount }); await load(); }
+    try { await api('POST', `/api/super-admin/users/${encodeURIComponent(idOf(row))}/add-funds`, { amount }); setMessage('User credited.'); await load(); }
     catch (e) { setError(e instanceof Error ? e.message : 'Could not credit user'); }
   };
   return <div className="admin-stack">
     <Intro title="Users" description="Search customers, review account state, and manage access safely." onRefresh={load} loading={loading} />
-    <Notice message={error} error />
+    <Notice message={error} error /><Notice message={message} />
     <Panel title="Customer directory">
       <div className="admin-toolbar">
         <input placeholder="Search by name or email" value={search} onChange={e => setSearch(e.target.value)} onKeyDown={e => e.key === 'Enter' && load()} />
@@ -588,6 +599,7 @@ function SuperUsers() {
       </div>
       <Table data={data} columns={['id', 'name', 'email', 'role', 'status', 'createdAt']} actions={row => <><Button onClick={() => toggle(row)}>{String(row.status ?? row.active ?? '').toLowerCase().includes('active') ? 'Deactivate' : 'Activate'}</Button><Button onClick={() => credit(row)}>Credit</Button></>} />
     </Panel>
+    {creditPrompt && <PromptDialog title="Credit user" label={`Amount to credit ${labelOf(creditPrompt.row)} (GHS)`} initial="50" onSubmit={doCredit} onClose={() => setCreditPrompt(null)} />}
   </div>;
 }
 
@@ -613,8 +625,7 @@ function SuperFinanceQueue({ page }: { page: SuperPageKey }) {
     setLoading(true);
     try {
       const payload = await api('GET', endpoint);
-      const r = rows(payload);
-      setData(r.length ? r : (payload && typeof payload === 'object' && !Array.isArray(payload) ? [payload as Row] : []));
+      setData(rows(payload));
       setError('');
     } catch (e) { setError(e instanceof Error ? e.message : 'Could not load this queue'); }
     finally { setLoading(false); }
