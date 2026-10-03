@@ -1041,7 +1041,6 @@ export default function AdminPanel({ role }: { role: Role }) {
     <button className={`admin-nav-btn${page === item.id ? ' active' : ''}`} key={item.id} onClick={() => go(item.id)}>
       <span className="admin-nav-ico"><span className="material-symbols-rounded">{item.icon}</span></span>
       <span className="admin-nav-label">{item.label}</span>
-      {page === item.id && <span className="admin-nav-dot" />}
     </button>
   );
 
