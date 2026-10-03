@@ -11,9 +11,7 @@
 .admin-brand-text strong span{color:var(--lime)}
 .admin-role-pill{flex-shrink:0;padding:5px 10px;border-radius:999px;font:800 9px 'Rajdhani';letter-spacing:.12em;text-transform:uppercase;background:rgba(120,170,255,.13);border:1px solid rgba(120,170,255,.38);color:#a9c6ff;white-space:nowrap}
 .admin-role-pill.super{background:rgba(214,238,70,.12);border-color:rgba(214,238,70,.42);color:var(--lime)}
-.admin-nav{flex:1;padding:16px 12px 12px;display:flex;flex-direction:column;gap:20px}
-.admin-nav-section{display:flex;flex-direction:column;gap:3px}
-.admin-nav-heading{padding:0 12px 8px;font:800 10px 'Rajdhani';letter-spacing:.2em;text-transform:uppercase;color:#6f5f80}
+.admin-nav{flex:1;padding:18px 12px 12px;display:flex;flex-direction:column;gap:4px;overflow-y:auto}
 .admin-nav-btn{position:relative;display:flex;align-items:center;gap:12px;width:100%;min-height:47px;padding:6px 12px 6px 6px;border:0;border-radius:13px;background:transparent;color:#b9abc5;font:700 13px 'Rajdhani';text-align:left;cursor:pointer;transition:all .18s cubic-bezier(.34,1.3,.64,1)}
 .admin-nav-btn:hover{background:rgba(255,255,255,.05);color:#fff;transform:translateX(3px)}
 .admin-nav-btn:hover .admin-nav-ico{background:rgba(214,238,70,.16);color:var(--lime)}

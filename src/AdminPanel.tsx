@@ -60,26 +60,20 @@ const adminPages: { id: AdminPageKey; label: string; icon: string }[] = [
   { id: 'guide', label: 'How to use', icon: 'help' },
 ];
 
-const superSections: { title: string; items: { id: SuperPageKey; label: string; icon: string }[] }[] = [
-  { title: 'Overview', items: [
-    { id: 'dashboard', label: 'Dashboard', icon: 'space_dashboard' },
-  ] },
-  { title: 'Management', items: [
-    { id: 'admins', label: 'Administrators', icon: 'admin_panel_settings' },
-    { id: 'users', label: 'Users', icon: 'group' },
-    { id: 'chats', label: 'Upgrade chats', icon: 'forum' },
-    { id: 'audit', label: 'Audit trail', icon: 'fact_check' },
-  ] },
-  { title: 'Finance', items: [
-    { id: 'transactions', label: 'Transactions', icon: 'receipt_long' },
-    { id: 'binance', label: 'Binance deposits', icon: 'currency_bitcoin' },
-    { id: 'momo', label: 'MoMo deposits', icon: 'smartphone' },
-    { id: 'userdeposits', label: 'User deposits', icon: 'account_balance' },
-    { id: 'affwithdrawals', label: 'Affiliate withdrawals', icon: 'partner_exchange' },
-    { id: 'payouts', label: 'Payout requests', icon: 'request_quote' },
-    { id: 'walletwithdrawals', label: 'Wallet withdrawals', icon: 'payments' },
-    { id: 'commission', label: 'Commission analytics', icon: 'monitoring' },
-  ] },
+const superPages: { id: SuperPageKey; label: string; icon: string }[] = [
+  { id: 'dashboard', label: 'Dashboard', icon: 'space_dashboard' },
+  { id: 'admins', label: 'Administrators', icon: 'admin_panel_settings' },
+  { id: 'users', label: 'Users', icon: 'group' },
+  { id: 'chats', label: 'Upgrade chats', icon: 'forum' },
+  { id: 'audit', label: 'Audit trail', icon: 'fact_check' },
+  { id: 'transactions', label: 'Transactions', icon: 'receipt_long' },
+  { id: 'binance', label: 'Binance deposits', icon: 'currency_bitcoin' },
+  { id: 'momo', label: 'MoMo deposits', icon: 'smartphone' },
+  { id: 'userdeposits', label: 'User deposits', icon: 'account_balance' },
+  { id: 'affwithdrawals', label: 'Affiliate withdrawals', icon: 'partner_exchange' },
+  { id: 'payouts', label: 'Payout requests', icon: 'request_quote' },
+  { id: 'walletwithdrawals', label: 'Wallet withdrawals', icon: 'payments' },
+  { id: 'commission', label: 'Commission analytics', icon: 'monitoring' },
 ];
 
 function Notice({ message, error }: { message: string; error?: boolean }) { return message ? <div className={`admin-notice ${error ? 'is-error' : 'is-success'}`}><span className="material-symbols-rounded">{error ? 'error' : 'check_circle'}</span>{message}</div> : null; }
@@ -1084,12 +1078,7 @@ export default function AdminPanel({ role }: { role: Role }) {
         <span className={`admin-role-pill${isSuper ? ' super' : ''}`}>{isSuper ? 'Super admin' : 'Admin'}</span>
       </div>
       <nav className="admin-nav">
-        {isSuper
-          ? superSections.map(sec => <div className="admin-nav-section" key={sec.title}>
-              <span className="admin-nav-heading">{sec.title}</span>
-              {sec.items.map(navBtn)}
-            </div>)
-          : <div className="admin-nav-section"><span className="admin-nav-heading">Menu</span>{adminPages.map(navBtn)}</div>}
+        {(isSuper ? superPages : adminPages).map(navBtn)}
       </nav>
       <div className="admin-side-foot">
         <a className="admin-exit" href="/"><span className="material-symbols-rounded">arrow_back</span>Back to sportsbook</a>
