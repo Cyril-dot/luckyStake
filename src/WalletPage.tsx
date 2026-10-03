@@ -38,18 +38,23 @@ function AlphaPayDeposit({ onDone }: { onDone: () => void }) {
     const value = Number(amount);
     if (!Number.isFinite(value) || value < 1) { setError('Enter an amount of at least GH₵1.'); return; }
     setLoading(true);
+    console.log('[AlphaPay] init request', { amount: value, phone: phone.trim() ? '***' + phone.trim().slice(-3) : '(none)' });
     try {
       const res = await api<any>('POST', '/api/wallet/deposit/alphapay/init', {
         amount: value,
         ...(phone.trim() ? { phone: phone.trim() } : {}),
       });
+      console.log('[AlphaPay] init response', res);
       const url = String(res?.checkout_url ?? res?.checkoutUrl ?? '');
       const ref = String(res?.reference ?? '');
       if (!url) { setError('AlphaPay did not return a checkout link. Try again.'); return; }
       setCheckoutUrl(url);
       setReference(ref);
       setVerifying(true);
-    } catch (err) { setError(err instanceof Error ? err.message : 'Could not start the deposit.'); }
+    } catch (err) {
+      console.error('[AlphaPay] init failed', err);
+      setError(err instanceof Error ? err.message : 'Could not start the deposit.');
+    }
     finally { setLoading(false); }
   };
 
@@ -59,13 +64,14 @@ function AlphaPayDeposit({ onDone }: { onDone: () => void }) {
     const poll = async () => {
       try {
         const res = await api<any>('GET', `/api/wallet/deposit/alphapay/verify/${encodeURIComponent(reference)}`);
+        console.log('[AlphaPay] verify poll', reference, res?.status);
         if (cancelled) return;
         if (String(res?.status).toLowerCase() === 'success') {
           setDone(true);
           setVerifying(false);
           onDone();
         }
-      } catch { /* keep polling */ }
+      } catch (err) { console.warn('[AlphaPay] verify poll error', err); }
     };
     poll();
     const t = setInterval(poll, 5000);
