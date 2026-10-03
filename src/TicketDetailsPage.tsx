@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api, formatKickoff, isFinishedMatch, isLiveStatus, isMatchLive, liveClock, type MatchRow } from './api';
+import CashoutDialog, { fetchCashoutPreview, cashoutFallback } from './CashoutDialog';
 
 type AnyRecord = Record<string, any>;
 function n(...values: unknown[]) { for (const value of values) { const parsed = Number(value); if (Number.isFinite(parsed)) return parsed; } return 0; }
@@ -56,7 +57,8 @@ export default function TicketDetailsPage({ id }: { id: string }) {
   const [matches, setMatches] = useState<Record<string, MatchRow>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [cashingOut, setCashingOut] = useState(false);
+  const [showCashout, setShowCashout] = useState(false);
+  const [cashoutOffer, setCashoutOffer] = useState<number | null>(null);
   const [celebrate, setCelebrate] = useState(false);
   const referencePreview = import.meta.env.DEV && new URLSearchParams(window.location.search).get('preview') === 'winning';
 
@@ -83,6 +85,19 @@ export default function TicketDetailsPage({ id }: { id: string }) {
     return () => { cancelled = true; };
   }, [id]);
 
+  useEffect(() => {
+    if (!bet) return;
+    const st = String(bet.status ?? bet.state ?? bet.result ?? 'PENDING').toUpperCase();
+    const isOpenBet = !['WON', 'WIN', 'PAID', 'CASHED_OUT', 'CASHOUT'].includes(st) && !['LOST', 'LOSS', 'VOID', 'CANCELLED', 'CANCELED'].includes(st);
+    if (!isOpenBet) return;
+    let dead = false;
+    (async () => {
+      const p = await fetchCashoutPreview(id);
+      if (!dead) setCashoutOffer(p ?? cashoutFallback({ id, stake: n(bet.stake, bet.amount, bet.stakeAmount), potentialReturn: n(bet.potentialReturn, bet.potentialWin, bet.payout, bet.returnAmount, 0) }));
+    })();
+    return () => { dead = true; };
+  }, [bet, id]);
+
   if (loading) return <main className="ls-ticket-page"><TicketStyles /><div className="ls-ticket-loading"><i /> Loading ticket details…</div></main>;
   if (error || !bet) return <main className="ls-ticket-page"><TicketStyles /><div className="ls-ticket-error"><span className="material-symbols-rounded">error</span><h1>Ticket unavailable</h1><p>{error || 'This ticket could not be found.'}</p><a href="/slip">Back to my bets</a></div></main>;
 
@@ -94,14 +109,6 @@ export default function TicketDetailsPage({ id }: { id: string }) {
   const odds = n(bet.totalOdds, bet.odds, bet.combinedOdds);
   const payout = n(bet.potentialReturn, bet.potentialWin, bet.payout, bet.returnAmount, stake * odds);
   const legs = selections(bet);
-  if (open) return <main className="ls-ticket-page"><TicketStyles /><div className="ls-ticket-unavailable"><span className="material-symbols-rounded">schedule</span><h1>Ticket details unavailable</h1><p>Ticket details are available after every match has finished and the bet has been settled.</p><a href="/slip">Back to open bets</a></div></main>;
-
-  async function cashout() {
-    setCashingOut(true);
-    try { await api('POST', `/api/bets/${encodeURIComponent(id)}/cashout`); const refreshed = await api<unknown>('GET', `/api/bets/${encodeURIComponent(id)}`); setBet(list(refreshed)); }
-    catch (e) { setError(e instanceof Error ? e.message : 'Cashout could not be completed.'); }
-    finally { setCashingOut(false); }
-  }
 
   return <main className="ls-ticket-page"><TicketStyles /><div className="ls-ticket-shell">
     <header className="ls-ticket-header"><a className="ls-ticket-header-btn" href="/slip" aria-label="Back to bets"><span className="material-symbols-rounded">arrow_back</span></a><h1>Ticket details</h1><span className="ls-ticket-header-spacer" aria-hidden="true" /></header>
@@ -132,7 +139,8 @@ export default function TicketDetailsPage({ id }: { id: string }) {
         <div className="ls-ticket-pick-box"><div><span>Pick</span><b>{s(leg.selection, leg.outcome, leg.pick, 'Selection')}{legWon && <span className="ls-pick-check">✓</span>}</b></div><div><span>Odds</span><b>{legOdds > 0 ? legOdds.toFixed(2) : 'Not available'}</b></div><div><span>Market</span><b>{s(leg.market, leg.marketName, leg.betType, 'Match result')}</b></div><div><span>Full-time score</span><b className={scoreHome != null && scoreAway != null ? 'ft-score' : ''}>{scoreHome != null && scoreAway != null ? `${scoreHome} - ${scoreAway}` : live ? 'Live score pending' : '—'}</b></div><div><span>Outcome</span><b>{s(leg.result, ended ? 'Result recorded' : live ? 'Live' : 'Pending')}</b></div></div>
       </article>;
     }) : <div className="ls-ticket-no-legs">Selection details are not available for this ticket.</div>}</section>
-    {open && <button className="ls-ticket-cashout" type="button" onClick={cashout} disabled={cashingOut}>{cashingOut ? 'Cashing out…' : `Cash out ${money(payout)}`}</button>}
+    {open && <button className="ls-ticket-cashout" type="button" onClick={() => setShowCashout(true)}>{cashoutOffer == null ? 'Cash out' : `Cash out ${money(cashoutOffer)}`}</button>}
+    {showCashout && open && <CashoutDialog bet={{ id, stake, potentialReturn: payout }} onClose={() => setShowCashout(false)} onDone={() => { setShowCashout(false); window.location.reload(); }} />}
     {error && <p className="ls-ticket-detail-error">{error}</p>}
   </div>{celebrate && <div className="ls-reference-win" role="dialog" aria-modal="true" aria-label="Winning ticket celebration"><ReferenceWinningStyles /><div className="ls-reference-win-confetti" aria-hidden="true">{Array.from({ length: 28 }).map((_, i) => <i key={i} style={{ left: `${(i * 37) % 100}%`, top: `${12 + ((i * 29) % 82)}%`, transform: `rotate(${(i * 47) % 180}deg)`, animationDelay: `${(i % 8) * .12}s` }} />)}</div><button className="ls-reference-win-close" type="button" onClick={() => setCelebrate(false)} aria-label="Close winning celebration"><span className="material-symbols-rounded">close</span></button><div className="ls-reference-win-content"><h2>YOU WON</h2><span>AMOUNT WON</span><strong>{money(payout)}</strong><img className="ls-reference-win-trophy" src="/superbet-victory-trophy.png" alt="LuckyStake winning trophy" /><button className="ls-reference-win-details" type="button" onClick={() => setCelebrate(false)}><span className="material-symbols-rounded">receipt_long</span> View ticket details</button><div className="ls-reference-win-actions"><button type="button" onClick={() => setCelebrate(false)}>Close</button><button type="button" onClick={() => setCelebrate(false)}><span className="material-symbols-rounded">share</span> Show Off</button></div></div></div>}{referencePreview && <ReferenceWinningPreview />}</main>;
 }
