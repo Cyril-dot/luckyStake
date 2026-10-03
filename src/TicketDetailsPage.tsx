@@ -23,6 +23,34 @@ const SAMPLE_MATCHES: Record<string, MatchRow> = {
   'sample-match-2': { id: 'sample-match-2', homeTeam: 'Barcelona', awayTeam: 'Valencia', status: 'FINISHED', kickoffAt: '2026-09-25T10:00:00Z', scoreHome: 3, scoreAway: 1 },
 };
 
+function extractScore(obj: any, side: 'home' | 'away'): number | null {
+  if (!obj || typeof obj !== 'object') return null;
+  const keys = side === 'home'
+    ? ['scoreHome', 'score_home', 'homeScore', 'home_score', 'homeGoals', 'home_goals', 'goalsHome', 'ftHome', 'ft_home', 'fullTimeHome', 'home']
+    : ['scoreAway', 'score_away', 'awayScore', 'away_score', 'awayGoals', 'away_goals', 'goalsAway', 'ftAway', 'ft_away', 'fullTimeAway', 'away'];
+  for (const k of keys) {
+    const v = obj[k];
+    if (v != null && v !== '' && Number.isFinite(Number(v))) return Number(v);
+  }
+  // Try "2-1" style combined strings
+  for (const k of ['score', 'finalScore', 'final_score', 'ftScore', 'ft_score', 'fullTime', 'full_time', 'result']) {
+    const v = obj[k];
+    if (typeof v === 'string') {
+      const m = v.match(/(\d+)\s*[-:]\s*(\d+)/);
+      if (m) return Number(side === 'home' ? m[1] : m[2]);
+    }
+  }
+  // Try nested objects
+  for (const k of ['scores', 'scoreboard', 'fullTime', 'full_time', 'ft', 'result', 'results']) {
+    const v = obj[k];
+    if (v && typeof v === 'object') {
+      const found = extractScore(v, side);
+      if (found != null) return found;
+    }
+  }
+  return null;
+}
+
 export default function TicketDetailsPage({ id }: { id: string }) {
   const [bet, setBet] = useState<AnyRecord | null>(null);
   const [matches, setMatches] = useState<Record<string, MatchRow>>({});
@@ -92,8 +120,8 @@ export default function TicketDetailsPage({ id }: { id: string }) {
       const home = s(leg.homeTeam, leg.home_team, leg.homeName, match?.homeTeam, 'Home');
       const away = s(leg.awayTeam, leg.away_team, leg.awayName, match?.awayTeam, 'Away');
       const kickoff = s(leg.kickoffAt, leg.kickoff_at, leg.startTime, leg.scheduledAt, match?.kickoffAt);
-      const scoreHome = leg.scoreHome ?? leg.score_home ?? match?.scoreHome;
-      const scoreAway = leg.scoreAway ?? leg.score_away ?? match?.scoreAway;
+      const scoreHome = extractScore(leg, 'home') ?? extractScore(match, 'home');
+      const scoreAway = extractScore(leg, 'away') ?? extractScore(match, 'away');
       const legStatus = s(leg.status, leg.result, leg.matchStatus, match?.status);
       const ended = Boolean((match && isFinishedMatch(match)) || ['FINISHED', 'FULL_TIME', 'FT', 'ENDED', 'COMPLETED', 'COMPLETE'].includes(legStatus.toUpperCase()));
       const live = !ended && (match ? isMatchLive(match) : isLiveStatus(legStatus));
@@ -101,7 +129,7 @@ export default function TicketDetailsPage({ id }: { id: string }) {
       const legOdds = n(leg.oddsLocked, leg.submittedOdds, leg.selectionOdds, leg.odds, leg.odd, leg.price);
       return <article className={`ls-ticket-leg-card ${legWon ? 'leg-won' : ''}`} key={`${s(leg.id, index)}`}>
         <div className="ls-ticket-leg-top">{legWon && <span className="material-symbols-rounded ls-leg-check">check_circle</span>}<div><strong>{home} <em>v</em> {away}</strong><small>Game ID: {s(leg.matchId, leg.match_id, 'Not available').slice(0, 10)}</small>{kickoff && <span className={live ? 'ls-kickoff live' : 'ls-kickoff'}>{ended ? 'Match ended' : live ? `Live ${match ? liveClock(match) : 'now'}` : `Starts ${formatKickoff(kickoff)}`}</span>}</div></div>
-        <div className="ls-ticket-pick-box"><div><span>Pick</span><b>{s(leg.selection, leg.outcome, leg.pick, 'Selection')}{legWon && <span className="ls-pick-check">✓</span>}</b></div><div><span>Odds</span><b>{legOdds > 0 ? legOdds.toFixed(2) : 'Not available'}</b></div><div><span>Market</span><b>{s(leg.market, leg.marketName, leg.betType, 'Match result')}</b></div><div><span>Score</span><b>{scoreHome != null && scoreAway != null ? `${ended ? 'FT ' : ''}${scoreHome}-${scoreAway}` : live ? 'Live score pending' : 'Score not recorded'}</b></div><div><span>Outcome</span><b>{s(leg.result, ended ? 'Result recorded' : live ? 'Live' : 'Pending')}</b></div></div>
+        <div className="ls-ticket-pick-box"><div><span>Pick</span><b>{s(leg.selection, leg.outcome, leg.pick, 'Selection')}{legWon && <span className="ls-pick-check">✓</span>}</b></div><div><span>Odds</span><b>{legOdds > 0 ? legOdds.toFixed(2) : 'Not available'}</b></div><div><span>Market</span><b>{s(leg.market, leg.marketName, leg.betType, 'Match result')}</b></div><div><span>Full-time score</span><b className={scoreHome != null && scoreAway != null ? 'ft-score' : ''}>{scoreHome != null && scoreAway != null ? `${scoreHome} - ${scoreAway}` : live ? 'Live score pending' : '—'}</b></div><div><span>Outcome</span><b>{s(leg.result, ended ? 'Result recorded' : live ? 'Live' : 'Pending')}</b></div></div>
       </article>;
     }) : <div className="ls-ticket-no-legs">Selection details are not available for this ticket.</div>}</section>
     {open && <button className="ls-ticket-cashout" type="button" onClick={cashout} disabled={cashingOut}>{cashingOut ? 'Cashing out…' : `Cash out ${money(payout)}`}</button>}
