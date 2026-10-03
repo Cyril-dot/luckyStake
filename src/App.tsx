@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { api, catalog, DEFAULT_API, fetchAdminMatches, fetchMatchDetail, fetchMatchOdds, formatKickoff, formatKickoffDate, parseKickoff, isFinishedMatch, isLiveStatus, liveClock, normalizeMatches, setApiBase, setToken, sportFeedPath, type Feed, type MatchRow, type Sport } from './api';
 import './index.css';
+import './booking-share.css';
 import HeaderDesigns, { BottomNavSamples, SlipPreviewPage } from './HeaderDesigns';
 import AuthDesigns from './AuthDesigns';
 import BroadcastAuth from './BroadcastAuth';
