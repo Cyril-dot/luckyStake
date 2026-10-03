@@ -60,20 +60,26 @@ const adminPages: { id: AdminPageKey; label: string; icon: string }[] = [
   { id: 'guide', label: 'How to use', icon: 'help' },
 ];
 
-const superPages: { id: SuperPageKey; label: string; icon: string }[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: 'space_dashboard' },
-  { id: 'admins', label: 'Administrators', icon: 'admin_panel_settings' },
-  { id: 'users', label: 'Users', icon: 'group' },
-  { id: 'transactions', label: 'Transactions', icon: 'receipt_long' },
-  { id: 'binance', label: 'Binance deposits', icon: 'currency_bitcoin' },
-  { id: 'momo', label: 'MoMo deposits', icon: 'smartphone' },
-  { id: 'userdeposits', label: 'User deposits', icon: 'account_balance' },
-  { id: 'affwithdrawals', label: 'Affiliate withdrawals', icon: 'partner_exchange' },
-  { id: 'payouts', label: 'Payout requests', icon: 'request_quote' },
-  { id: 'walletwithdrawals', label: 'Wallet withdrawals', icon: 'payments' },
-  { id: 'commission', label: 'Commission analytics', icon: 'monitoring' },
-  { id: 'chats', label: 'Upgrade chats', icon: 'forum' },
-  { id: 'audit', label: 'Audit trail', icon: 'fact_check' },
+const superSections: { title: string; items: { id: SuperPageKey; label: string; icon: string }[] }[] = [
+  { title: 'Overview', items: [
+    { id: 'dashboard', label: 'Dashboard', icon: 'space_dashboard' },
+  ] },
+  { title: 'Management', items: [
+    { id: 'admins', label: 'Administrators', icon: 'admin_panel_settings' },
+    { id: 'users', label: 'Users', icon: 'group' },
+    { id: 'chats', label: 'Upgrade chats', icon: 'forum' },
+    { id: 'audit', label: 'Audit trail', icon: 'fact_check' },
+  ] },
+  { title: 'Finance', items: [
+    { id: 'transactions', label: 'Transactions', icon: 'receipt_long' },
+    { id: 'binance', label: 'Binance deposits', icon: 'currency_bitcoin' },
+    { id: 'momo', label: 'MoMo deposits', icon: 'smartphone' },
+    { id: 'userdeposits', label: 'User deposits', icon: 'account_balance' },
+    { id: 'affwithdrawals', label: 'Affiliate withdrawals', icon: 'partner_exchange' },
+    { id: 'payouts', label: 'Payout requests', icon: 'request_quote' },
+    { id: 'walletwithdrawals', label: 'Wallet withdrawals', icon: 'payments' },
+    { id: 'commission', label: 'Commission analytics', icon: 'monitoring' },
+  ] },
 ];
 
 function Notice({ message, error }: { message: string; error?: boolean }) { return message ? <div className={`admin-notice ${error ? 'is-error' : 'is-success'}`}><span className="material-symbols-rounded">{error ? 'error' : 'check_circle'}</span>{message}</div> : null; }
@@ -947,10 +953,17 @@ function SuperAudit() {
 
 export default function AdminPanel({ role }: { role: Role }) {
   const isSuper = role === 'super-admin';
-  const available = isSuper ? superPages : adminPages;
   const [page, setPage] = useState<PageKey>(isSuper ? 'dashboard' : 'overview');
   const [mobileNav, setMobileNav] = useState(false);
   useEffect(() => { setPage(isSuper ? 'dashboard' : 'overview'); }, [isSuper]);
+  const go = (id: PageKey) => { setPage(id); setMobileNav(false); };
+  const navBtn = (item: { id: PageKey; label: string; icon: string }) => (
+    <button className={`admin-nav-btn${page === item.id ? ' active' : ''}`} key={item.id} onClick={() => go(item.id)}>
+      <span className="admin-nav-ico"><span className="material-symbols-rounded">{item.icon}</span></span>
+      <span className="admin-nav-label">{item.label}</span>
+      {page === item.id && <span className="admin-nav-dot" />}
+    </button>
+  );
 
   const content = (() => {
     if (!isSuper) {
@@ -979,13 +992,26 @@ export default function AdminPanel({ role }: { role: Role }) {
 
   return <div className="admin-app">
     <aside className={`admin-sidebar ${mobileNav ? 'open' : ''}`}>
-      <div className="admin-brand"><span className="admin-brand-mark">S</span><div><strong>Lucky<span>Stake</span></strong><small>{isSuper ? 'Super admin' : 'Admin'} control</small></div></div>
-      <nav>{available.map(item => <button className={page === item.id ? 'active' : ''} key={item.id} onClick={() => { setPage(item.id); setMobileNav(false); }}><span className="material-symbols-rounded">{item.icon}</span>{item.label}</button>)}</nav>
-      <a className="admin-exit" href="/"><span className="material-symbols-rounded">arrow_back</span>Back to sportsbook</a>
+      <div className="admin-brand">
+        <span className="admin-brand-mark">S</span>
+        <div className="admin-brand-text"><strong>Lucky<span>Stake</span></strong></div>
+        <span className={`admin-role-pill${isSuper ? ' super' : ''}`}>{isSuper ? 'Super admin' : 'Admin'}</span>
+      </div>
+      <nav className="admin-nav">
+        {isSuper
+          ? superSections.map(sec => <div className="admin-nav-section" key={sec.title}>
+              <span className="admin-nav-heading">{sec.title}</span>
+              {sec.items.map(navBtn)}
+            </div>)
+          : <div className="admin-nav-section"><span className="admin-nav-heading">Menu</span>{adminPages.map(navBtn)}</div>}
+      </nav>
+      <div className="admin-side-foot">
+        <a className="admin-exit" href="/"><span className="material-symbols-rounded">arrow_back</span>Back to sportsbook</a>
+      </div>
     </aside>
     {mobileNav && <button className="admin-backdrop" aria-label="Close navigation" onClick={() => setMobileNav(false)} />}
     <main className="admin-main">
-      <div className="admin-mobile-bar"><button onClick={() => setMobileNav(true)} aria-label="Open admin navigation"><span className="material-symbols-rounded">menu</span></button><strong>{isSuper ? 'Super admin' : 'Admin'}</strong></div>
+      <div className="admin-mobile-bar"><button onClick={() => setMobileNav(true)} aria-label="Open admin navigation"><span className="material-symbols-rounded">menu</span></button><strong>{isSuper ? 'Super admin' : 'Admin'}</strong><span className={`admin-role-pill${isSuper ? ' super' : ''}`}>{isSuper ? 'Super' : 'Admin'}</span></div>
       {content}
     </main>
   </div>;

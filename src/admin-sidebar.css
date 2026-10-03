@@ -1,0 +1,35 @@
+/* Premium admin sidebar — LuckyStake admin + super-admin panels.
+   Loaded after index.css so these rules win over the base sidebar styles. */
+.admin-app{display:flex;align-items:stretch;min-height:calc(100vh - 104px)}
+.admin-sidebar{position:sticky;top:104px;height:calc(100vh - 104px);width:276px;flex-shrink:0;display:flex;flex-direction:column;background:linear-gradient(180deg,#261c38 0%,#1b1328 55%,#150e1f 100%);border-right:1px solid rgba(214,238,70,.09);z-index:20;overflow-y:auto;overflow-x:hidden}
+.admin-sidebar::-webkit-scrollbar{width:5px}
+.admin-sidebar::-webkit-scrollbar-thumb{background:#3d2c52;border-radius:4px}
+.admin-brand{display:flex;align-items:center;gap:12px;padding:22px 18px 18px;border-bottom:1px solid rgba(255,255,255,.06)}
+.admin-brand-mark{display:grid;place-items:center;width:44px;height:44px;flex-shrink:0;border-radius:15px;background:linear-gradient(135deg,#f2ff7e,#c8ec3f 55%,#9fd12c);color:#191423;font:900 25px/1 'Barlow Condensed';box-shadow:0 6px 20px rgba(214,238,70,.35),inset 0 1px 0 rgba(255,255,255,.5)}
+.admin-brand-text{flex:1;min-width:0}
+.admin-brand-text strong{display:block;font:800 23px/1 'Barlow Condensed';letter-spacing:.02em;color:#fff;white-space:nowrap}
+.admin-brand-text strong span{color:var(--lime)}
+.admin-role-pill{flex-shrink:0;padding:5px 10px;border-radius:999px;font:800 9px 'Rajdhani';letter-spacing:.12em;text-transform:uppercase;background:rgba(120,170,255,.13);border:1px solid rgba(120,170,255,.38);color:#a9c6ff;white-space:nowrap}
+.admin-role-pill.super{background:rgba(214,238,70,.12);border-color:rgba(214,238,70,.42);color:var(--lime)}
+.admin-nav{flex:1;padding:16px 12px 12px;display:flex;flex-direction:column;gap:20px}
+.admin-nav-section{display:flex;flex-direction:column;gap:3px}
+.admin-nav-heading{padding:0 12px 8px;font:800 10px 'Rajdhani';letter-spacing:.2em;text-transform:uppercase;color:#6f5f80}
+.admin-nav-btn{position:relative;display:flex;align-items:center;gap:12px;width:100%;min-height:47px;padding:6px 12px 6px 6px;border:0;border-radius:13px;background:transparent;color:#b9abc5;font:700 13px 'Rajdhani';text-align:left;cursor:pointer;transition:all .18s cubic-bezier(.34,1.3,.64,1)}
+.admin-nav-btn:hover{background:rgba(255,255,255,.05);color:#fff;transform:translateX(3px)}
+.admin-nav-btn:hover .admin-nav-ico{background:rgba(214,238,70,.16);color:var(--lime)}
+.admin-nav-ico{display:grid;place-items:center;width:35px;height:35px;flex-shrink:0;border-radius:11px;background:rgba(255,255,255,.055);color:#9a8aa8;transition:all .18s}
+.admin-nav-ico .material-symbols-rounded{font-size:20px}
+.admin-nav-label{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.admin-nav-btn.active{background:linear-gradient(135deg,#f2ff7e,#c8ec3f 60%,#a4d12c);color:#1a1424;box-shadow:0 8px 24px rgba(214,238,70,.3),inset 0 1px 0 rgba(255,255,255,.5)}
+.admin-nav-btn.active:hover{transform:none}
+.admin-nav-btn.active .admin-nav-ico{background:rgba(0,0,0,.13);color:#1a1424}
+.admin-nav-btn.active .admin-nav-label{font-weight:800}
+.admin-nav-dot{width:7px;height:7px;flex-shrink:0;border-radius:50%;background:#1a1424}
+.admin-side-foot{padding:16px;border-top:1px solid rgba(255,255,255,.06)}
+.admin-exit{display:flex;align-items:center;justify-content:center;gap:9px;min-height:45px;padding:0 14px;border:1px solid #4a3a5e;border-radius:13px;background:rgba(255,255,255,.03);color:#b9abc5;text-decoration:none;font:700 12px 'Rajdhani';transition:all .18s}
+.admin-exit:hover{border-color:var(--lime);color:var(--lime);background:rgba(214,238,70,.07);transform:translateY(-1px)}
+.admin-exit .material-symbols-rounded{font-size:18px}
+@media(max-width:850px){
+  .admin-sidebar{position:fixed;top:0;left:0;width:284px;max-width:86vw;height:100vh;height:100dvh;transform:translateX(-104%);transition:transform .24s cubic-bezier(.32,.72,.35,1);box-shadow:20px 0 50px rgba(0,0,0,.45);border-right:1px solid rgba(214,238,70,.12)}
+  .admin-mobile-bar .admin-role-pill{margin-left:auto}
+}
