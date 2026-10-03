@@ -8,6 +8,7 @@ function money(value: number) { return `GH₵${value.toLocaleString('en-GH', { m
 function list(payload: unknown): AnyRecord { if (payload && typeof payload === 'object' && 'data' in (payload as AnyRecord)) return (payload as AnyRecord).data; return (payload || {}) as AnyRecord; }
 function selections(raw: AnyRecord): AnyRecord[] { const value = raw.selections ?? raw.picks ?? raw.legs ?? raw.betSelections ?? []; return Array.isArray(value) ? value : []; }
 function verifyCode(id: string) { const raw = id.replace(/[^A-Z0-9]/gi, '').toUpperCase(); return `GH${raw.slice(0, 4)}${raw.slice(-6)}`; }
+function betShareCode(betId: string): string { try { const map = JSON.parse(localStorage.getItem('luckystake_bet_share_codes') || '{}'); return String(map[betId] || ''); } catch { return ''; } }
 
 const SAMPLE_BET: AnyRecord = { id: 'sample-ls-2026', status: 'WON', stake: 50, totalOdds: 4.86, potentialReturn: 243, placedAt: '2026-09-25T13:22:00Z', selections: [
   { id: 'sample-leg-1', matchId: 'sample-match-1', homeTeam: 'Hearts of Oak', awayTeam: 'Asante Kotoko', market: 'Match result', selection: 'Home', oddsLocked: 2.15, result: 'Won', scoreHome: 2, scoreAway: 1 },
@@ -83,6 +84,7 @@ export default function TicketDetailsPage({ id }: { id: string }) {
       <div className="ls-ticket-stat"><span>Total stake</span><b>{money(stake)}</b></div>
       <div className="ls-ticket-stat"><span>Total odds</span><b>{odds.toFixed(2)}×</b></div>
       <div className="ls-ticket-verify">Verify code: <strong>{verifyCode(id)}</strong></div>
+      {betShareCode(id) && <div className="ls-ticket-booking"><span className="material-symbols-rounded">confirmation_number</span><div><small>Booking code</small><strong>{betShareCode(id)}</strong></div><button type="button" onClick={() => { try { navigator.clipboard?.writeText(betShareCode(id)); } catch {} }}>Copy</button></div>}
       {won && <div className="ls-ticket-win-banner"><div className="ls-ticket-win-message"><span className="ls-ticket-win-trophy"><img src="/superbet-victory-trophy.png" alt="LuckyStake winning trophy" /></span><span>Congratulations!<br /><b>You won this ticket.</b></span></div><button type="button" onClick={() => setCelebrate(true)}>Show off</button></div>}
     </section>
     <section className="ls-ticket-legs">{legs.length ? legs.map((leg, index) => {
