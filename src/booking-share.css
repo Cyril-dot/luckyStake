@@ -157,3 +157,35 @@
   .lp-ladder-dot{width:32px;height:32px}
   .lp-ladder-btn{padding:9px 16px;font-size:12px}
 }
+
+/* Win-first gate — premium */
+.lp-gate-win{padding:12px 4px}
+.lp-trophy-wrap{position:relative;display:grid;place-items:center;padding:12px}
+.lp-trophy-glow{position:absolute;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,rgba(214,238,70,.25),transparent 70%);animation:lp-pulse 2s ease-in-out infinite}
+.lp-icon-ring.trophy{width:96px;height:96px;background:linear-gradient(135deg,rgba(214,238,70,.18),rgba(214,238,70,.05));border:2px solid rgba(214,238,70,.5);box-shadow:0 8px 32px rgba(214,238,70,.2)}
+.lp-icon-ring.trophy .material-symbols-rounded{font-size:44px;color:var(--lime)}
+.lp-gate-badge{display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border-radius:999px;background:rgba(255,180,80,.1);border:1px solid rgba(255,180,80,.3);color:#ffb454;font:700 11px 'Rajdhani';letter-spacing:.1em;text-transform:uppercase}
+.lp-gate-badge .material-symbols-rounded{font-size:15px}
+.lp-gate-win h3{margin:0;color:#fff;font-size:28px;font-weight:800;line-height:1.15}
+.lp-gate-steps{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:4px 0}
+.lp-gate-step{display:flex;align-items:center;gap:8px;padding:10px 14px;border:1px solid #3a2c4d;border-radius:12px;background:#1c1428;font:700 13px 'Rajdhani';color:#ddd2e3}
+.lp-gate-num{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--lime);color:#18121e;font:800 13px 'Rajdhani';flex-shrink:0}
+.lp-gate-arrow{color:#5a4a6d;font-size:20px}
+@media(max-width:480px){
+  .lp-gate-steps{flex-wrap:wrap}
+  .lp-gate-win h3{font-size:24px}
+  .lp-icon-ring.trophy{width:84px;height:84px}
+}
+
+/* Referral link card */
+.ref-link-card{display:flex;align-items:center;gap:12px;padding:14px;border:1px solid #3a2c4d;border-radius:14px;background:#1c1428;margin-bottom:10px}
+.ref-link-info{flex:1;display:flex;align-items:center;gap:12px;min-width:0}
+.ref-link-info>.material-symbols-rounded{font-size:24px;color:var(--lime);flex-shrink:0}
+.ref-link-info>div{min-width:0;flex:1}
+.ref-link-info b{display:block;color:#fff;font-size:13px;margin-bottom:4px}
+.ref-link-info code{display:block;color:#8a7a99;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:monospace}
+.ref-copy-btn{display:inline-flex;align-items:center;gap:6px;padding:10px 18px;border:0;border-radius:999px;background:var(--lime);color:#18121e;font:800 13px 'Rajdhani';cursor:pointer;flex-shrink:0;transition:all .18s}
+.ref-copy-btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(214,238,70,.3)}
+.ref-copy-btn.ok{background:#4ade80}
+.ref-copy-btn .material-symbols-rounded{font-size:16px}
+@media(max-width:480px){.ref-link-card{flex-direction:column;align-items:stretch}.ref-copy-btn{justify-content:center}}

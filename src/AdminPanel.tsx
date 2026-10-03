@@ -68,6 +68,25 @@ function Button({ children, onClick, tone = 'secondary' }: { children: React.Rea
 // REGULAR ADMIN TABS
 // ============================================================================
 
+function ReferralLinkCard({ link, onCopied }: { link: any; onCopied: () => void }) {
+  const [copied, setCopied] = useState(false);
+  const url = String(link.url ?? link.link ?? '');
+  const fullUrl = url.startsWith('http') ? url : `https://www.luckysttake.site${url.startsWith('/') ? '' : '/'}${url}`;
+  const copy = async () => {
+    try { await navigator.clipboard.writeText(fullUrl); } catch { try { const t = document.createElement('textarea'); t.value = fullUrl; document.body.appendChild(t); t.select(); document.execCommand('copy'); t.remove(); } catch {} }
+    setCopied(true); onCopied(); setTimeout(() => setCopied(false), 2000);
+  };
+  return <div className="ref-link-card">
+    <div className="ref-link-info">
+      <span className="material-symbols-rounded">link</span>
+      <div><b>{String(link.label ?? link.name ?? link.code ?? 'Referral link')}</b><code>{fullUrl}</code></div>
+    </div>
+    <button type="button" className={`ref-copy-btn ${copied ? 'ok' : ''}`} onClick={copy}>
+      <span className="material-symbols-rounded">{copied ? 'check' : 'content_copy'}</span>{copied ? 'Copied' : 'Copy'}
+    </button>
+  </div>;
+}
+
 function AdminOverview({ onNavigate }: { onNavigate: (page: AdminPageKey) => void }) {
   const [stats, setStats] = useState<Row>({});
   const [links, setLinks] = useState<Row[]>([]);
@@ -123,7 +142,7 @@ function AdminOverview({ onNavigate }: { onNavigate: (page: AdminPageKey) => voi
         </div>
       </Panel>
       <Panel title="Referral links" action={<Button onClick={createLink}><span className="material-symbols-rounded">add_link</span>New link</Button>}>
-        {links.length ? links.slice(0, 5).map((l, i) => <div className="admin-status-list" key={i}><div><span><code>{text(l.code ?? l.link)}</code></span><b><button className="admin-button" onClick={() => { navigator.clipboard?.writeText(text(l.url ?? l.link)); setMessage('Link copied.'); }}>Copy</button></b></div></div>) : <p style={{ color: '#a99bb3', fontSize: 12 }}>No referral links yet. Create one to start earning.</p>}
+        {links.length ? links.slice(0, 5).map((l, i) => <ReferralLinkCard key={i} link={l} onCopied={() => setMessage('Link copied to clipboard.')} />) : <p style={{ color: '#a99bb3', fontSize: 12 }}>No referral links yet. Create one to start earning.</p>}
       </Panel>
     </div>
   </div>;

@@ -221,11 +221,22 @@ function WithdrawalGate({ onUnlocked }: { onUnlocked: () => void }) {
 
   if (state === 'checking') return <div className="lp-gate lp-gate-checking"><span className="lp-spinner" /><p>Checking withdrawal eligibility…</p></div>;
 
-  if (state === 'no_win') return <div className="lp-gate">
-    <div className="lp-icon-ring"><span className="material-symbols-rounded">sports_soccer</span></div>
-    <h3>Win first, withdraw later</h3>
-    <p className="lp-sub">You need to stake and win at least one bet before you can withdraw. Place a bet and come back when it lands.</p>
-    <a className="lp-cta" href="/sports" style={{ textDecoration: 'none' }}><span className="material-symbols-rounded">bolt</span>Find a match</a>
+  if (state === 'no_win') return <div className="lp-gate lp-gate-win">
+    <div className="lp-trophy-wrap">
+      <div className="lp-trophy-glow" />
+      <div className="lp-icon-ring trophy"><span className="material-symbols-rounded">emoji_events</span></div>
+    </div>
+    <div className="lp-gate-badge"><span className="material-symbols-rounded">lock</span>Withdrawals locked</div>
+    <h3>Win first,<br />withdraw later</h3>
+    <p className="lp-sub">Withdrawals unlock after your first winning bet.<br />Place a bet, win it, and come back for your cash.</p>
+    <div className="lp-gate-steps">
+      <div className="lp-gate-step"><span className="lp-gate-num">1</span><span>Place a bet</span></div>
+      <span className="material-symbols-rounded lp-gate-arrow">chevron_right</span>
+      <div className="lp-gate-step"><span className="lp-gate-num">2</span><span>Win it</span></div>
+      <span className="material-symbols-rounded lp-gate-arrow">chevron_right</span>
+      <div className="lp-gate-step"><span className="lp-gate-num">3</span><span>Withdraw</span></div>
+    </div>
+    <a className="lp-cta" href="/sports" style={{ textDecoration: 'none' }}><span className="material-symbols-rounded">sports_soccer</span>Find a match to bet on</a>
   </div>;
 
   if (state === 'depositing') return <div className="lp-gate">
