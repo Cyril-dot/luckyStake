@@ -132,3 +132,28 @@
 }
 .lp-min-hint{margin:0!important;text-align:center;color:#8a7a99!important;font-size:12px!important;font-weight:600!important;letter-spacing:.04em}
 .ls-ticket-pick-box b.ft-score{color:var(--lime)!important;font-size:17px!important;font-weight:800;letter-spacing:.06em}
+
+/* Withdrawal gate — LuckyStake */
+.lp-gate{display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center;padding:8px 4px}
+.lp-gate-checking{padding:32px 0}
+.lp-ladder{list-style:none;margin:0;padding:0;width:100%;display:flex;flex-direction:column;gap:10px}
+.lp-ladder li{display:flex;align-items:center;gap:14px;padding:14px 16px;border:1px solid #3a2c4d;border-radius:14px;background:#1c1428;text-align:left;transition:all .2s}
+.lp-ladder li.done{border-color:rgba(214,238,70,.4);background:rgba(214,238,70,.05)}
+.lp-ladder li.current{border-color:var(--lime);background:rgba(214,238,70,.07);box-shadow:0 4px 20px rgba(214,238,70,.12)}
+.lp-ladder li.locked{opacity:.45}
+.lp-ladder-dot{width:36px;height:36px;flex-shrink:0;border-radius:50%;display:grid;place-items:center;background:#241a31;border:2px solid #3a2c4d;color:#8a7a99;font:800 14px 'Rajdhani'}
+.lp-ladder-dot .material-symbols-rounded{font-size:18px}
+.lp-ladder li.done .lp-ladder-dot{background:rgba(214,238,70,.15);border-color:var(--lime);color:var(--lime)}
+.lp-ladder li.current .lp-ladder-dot{background:var(--lime);border-color:var(--lime);color:#18121e}
+.lp-ladder-info{flex:1;display:flex;flex-direction:column;gap:2px}
+.lp-ladder-info b{color:#fff;font-size:15px}
+.lp-ladder-info small{color:#8a7a99;font-size:11px;text-transform:uppercase;letter-spacing:.06em;font-weight:700}
+.lp-ladder li.current .lp-ladder-info small{color:var(--lime)}
+.lp-ladder-btn{padding:10px 20px;border:0;border-radius:999px;background:var(--lime);color:#18121e;font:800 13px 'Rajdhani';cursor:pointer;transition:transform .15s}
+.lp-ladder-btn:active{transform:scale(.95)}
+.lp-progress{margin:0!important;color:#8a7a99!important;font-size:12px!important;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+@media(max-width:480px){
+  .lp-ladder li{padding:12px;gap:10px}
+  .lp-ladder-dot{width:32px;height:32px}
+  .lp-ladder-btn{padding:9px 16px;font-size:12px}
+}
