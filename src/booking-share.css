@@ -61,3 +61,4 @@
 .deposit-complete>.material-symbols-rounded{font-size:64px;color:var(--lime)}
 .deposit-complete h1{color:#fff;margin:16px 0 8px}
 .deposit-complete p{color:#a99bb3}
+.alphapay-message{color:var(--lime)!important;font-weight:600}

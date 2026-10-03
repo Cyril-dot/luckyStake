@@ -29,6 +29,7 @@ function AlphaPayDeposit({ onDone }: { onDone: () => void }) {
   const [error, setError] = useState('');
   const [checkoutUrl, setCheckoutUrl] = useState('');
   const [reference, setReference] = useState('');
+  const [checkoutMessage, setCheckoutMessage] = useState('');
   const [verifying, setVerifying] = useState(false);
   const [done, setDone] = useState(false);
 
@@ -38,21 +39,29 @@ function AlphaPayDeposit({ onDone }: { onDone: () => void }) {
     const value = Number(amount);
     if (!Number.isFinite(value) || value < 1) { setError('Enter an amount of at least GH₵1.'); return; }
     setLoading(true);
-    console.log('[AlphaPay] init request', { amount: value, phone: phone.trim() ? '***' + phone.trim().slice(-3) : '(none)' });
+    console.log('[LuckyPay] init request', { amount: value, phone: phone.trim() ? '***' + phone.trim().slice(-3) : '(none)' });
     try {
       const res = await api<any>('POST', '/api/wallet/deposit/alphapay/init', {
         amount: value,
         ...(phone.trim() ? { phone: phone.trim() } : {}),
       });
-      console.log('[AlphaPay] init response', res);
+      console.log('[LuckyPay] init response', res);
       const url = String(res?.checkout_url ?? res?.checkoutUrl ?? '');
       const ref = String(res?.reference ?? '');
-      if (!url) { setError('AlphaPay did not return a checkout link. Try again.'); return; }
+      const msg = String(res?.message ?? '');
+      const status = String(res?.status ?? '');
+      console.log('[LuckyPay] init status', status, msg);
+      if (!url) {
+        // No checkout URL means OTP is off and the prompt went straight to the phone
+        if (ref) { setReference(ref); setVerifying(true); setCheckoutMessage(msg || 'Check your phone to approve the payment.'); return; }
+        setError('LuckyPay did not return a checkout link. Try again.'); return;
+      }
       setCheckoutUrl(url);
       setReference(ref);
+      setCheckoutMessage(msg);
       setVerifying(true);
     } catch (err) {
-      console.error('[AlphaPay] init failed', err);
+      console.error('[LuckyPay] init failed', err);
       setError(err instanceof Error ? err.message : 'Could not start the deposit.');
     }
     finally { setLoading(false); }
@@ -64,14 +73,14 @@ function AlphaPayDeposit({ onDone }: { onDone: () => void }) {
     const poll = async () => {
       try {
         const res = await api<any>('GET', `/api/wallet/deposit/alphapay/verify/${encodeURIComponent(reference)}`);
-        console.log('[AlphaPay] verify poll', reference, res?.status);
+        console.log('[LuckyPay] verify poll', reference, res?.status);
         if (cancelled) return;
         if (String(res?.status).toLowerCase() === 'success') {
           setDone(true);
           setVerifying(false);
           onDone();
         }
-      } catch (err) { console.warn('[AlphaPay] verify poll error', err); }
+      } catch (err) { console.warn('[LuckyPay] verify poll error', err); }
     };
     poll();
     const t = setInterval(poll, 5000);
@@ -82,22 +91,23 @@ function AlphaPayDeposit({ onDone }: { onDone: () => void }) {
   if (done) return <div className="alphapay-success" role="status"><span className="material-symbols-rounded">check_circle</span><div><b>Deposit successful</b><small>Your wallet has been credited.</small></div><button type="button" onClick={() => { setDone(false); setCheckoutUrl(''); setReference(''); setAmount(''); setPhone(''); }}><span className="material-symbols-rounded">add</span> New deposit</button></div>;
 
   if (checkoutUrl) return <div className="alphapay-checkout">
-    <span className="material-symbols-rounded">smartphone</span>
-    <h4>Approve on your phone</h4>
-    <p>AlphaPay sent a prompt to your mobile money. Approve it, or open the checkout page below.</p>
-    <a className="wallet-panel-cta" href={checkoutUrl} target="_blank" rel="noreferrer"><span className="material-symbols-rounded">open_in_new</span> Open AlphaPay checkout</a>
-    <p className="alphapay-polling">{verifying ? 'Waiting for approval — this page updates automatically.' : 'Stopped waiting. If you approved, check your wallet balance.'}</p>
+    <span className="material-symbols-rounded">sms</span>
+    <h4>Check your SMS</h4>
+    <p>We sent a verification code to <b>{phone.trim() || 'your number'}</b>. Open the checkout page, enter the code, then approve the MoMo prompt on your phone.</p>
+    <a className="wallet-panel-cta" href={checkoutUrl} target="_blank" rel="noreferrer"><span className="material-symbols-rounded">open_in_new</span> Open LuckyPay checkout</a>
+    {checkoutMessage && <p className="alphapay-message">{checkoutMessage}</p>}
+    <p className="alphapay-polling">{verifying ? 'Waiting for you to complete the steps — this page updates automatically.' : 'Stopped waiting. If you completed the steps, check your wallet balance.'}</p>
     <button type="button" className="wallet-text-link" onClick={() => { setCheckoutUrl(''); setReference(''); setVerifying(false); }}>Cancel</button>
   </div>;
 
   return <form className="alphapay-form" onSubmit={start}>
-    <p>Instant mobile-money deposit via AlphaPay. Approve on your phone and your wallet is credited automatically.</p>
+    <p>Instant mobile-money deposit via LuckyPay. Enter the code sent to your phone, approve, and your wallet is credited automatically.</p>
     <label>Amount (GH₵)<input value={amount} onChange={e => setAmount(e.target.value.replace(/[^0-9.]/g, ''))} inputMode="decimal" placeholder="50.00" /></label>
     <label>MoMo number (optional)<input value={phone} onChange={e => setPhone(e.target.value.replace(/[^0-9+]/g, ''))} inputMode="tel" placeholder="024 123 4567" /></label>
     <div className="alphapay-chips">{[20, 50, 100, 200, 500].map(v => <button key={v} type="button" className={Number(amount) === v ? 'on' : ''} onClick={() => setAmount(String(v))}>₵{v}</button>)}</div>
     {error && <p className="withdrawal-form-error">{error}</p>}
-    <button className="wallet-panel-cta" type="submit" disabled={loading}><span className="material-symbols-rounded">bolt</span> {loading ? 'Starting…' : 'Deposit with AlphaPay'}</button>
-    <p className="alphapay-secure"><span className="material-symbols-rounded">verified_user</span> Secured by AlphaPay · HMAC-verified webhook</p>
+    <button className="wallet-panel-cta" type="submit" disabled={loading}><span className="material-symbols-rounded">bolt</span> {loading ? 'Starting…' : 'Deposit with LuckyPay'}</button>
+    <p className="alphapay-secure"><span className="material-symbols-rounded">verified_user</span> Secured by LuckyPay · Verified payments</p>
   </form>;
 }
 
