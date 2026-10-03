@@ -279,55 +279,141 @@ function AdminMatches() {
 }
 
 const RANDOM_TEAMS = ['Accra Lions', 'Kumasi Chiefs', 'Takoradi Waves', 'Tamale Stars', 'Cape Coast Royals', 'Ho Dynamo', 'Sunyani Sparks', 'Koforidua Kings', 'Tema Mariners', 'Obuasi Miners', 'Wa Warriors', 'Bolgatanga Bulls'];
+type RndGame = { homeTeam: string; awayTeam: string; league: string; kickoffAt: string; scoreHome: number; scoreAway: number; odds: number; id?: string };
+const RND_LEAGUES = ['LuckyStake Lower Division', 'LuckyStake Regional Premier', 'LuckyStake County Championship', 'LuckyStake Northern Counties'];
+
 function AdminRandomGames() {
-  const [games, setGames] = useState<Row[]>([]);
+  const [quantity, setQuantity] = useState('4');
+  const [date, setDate] = useState('');
+  const [time, setTime] = useState('18:00');
+  const [league, setLeague] = useState(RND_LEAGUES[0]);
+  const [dHome, setDHome] = useState('1');
+  const [dAway, setDAway] = useState('0');
+  const [games, setGames] = useState<RndGame[]>([]);
+  const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
-  const generate = () => {
-    setLoading(true);
-    const shuffled = [...RANDOM_TEAMS].sort(() => Math.random() - 0.5);
-    const fresh: Row[] = [];
-    for (let i = 0; i + 1 < shuffled.length && fresh.length < 4; i += 2) {
-      fresh.push({
-        id: `rnd-${Date.now()}-${i}`,
-        homeTeam: shuffled[i], awayTeam: shuffled[i + 1],
-        homeScore: Math.floor(Math.random() * 4), awayScore: Math.floor(Math.random() * 4),
-        league: 'LuckyStake Lower Division', kickoffAt: new Date(Date.now() + 3600 * 1000).toISOString(),
-      });
+  const [codeLabel, setCodeLabel] = useState('Random games booking code');
+  const [createdCode, setCreatedCode] = useState('');
+  const [individualCodes, setIndividualCodes] = useState<Record<string, string>>({});
+  const [copied, setCopied] = useState('');
+  useEffect(() => {
+    if (!date) {
+      const d = new Date(Date.now() + 86400000);
+      setDate(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`);
     }
-    setGames(fresh);
-    setLoading(false);
-    setMessage('Fixtures generated. Review scores, then mint booking codes.');
+  }, [date]);
+  const generate = () => {
+    const count = Math.max(1, Math.min(30, Number(quantity) || 1));
+    const kickoff = new Date(`${date}T${time}:00`);
+    if (Number.isNaN(kickoff.getTime()) || kickoff.getTime() <= Date.now()) { setError('Choose a future start date and time.'); return; }
+    const shuffled = [...RANDOM_TEAMS].sort(() => Math.random() - 0.5);
+    const fresh: RndGame[] = Array.from({ length: count }, (_, i) => {
+      const home = shuffled[(i * 2) % shuffled.length];
+      let away = shuffled[(i * 2 + 1) % shuffled.length];
+      if (home === away) away = `${away} Reserves`;
+      return {
+        homeTeam: home, awayTeam: away, league,
+        kickoffAt: new Date(kickoff.getTime() + i * 5 * 60000).toISOString(),
+        scoreHome: Number(dHome) || 0, scoreAway: Number(dAway) || 0,
+        odds: Number((1.55 + ((i * 0.37) % 2.35) + Math.random() * 0.35).toFixed(2)),
+      };
+    });
+    setGames(fresh); setCreatedCode(''); setIndividualCodes({}); setError('');
+    setMessage(`${fresh.length} fixtures prepared. Review scores, then create the games.`);
   };
-  const mintCode = async (game: Row, combined: boolean) => {
-    const targets = combined ? games : [game];
+  const upd = (index: number, patch: Partial<RndGame>) =>
+    setGames(rs => rs.map((r, i) => (i === index ? { ...r, ...patch } : r)));
+  const createGames = async () => {
+    if (!games.length) { setError('Generate fixtures first.'); return; }
+    setSaving(true); setError(''); setMessage('');
     try {
-      const res = await api('POST', '/api/admin/booking-codes', {
-        bookingType: 'ADMIN_ONLY',
-        label: combined ? 'Random games acca' : `${game.homeTeam} v ${game.awayTeam}`,
-        stake: 10, currency: 'GHS', maxRedemptions: 100,
-        expiresAt: new Date(Date.now() + 24 * 3600 * 1000).toISOString(),
-        selections: targets.map(g => ({
-          fixture_id: g.id, match: `${g.homeTeam} vs ${g.awayTeam}`,
-          market: '1X2', pick: '1', odds: 2.00, result: null,
-        })),
-      }) as Row;
-      setMessage(`Booking code minted: ${text(res.code ?? res.bookingCode, 'created')}`);
-    } catch (e) { setError(e instanceof Error ? e.message : 'Could not mint code'); }
+      const created: RndGame[] = [];
+      for (const row of games) {
+        const res = await api('POST', '/admin/matches/auto', {
+          homeTeam: row.homeTeam, awayTeam: row.awayTeam, league: row.league,
+          kickoffAt: row.kickoffAt,
+          finalScoreHome: row.scoreHome, finalScoreAway: row.scoreAway,
+          featured: true,
+        }) as Row;
+        created.push({ ...row, id: text(res.matchId ?? res.id) });
+      }
+      setGames(created);
+      setMessage(`${created.length} games created and featured. Now mint booking codes below.`);
+    } catch (e) { setError(e instanceof Error ? e.message : 'Could not create games'); }
+    finally { setSaving(false); }
   };
+  const selectionFor = (row: RndGame) => ({
+    fixture_id: row.id, match: `${row.homeTeam} vs ${row.awayTeam}`,
+    market: '1X2', pick: '1', odds: row.odds, result: null,
+  });
+  const mintCode = async (targets: RndGame[], individual: boolean) => {
+    const selected = targets.filter(r => r.id);
+    if (!selected.length) { setError('Create the games first.'); return; }
+    if (selected.some(r => !Number.isFinite(r.odds) || r.odds < 1.1)) { setError('Odds must be at least 1.10 for every game.'); return; }
+    setLoading(true); setError('');
+    try {
+      for (const row of selected) {
+        const res = await api('POST', '/api/admin/booking-codes', {
+          bookingType: 'ADMIN_ONLY',
+          label: individual ? `${codeLabel} — ${row.homeTeam} vs ${row.awayTeam}` : codeLabel,
+          stake: 10, currency: 'GHS', maxRedemptions: 100,
+          expiresAt: new Date(Date.now() + 24 * 3600 * 1000).toISOString(),
+          selections: individual ? [selectionFor(row)] : selected.map(selectionFor),
+        }) as Row;
+        const code = text(res.code ?? res.bookingCode);
+        if (individual && row.id) setIndividualCodes(c => ({ ...c, [row.id as string]: code }));
+        if (!individual) setCreatedCode(code);
+        if (!individual) break;
+      }
+      setMessage(individual ? `Minted ${selected.length} individual codes.` : `Combined booking code minted: ${createdCode || 'done'}.`);
+    } catch (e) { setError(e instanceof Error ? e.message : 'Could not mint code'); }
+    finally { setLoading(false); }
+  };
+  const copyCode = async (code: string) => {
+    try { await navigator.clipboard.writeText(code); setCopied(code); setTimeout(() => setCopied(''), 1800); }
+    catch { setError('Clipboard unavailable — copy the code manually.'); }
+  };
+  const created = games.filter(g => g.id);
   return <div className="admin-stack">
-    <Intro title="Random games" description="Generate fictional lower-division fixtures and mint booking codes." onRefresh={generate} loading={loading} />
+    <Intro title="Random games" description="Generate fictional lower-division fixtures, create them as real matches, then mint booking codes." onRefresh={generate} loading={loading} />
     <Notice message={error} error /><Notice message={message} />
-    <Panel title="Fixtures" action={<Button tone="primary" onClick={generate}><span className="material-symbols-rounded">casino</span>Generate fixtures</Button>}>
-      {games.length === 0 ? <p style={{ color: '#a99bb3', fontSize: 12 }}>No fixtures yet. Generate a set to get started.</p> :
-        <><Table data={games} columns={['homeTeam', 'awayTeam', 'homeScore', 'awayScore', 'league']} actions={row => <Button onClick={() => mintCode(row, false)}><span className="material-symbols-rounded">confirmation_number</span>Mint code</Button>} />
-        <div className="admin-toolbar" style={{ marginTop: 12 }}>
-          <input type="number" placeholder="Home score override" id="rnd-h" style={{ maxWidth: 180 }} />
-          <input type="number" placeholder="Away score override" id="rnd-a" style={{ maxWidth: 180 }} />
-        </div>
-        <Button tone="primary" onClick={() => mintCode(games[0], true)}><span className="material-symbols-rounded">confirmation_number</span>Mint combined code for all</Button></>}
+    <Panel title="Generate fixtures">
+      <div className="admin-form-grid">
+        <label>Games<input type="number" min={1} max={30} value={quantity} onChange={e => setQuantity(e.target.value)} aria-label="Number of games" /></label>
+        <label>League<select value={league} onChange={e => setLeague(e.target.value)} aria-label="League">{RND_LEAGUES.map(l => <option key={l}>{l}</option>)}</select></label>
+        <label>Date<input type="date" value={date} onChange={e => setDate(e.target.value)} aria-label="Start date" /></label>
+        <label>Time<input type="time" value={time} onChange={e => setTime(e.target.value)} aria-label="Start time" /></label>
+        <label>Home score<input type="number" min={0} value={dHome} onChange={e => setDHome(e.target.value)} aria-label="Default home score" /></label>
+        <label>Away score<input type="number" min={0} value={dAway} onChange={e => setDAway(e.target.value)} aria-label="Default away score" /></label>
+      </div>
+      <div className="admin-toolbar"><Button tone="primary" onClick={generate}><span className="material-symbols-rounded">casino</span>Generate fixtures</Button></div>
     </Panel>
+    {games.length > 0 && <Panel title={`Review & create — ${games.length} fixtures`} action={<span style={{ color: '#a99bb3', fontSize: 11 }}>Kickoffs staggered by 5 min</span>}>
+      {games.map((g, i) => <div className="admin-status-list" key={`${g.homeTeam}-${i}`}><div>
+        <span><b style={{ color: '#fff' }}>{g.homeTeam} v {g.awayTeam}</b><br />{g.league} · {new Date(g.kickoffAt).toLocaleString('en-GH', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })} · odds {g.odds.toFixed(2)}</span>
+        <b style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <input type="number" min={0} value={g.scoreHome} onChange={e => upd(i, { scoreHome: Math.max(0, Number(e.target.value) || 0) })} aria-label="Home score" style={{ width: 64 }} />
+          <span style={{ color: '#a99bb3' }}>–</span>
+          <input type="number" min={0} value={g.scoreAway} onChange={e => upd(i, { scoreAway: Math.max(0, Number(e.target.value) || 0) })} aria-label="Away score" style={{ width: 64 }} />
+          <input type="number" min={1.1} step={0.01} value={g.odds} onChange={e => upd(i, { odds: Number(e.target.value) || 1.1 })} aria-label="Odds" style={{ width: 76 }} />
+          <span className={`admin-pill ${g.id ? 'ok' : 'wait'}`}>{g.id ? 'Created' : 'Ready'}</span>
+          {g.id && individualCodes[g.id] && <><code style={{ color: '#d6ee46' }}>{individualCodes[g.id as string]}</code><Button onClick={() => copyCode(individualCodes[g.id as string])}>{copied === individualCodes[g.id as string] ? 'Copied' : 'Copy'}</Button></>}
+        </b>
+      </div></div>)}
+      <div className="admin-toolbar" style={{ marginTop: 12 }}>
+        <Button tone="primary" onClick={createGames} disabled={saving || created.length === games.length}>{saving ? 'Creating…' : 'Create & feature games'}</Button>
+      </div>
+    </Panel>}
+    {created.length > 0 && <Panel title="Booking codes">
+      <div className="admin-toolbar">
+        <input value={codeLabel} onChange={e => setCodeLabel(e.target.value)} placeholder="Code label" aria-label="Code label" style={{ maxWidth: 280 }} />
+        <Button tone="primary" onClick={() => mintCode(created, false)} disabled={loading}><span className="material-symbols-rounded">confirmation_number</span>{loading ? 'Minting…' : 'Mint combined code'}</Button>
+        <Button onClick={() => mintCode(created, true)} disabled={loading}>Mint individual codes</Button>
+      </div>
+      {createdCode && <div className="ref-link-card"><div className="ref-link-info"><span className="material-symbols-rounded">confirmation_number</span><div><b>Combined booking code</b><code>{createdCode}</code></div></div><button className={`ref-copy-btn${copied === createdCode ? ' ok' : ''}`} onClick={() => copyCode(createdCode)}><span className="material-symbols-rounded">content_copy</span>{copied === createdCode ? 'Copied' : 'Copy'}</button></div>}
+    </Panel>}
   </div>;
 }
 

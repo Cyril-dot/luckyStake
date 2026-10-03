@@ -33,3 +33,48 @@
   .admin-sidebar{position:fixed;top:0;left:0;width:284px;max-width:86vw;height:100vh;height:100dvh;transform:translateX(-104%);transition:transform .24s cubic-bezier(.32,.72,.35,1);box-shadow:20px 0 50px rgba(0,0,0,.45);border-right:1px solid rgba(214,238,70,.12)}
   .admin-mobile-bar .admin-role-pill{margin-left:auto}
 }
+
+/* ---- Premium admin forms: inputs, selects, textareas ---- */
+.admin-panel input:not([type=checkbox]):not([type=radio]):not([type=range]),
+.admin-panel select,
+.admin-panel textarea,
+.admin-toolbar input:not([type=checkbox]):not([type=radio]):not([type=range]),
+.admin-toolbar select,
+.admin-status-list input:not([type=checkbox]):not([type=radio]),
+.admin-modal input,
+.admin-modal select{
+  height:44px;padding:0 14px;border:1px solid #4d3a5e;border-radius:11px;
+  background:#170f22;color:#fff;font:600 13px 'Rajdhani';outline:0;min-width:0;
+  transition:border-color .16s ease,box-shadow .16s ease,background .16s ease;
+  color-scheme:dark;
+}
+.admin-panel textarea{height:auto;min-height:96px;padding:12px 14px;resize:vertical}
+.admin-panel input::placeholder,.admin-toolbar input::placeholder,.admin-modal input::placeholder{color:#6f5f80;font-weight:500}
+.admin-panel input:hover:not(:disabled),.admin-toolbar input:hover:not(:disabled),.admin-panel select:hover{border-color:#6a5480}
+.admin-panel input:focus,.admin-panel select:focus,.admin-panel textarea:focus,
+.admin-toolbar input:focus,.admin-toolbar select:focus,
+.admin-status-list input:focus,.admin-modal input:focus{
+  border-color:var(--lime);background:#1c1428;
+  box-shadow:0 0 0 3px rgba(214,238,70,.14),0 4px 14px rgba(0,0,0,.25);
+}
+.admin-panel input:disabled,.admin-toolbar input:disabled{opacity:.5;cursor:not-allowed}
+.admin-panel select,.admin-toolbar select,.admin-modal select{
+  appearance:none;-webkit-appearance:none;cursor:pointer;padding-right:36px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23d6ee46' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;
+}
+.admin-panel select option,.admin-toolbar select option{background:#241a31;color:#fff}
+/* Labeled fields */
+.admin-field{display:flex;flex-direction:column;gap:7px;min-width:0}
+.admin-field>span,.admin-form-grid label{font:800 10px 'Rajdhani';letter-spacing:.14em;text-transform:uppercase;color:#8f7fa0}
+.admin-form-grid label{display:flex;flex-direction:column;gap:7px;min-width:0}
+.admin-form-grid{gap:12px;align-items:end}
+/* Score/odds inline editors in rows */
+.admin-status-list input{height:38px;padding:0 10px;border-radius:9px;font-size:12px}
+/* Pills */
+.admin-pill{display:inline-flex;align-items:center;padding:5px 11px;border-radius:999px;font:800 10px 'Rajdhani';letter-spacing:.08em;text-transform:uppercase}
+.admin-pill.ok{background:rgba(214,238,70,.14);border:1px solid rgba(214,238,70,.4);color:var(--lime)}
+.admin-pill.wait{background:rgba(255,255,255,.06);border:1px solid #4d3a5e;color:#a99bb3}
+/* Panel header polish */
+.admin-panel{border-radius:16px}
+.admin-panel-title h2{letter-spacing:.01em}
