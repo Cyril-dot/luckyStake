@@ -37,7 +37,7 @@ function LuckyPayDeposit({ onDone }: { onDone: () => void }) {
     e.preventDefault();
     setError('');
     const value = Number(amount);
-    if (!Number.isFinite(value) || value < 1) { setError('Enter an amount of at least GH₵1.'); return; }
+    if (!Number.isFinite(value) || value < 20) { setError('Minimum deposit is GH₵20.'); return; }
     if (!phone.trim()) { setError('Enter your MoMo number to receive the code.'); return; }
     setLoading(true);
     console.log('[LuckyPay] init request', { amount: value });
@@ -112,12 +112,13 @@ function LuckyPayDeposit({ onDone }: { onDone: () => void }) {
     {step === 1 && <form className="lp-pane" onSubmit={start}>
       <div className="lp-amount-hero">
         <small>AMOUNT</small>
-        <div className="lp-amount-input"><span>GH₵</span><input value={amount} onChange={e => setAmount(e.target.value.replace(/[^0-9.]/g, ''))} inputMode="decimal" placeholder="0.00" autoFocus /></div>
+        <div className="lp-amount-input"><span>GH₵</span><input value={amount} onChange={e => setAmount(e.target.value.replace(/[^0-9.]/g, ''))} inputMode="decimal" placeholder="20.00" autoFocus /></div>
+      <p className="lp-min-hint">Minimum deposit GH₵20</p>
       </div>
       <div className="lp-chips">{[20, 50, 100, 200, 500, 1000].map(v => <button key={v} type="button" className={Number(amount) === v ? 'on' : ''} onClick={() => setAmount(String(v))}>₵{v.toLocaleString()}</button>)}</div>
       <label className="lp-field"><span>MoMo number</span><input value={phone} onChange={e => setPhone(e.target.value.replace(/[^0-9+]/g, ''))} inputMode="tel" placeholder="024 123 4567" /></label>
       {error && <p className="lp-error"><span className="material-symbols-rounded">error</span>{error}</p>}
-      <button className="lp-cta" type="submit" disabled={loading}><span className="material-symbols-rounded">bolt</span>{loading ? 'Starting…' : 'Continue'}</button>
+      <button className="lp-cta" type="submit" disabled={loading || !Number.isFinite(Number(amount)) || Number(amount) < 20}><span className="material-symbols-rounded">bolt</span>{loading ? 'Starting…' : 'Continue'}</button>
       <p className="lp-secure"><span className="material-symbols-rounded">verified_user</span>Secured by LuckyPay</p>
     </form>}
 
