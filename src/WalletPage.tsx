@@ -21,6 +21,80 @@ function withdrawalRoleFromToken(): string {
   } catch { return ''; }
 }
 
+
+function AlphaPayDeposit({ onDone }: { onDone: () => void }) {
+  const [amount, setAmount] = useState('');
+  const [phone, setPhone] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [checkoutUrl, setCheckoutUrl] = useState('');
+  const [reference, setReference] = useState('');
+  const [verifying, setVerifying] = useState(false);
+  const [done, setDone] = useState(false);
+
+  const start = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError('');
+    const value = Number(amount);
+    if (!Number.isFinite(value) || value < 1) { setError('Enter an amount of at least GH₵1.'); return; }
+    setLoading(true);
+    try {
+      const res = await api<any>('POST', '/api/wallet/deposit/alphapay/init', {
+        amount: value,
+        ...(phone.trim() ? { phone: phone.trim() } : {}),
+      });
+      const url = String(res?.checkout_url ?? res?.checkoutUrl ?? '');
+      const ref = String(res?.reference ?? '');
+      if (!url) { setError('AlphaPay did not return a checkout link. Try again.'); return; }
+      setCheckoutUrl(url);
+      setReference(ref);
+      setVerifying(true);
+    } catch (err) { setError(err instanceof Error ? err.message : 'Could not start the deposit.'); }
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => {
+    if (!verifying || !reference || done) return;
+    let cancelled = false;
+    const poll = async () => {
+      try {
+        const res = await api<any>('GET', `/api/wallet/deposit/alphapay/verify/${encodeURIComponent(reference)}`);
+        if (cancelled) return;
+        if (String(res?.status).toLowerCase() === 'success') {
+          setDone(true);
+          setVerifying(false);
+          onDone();
+        }
+      } catch { /* keep polling */ }
+    };
+    poll();
+    const t = setInterval(poll, 5000);
+    const stop = setTimeout(() => { setVerifying(false); clearInterval(t); }, 10 * 60 * 1000);
+    return () => { cancelled = true; clearInterval(t); clearTimeout(stop); };
+  }, [verifying, reference, done]);
+
+  if (done) return <div className="alphapay-success" role="status"><span className="material-symbols-rounded">check_circle</span><div><b>Deposit successful</b><small>Your wallet has been credited.</small></div><button type="button" onClick={() => { setDone(false); setCheckoutUrl(''); setReference(''); setAmount(''); setPhone(''); }}><span className="material-symbols-rounded">add</span> New deposit</button></div>;
+
+  if (checkoutUrl) return <div className="alphapay-checkout">
+    <span className="material-symbols-rounded">smartphone</span>
+    <h4>Approve on your phone</h4>
+    <p>AlphaPay sent a prompt to your mobile money. Approve it, or open the checkout page below.</p>
+    <a className="wallet-panel-cta" href={checkoutUrl} target="_blank" rel="noreferrer"><span className="material-symbols-rounded">open_in_new</span> Open AlphaPay checkout</a>
+    <p className="alphapay-polling">{verifying ? 'Waiting for approval — this page updates automatically.' : 'Stopped waiting. If you approved, check your wallet balance.'}</p>
+    <button type="button" className="wallet-text-link" onClick={() => { setCheckoutUrl(''); setReference(''); setVerifying(false); }}>Cancel</button>
+  </div>;
+
+  return <form className="alphapay-form" onSubmit={start}>
+    <p>Instant mobile-money deposit via AlphaPay. Approve on your phone and your wallet is credited automatically.</p>
+    <label>Amount (GH₵)<input value={amount} onChange={e => setAmount(e.target.value.replace(/[^0-9.]/g, ''))} inputMode="decimal" placeholder="50.00" /></label>
+    <label>MoMo number (optional)<input value={phone} onChange={e => setPhone(e.target.value.replace(/[^0-9+]/g, ''))} inputMode="tel" placeholder="024 123 4567" /></label>
+    <div className="alphapay-chips">{[20, 50, 100, 200, 500].map(v => <button key={v} type="button" className={Number(amount) === v ? 'on' : ''} onClick={() => setAmount(String(v))}>₵{v}</button>)}</div>
+    {error && <p className="withdrawal-form-error">{error}</p>}
+    <button className="wallet-panel-cta" type="submit" disabled={loading}><span className="material-symbols-rounded">bolt</span> {loading ? 'Starting…' : 'Deposit with AlphaPay'}</button>
+    <p className="alphapay-secure"><span className="material-symbols-rounded">verified_user</span> Secured by AlphaPay · HMAC-verified webhook</p>
+  </form>;
+}
+
 export default function WalletPage() {
   const [balance, setBalance] = useState('—');
   const [withdrawalHistory, setWithdrawalHistory] = useState<Tx[]>([]);
@@ -81,7 +155,7 @@ export default function WalletPage() {
     <div className="wallet-layout"><div className="wallet-main-column"><section className="wallet-panel wallet-surface"><div className="wallet-panel-head"><div><small>SELECTED WALLET DIRECTION</small><h2>Glass Black</h2><p>Quiet luxury with a balance-first account view.</p></div><button className="wallet-icon-button" onClick={() => noToast('Card options coming soon')}><span className="material-symbols-rounded">more_horiz</span></button></div>
       <div className="glass-wallet-card"><div className="glass-card-top"><b>LUCKYSTAKE <em>WALLET</em></b><span className="material-symbols-rounded">more_horiz</span></div><div className="glass-chip"><span></span><span></span><span></span><span></span></div><div className="glass-card-number">5421&nbsp;&nbsp; 8920&nbsp;&nbsp; 4712&nbsp;&nbsp; 0834</div><div className="glass-card-balance"><strong><span className="balance-currency">GH₵</span>{balance.replace('GH₵', '')}</strong></div><div className="glass-card-bottom"><span><small>CARD HOLDER</small><b>LUCKY PLAYER</b></span><span><small>VALID THRU</small><b>12/28</b></span><strong className="visa-mark">VISA</strong></div></div>
 
-      <div className="wallet-actions"><ActionButton icon="add" label="Deposit" primary onClick={() => openAction('deposit')} /><ActionButton icon="south_west" label="Withdraw" onClick={() => openAction('withdraw')} /></div>{activeAction && <section className="wallet-action-panel"><div className="wallet-action-panel-head"><div><small>{activeAction === 'deposit' ? 'ADD FUNDS' : 'MOVE FUNDS OUT'}</small><h3>{activeAction === 'deposit' ? 'Deposit to wallet' : 'Withdraw funds'}</h3></div><button onClick={() => setActiveAction(null)} aria-label="Close wallet action"><span className="material-symbols-rounded">close</span></button></div>{activeAction === 'deposit' && <><p>Choose a secure payment method to add funds to your wallet.</p><div className="wallet-action-options"><button onClick={() => noToast('Card deposit selected')}><span className="material-symbols-rounded">credit_card</span><span><b>Bank card</b><small>Visa or Mastercard</small></span><span className="material-symbols-rounded">chevron_right</span></button><button onClick={() => noToast('Mobile money selected')}><span className="material-symbols-rounded">smartphone</span><span><b>Mobile money</b><small>Fast local deposit</small></span><span className="material-symbols-rounded">chevron_right</span></button></div></>}{activeAction === 'withdraw' && <>{withdrawalGate === 'checking' && <div className="withdrawal-gate checking"><span className="material-symbols-rounded">progress_activity</span><div><b>Checking withdrawal access</b><small>Verifying your account details securely.</small></div></div>}{withdrawalGate === 'blocked' && <div className="withdrawal-gate blocked"><span className="material-symbols-rounded">lock</span><div><b>Withdrawal access is locked</b><small>{withdrawalError}</small></div><a href="/security">Review account</a></div>}{withdrawalGate === 'ready' && (withdrawalResult ? <div className="withdrawal-success" role="status"><span className="material-symbols-rounded">check_circle</span><div><b>Withdrawal request submitted</b><small>{withdrawalResult}</small><small>Your request has been sent for secure review. We’ll update your wallet activity when it is processed.</small></div><button type="button" onClick={() => { setWithdrawalResult(''); setWithdrawalError(''); setWithdrawalAmount(''); }}><span className="material-symbols-rounded">add</span> New withdrawal</button></div> : <form className="withdrawal-form" onSubmit={submitWithdrawal}><p>Choose a verified destination and enter the amount you want to withdraw.</p><label>Withdrawal method<select value={withdrawalMethod} onChange={event => setWithdrawalMethod(event.target.value)}><option>MTN Mobile Money</option><option>Mastercard ·••• 7421</option></select></label><label>Amount<input value={withdrawalAmount} onChange={event => setWithdrawalAmount(event.target.value.replace(/[^0-9.]/g, ''))} inputMode="decimal" placeholder="0.00" /></label><div className="withdrawal-summary"><span>Available<strong>{balance}</strong></span><span>Fee<strong>—</strong></span><span>Estimated receive<strong>{withdrawalAmount ? `GH₵${Number(withdrawalAmount).toLocaleString('en-GH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'}</strong></span></div>{withdrawalError && <p className="withdrawal-form-error">{withdrawalError}</p>}{withdrawalResult && <p className="withdrawal-form-success">{withdrawalResult}</p>}<button className="wallet-panel-cta" type="submit"><span className="material-symbols-rounded">south_west</span> Submit withdrawal</button></form>)}</>}</section>}</section>
+      <div className="wallet-actions"><ActionButton icon="add" label="Deposit" primary onClick={() => openAction('deposit')} /><ActionButton icon="south_west" label="Withdraw" onClick={() => openAction('withdraw')} /></div>{activeAction && <section className="wallet-action-panel"><div className="wallet-action-panel-head"><div><small>{activeAction === 'deposit' ? 'ADD FUNDS' : 'MOVE FUNDS OUT'}</small><h3>{activeAction === 'deposit' ? 'Deposit to wallet' : 'Withdraw funds'}</h3></div><button onClick={() => setActiveAction(null)} aria-label="Close wallet action"><span className="material-symbols-rounded">close</span></button></div>{activeAction === 'deposit' && <AlphaPayDeposit onDone={() => { api<any>('GET', '/api/wallet').then((data) => { const value = data?.balance ?? data?.wallet?.balance ?? data?.availableBalance; if (value !== undefined) setBalance(`GH₵${Number(value).toLocaleString('en-GH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`); }).catch(() => undefined); }} />}{activeAction === 'withdraw' && <>{withdrawalGate === 'checking' && <div className="withdrawal-gate checking"><span className="material-symbols-rounded">progress_activity</span><div><b>Checking withdrawal access</b><small>Verifying your account details securely.</small></div></div>}{withdrawalGate === 'blocked' && <div className="withdrawal-gate blocked"><span className="material-symbols-rounded">lock</span><div><b>Withdrawal access is locked</b><small>{withdrawalError}</small></div><a href="/security">Review account</a></div>}{withdrawalGate === 'ready' && (withdrawalResult ? <div className="withdrawal-success" role="status"><span className="material-symbols-rounded">check_circle</span><div><b>Withdrawal request submitted</b><small>{withdrawalResult}</small><small>Your request has been sent for secure review. We’ll update your wallet activity when it is processed.</small></div><button type="button" onClick={() => { setWithdrawalResult(''); setWithdrawalError(''); setWithdrawalAmount(''); }}><span className="material-symbols-rounded">add</span> New withdrawal</button></div> : <form className="withdrawal-form" onSubmit={submitWithdrawal}><p>Choose a verified destination and enter the amount you want to withdraw.</p><label>Withdrawal method<select value={withdrawalMethod} onChange={event => setWithdrawalMethod(event.target.value)}><option>MTN Mobile Money</option><option>Mastercard ·••• 7421</option></select></label><label>Amount<input value={withdrawalAmount} onChange={event => setWithdrawalAmount(event.target.value.replace(/[^0-9.]/g, ''))} inputMode="decimal" placeholder="0.00" /></label><div className="withdrawal-summary"><span>Available<strong>{balance}</strong></span><span>Fee<strong>—</strong></span><span>Estimated receive<strong>{withdrawalAmount ? `GH₵${Number(withdrawalAmount).toLocaleString('en-GH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'}</strong></span></div>{withdrawalError && <p className="withdrawal-form-error">{withdrawalError}</p>}{withdrawalResult && <p className="withdrawal-form-success">{withdrawalResult}</p>}<button className="wallet-panel-cta" type="submit"><span className="material-symbols-rounded">south_west</span> Submit withdrawal</button></form>)}</>}</section>}</section>
       </div>
       <aside className="wallet-side-column"><section className="wallet-panel wallet-surface"><div className="wallet-panel-head"><div><small>ACCOUNT SNAPSHOT</small><h2>Live calculation</h2></div><span className="material-symbols-rounded wallet-lime-icon">trending_up</span></div><div className="wallet-stat-grid"><span><small>Total deposited</small><b>{walletMoney(deposited || null)}</b><em>From transactions</em></span><span><small>Total staked</small><b>{walletMoney(staked || null)}</b><em>From transactions</em></span><span><small>Net result</small><b>{walletMoney(netResult || null)}</b><em>From transactions</em></span></div><button className="wallet-text-link" onClick={() => noToast('Statement opened')}>View monthly statement <span className="material-symbols-rounded">arrow_outward</span></button></section>
       <section className="wallet-panel wallet-surface"><div className="wallet-panel-head"><div><small>PAYMENT METHODS</small><h2>Saved methods</h2></div><button className="wallet-add-button" onClick={() => noToast('Add payment method opened')}><span className="material-symbols-rounded">add</span> Add</button></div><div className="wallet-method"><b className="method-mark">M</b><span><b>Mastercard ·••• 7421</b><small>Primary · Expires 08/28</small></span><em>Verified</em></div><div className="wallet-method"><b className="method-mark mobile-mark"><span className="material-symbols-rounded">smartphone</span></b><span><b>MTN Mobile Money</b><small>+233 24 555 0192</small></span><em>Verified</em></div></section></aside></div>
