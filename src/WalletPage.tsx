@@ -30,6 +30,10 @@ function AlphaPayDeposit({ onDone }: { onDone: () => void }) {
   const [checkoutUrl, setCheckoutUrl] = useState('');
   const [reference, setReference] = useState('');
   const [checkoutMessage, setCheckoutMessage] = useState('');
+  const [otp, setOtp] = useState('');
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [awaitingApproval, setAwaitingApproval] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [done, setDone] = useState(false);
 
@@ -67,6 +71,24 @@ function AlphaPayDeposit({ onDone }: { onDone: () => void }) {
     finally { setLoading(false); }
   };
 
+  const submitOtp = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError('');
+    if (!otp.trim() || !reference) { setError('Enter the code sent to your phone.'); return; }
+    setOtpLoading(true);
+    console.log('[LuckyPay] submit otp', reference);
+    try {
+      const res = await api<any>('POST', '/api/wallet/deposit/alphapay/submit-otp', { reference, code: otp.trim() });
+      console.log('[LuckyPay] submit otp response', res);
+      setOtpSent(true);
+      setAwaitingApproval(true);
+      setVerifying(true);
+    } catch (err) {
+      console.error('[LuckyPay] submit otp failed', err);
+      setError(err instanceof Error ? err.message : 'Wrong or expired code. Try again.');
+    } finally { setOtpLoading(false); }
+  };
+
   useEffect(() => {
     if (!verifying || !reference || done) return;
     let cancelled = false;
@@ -88,16 +110,26 @@ function AlphaPayDeposit({ onDone }: { onDone: () => void }) {
     return () => { cancelled = true; clearInterval(t); clearTimeout(stop); };
   }, [verifying, reference, done]);
 
-  if (done) return <div className="alphapay-success" role="status"><span className="material-symbols-rounded">check_circle</span><div><b>Deposit successful</b><small>Your wallet has been credited.</small></div><button type="button" onClick={() => { setDone(false); setCheckoutUrl(''); setReference(''); setAmount(''); setPhone(''); }}><span className="material-symbols-rounded">add</span> New deposit</button></div>;
+  if (done) return <div className="alphapay-success" role="status"><span className="material-symbols-rounded">check_circle</span><div><b>Deposit successful</b><small>Your wallet has been credited.</small></div><button type="button" onClick={() => { setDone(false); setCheckoutUrl(''); setReference(''); setAmount(''); setPhone(''); setOtp(''); setOtpSent(false); setAwaitingApproval(false); setCheckoutMessage(''); }}><span className="material-symbols-rounded">add</span> New deposit</button></div>;
 
-  if (checkoutUrl) return <div className="alphapay-checkout">
-    <span className="material-symbols-rounded">sms</span>
-    <h4>Check your SMS</h4>
-    <p>We sent a verification code to <b>{phone.trim() || 'your number'}</b>. Open the checkout page, enter the code, then approve the MoMo prompt on your phone.</p>
-    <a className="wallet-panel-cta" href={checkoutUrl} target="_blank" rel="noreferrer"><span className="material-symbols-rounded">open_in_new</span> Open LuckyPay checkout</a>
-    {checkoutMessage && <p className="alphapay-message">{checkoutMessage}</p>}
-    <p className="alphapay-polling">{verifying ? 'Waiting for you to complete the steps — this page updates automatically.' : 'Stopped waiting. If you completed the steps, check your wallet balance.'}</p>
-    <button type="button" className="wallet-text-link" onClick={() => { setCheckoutUrl(''); setReference(''); setVerifying(false); }}>Cancel</button>
+  if (reference && !done) return <div className="alphapay-checkout">
+    <span className="material-symbols-rounded">{awaitingApproval ? 'smartphone' : 'sms'}</span>
+    {!awaitingApproval ? <>
+      <h4>Enter verification code</h4>
+      <p>We sent a code by SMS to <b>{phone.trim() || 'your number'}</b>. Enter it below — then the MoMo approval prompt will hit your phone.</p>
+      <form className="alphapay-otp-form" onSubmit={submitOtp}>
+        <input value={otp} onChange={e => setOtp(e.target.value.replace(/[^0-9]/g, '').slice(0, 8))} inputMode="numeric" placeholder="Enter code" autoComplete="one-time-code" />
+        <button className="wallet-panel-cta" type="submit" disabled={otpLoading || !otp.trim()}><span className="material-symbols-rounded">verified</span> {otpLoading ? 'Verifying…' : 'Verify code'}</button>
+      </form>
+      {checkoutUrl && <a className="wallet-text-link" href={checkoutUrl} target="_blank" rel="noreferrer">Or open LuckyPay checkout <span className="material-symbols-rounded">open_in_new</span></a>}
+    </> : <>
+      <h4>Approve on your phone</h4>
+      <p>Code accepted. The MoMo approval prompt is on its way to <b>{phone.trim() || 'your number'}</b> — approve it now.</p>
+      <p className="alphapay-polling">{verifying ? 'Waiting for approval — this page updates automatically.' : 'Stopped waiting. If you approved, check your wallet balance.'}</p>
+    </>}
+    {checkoutMessage && !awaitingApproval && <p className="alphapay-message">{checkoutMessage}</p>}
+    {error && <p className="withdrawal-form-error">{error}</p>}
+    <button type="button" className="wallet-text-link" onClick={() => { setCheckoutUrl(''); setReference(''); setVerifying(false); setOtp(''); setOtpSent(false); setAwaitingApproval(false); }}>Cancel</button>
   </div>;
 
   return <form className="alphapay-form" onSubmit={start}>

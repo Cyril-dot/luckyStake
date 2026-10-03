@@ -62,3 +62,7 @@
 .deposit-complete h1{color:#fff;margin:16px 0 8px}
 .deposit-complete p{color:#a99bb3}
 .alphapay-message{color:var(--lime)!important;font-weight:600}
+.alphapay-otp-form{display:flex;flex-direction:column;gap:10px;width:100%;max-width:300px}
+.alphapay-otp-form input{height:56px;padding:0 16px;border:1px solid #514064;border-radius:14px;background:#181220;color:#fff;font-size:22px;font-weight:800;letter-spacing:.35em;text-align:center;outline:0;transition:border-color .15s,box-shadow .15s}
+.alphapay-otp-form input:focus{border-color:var(--lime);box-shadow:0 0 0 3px rgba(214,238,70,.12)}
+.alphapay-otp-form input::placeholder{letter-spacing:.1em;font-size:15px;font-weight:500}
