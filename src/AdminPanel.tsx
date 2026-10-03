@@ -61,6 +61,7 @@ const adminPages: { id: AdminPageKey; label: string; icon: string }[] = [
 ];
 
 const superPages: { id: SuperPageKey; label: string; icon: string }[] = [
+  { id: 'commission', label: 'Commission analytics', icon: 'monitoring' },
   { id: 'dashboard', label: 'Dashboard', icon: 'space_dashboard' },
   { id: 'admins', label: 'Administrators', icon: 'admin_panel_settings' },
   { id: 'users', label: 'Users', icon: 'group' },
@@ -73,7 +74,6 @@ const superPages: { id: SuperPageKey; label: string; icon: string }[] = [
   { id: 'affwithdrawals', label: 'Affiliate withdrawals', icon: 'partner_exchange' },
   { id: 'payouts', label: 'Payout requests', icon: 'request_quote' },
   { id: 'walletwithdrawals', label: 'Wallet withdrawals', icon: 'payments' },
-  { id: 'commission', label: 'Commission analytics', icon: 'monitoring' },
 ];
 
 function Notice({ message, error }: { message: string; error?: boolean }) { return message ? <div className={`admin-notice ${error ? 'is-error' : 'is-success'}`}><span className="material-symbols-rounded">{error ? 'error' : 'check_circle'}</span>{message}</div> : null; }

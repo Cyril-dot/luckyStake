@@ -1,7 +1,7 @@
 /* Premium admin sidebar — LuckyStake admin + super-admin panels.
    Loaded after index.css so these rules win over the base sidebar styles. */
 .admin-app{display:flex;align-items:stretch;min-height:calc(100vh - 104px)}
-.admin-sidebar{position:sticky;top:104px;height:calc(100vh - 104px);width:276px;flex-shrink:0;display:flex;flex-direction:column;background:linear-gradient(180deg,#261c38 0%,#1b1328 55%,#150e1f 100%);border-right:1px solid rgba(214,238,70,.09);z-index:20;overflow-y:auto;overflow-x:hidden}
+.admin-sidebar{position:sticky;top:104px;height:calc(100vh - 104px);flex:0 0 auto;display:flex;flex-direction:column;background:linear-gradient(180deg,#261c38 0%,#1b1328 55%,#150e1f 100%);border-right:1px solid rgba(214,238,70,.09);z-index:20;overflow-y:auto;overflow-x:hidden}
 .admin-sidebar::-webkit-scrollbar{width:5px}
 .admin-sidebar::-webkit-scrollbar-thumb{background:#3d2c52;border-radius:4px}
 .admin-brand{display:flex;align-items:center;gap:12px;padding:22px 18px 18px;border-bottom:1px solid rgba(255,255,255,.06)}
@@ -11,8 +11,8 @@
 .admin-brand-text strong span{color:var(--lime)}
 .admin-role-pill{flex-shrink:0;padding:5px 10px;border-radius:999px;font:800 9px 'Rajdhani';letter-spacing:.12em;text-transform:uppercase;background:rgba(120,170,255,.13);border:1px solid rgba(120,170,255,.38);color:#a9c6ff;white-space:nowrap}
 .admin-role-pill.super{background:rgba(214,238,70,.12);border-color:rgba(214,238,70,.42);color:var(--lime)}
-.admin-sidebar .admin-nav{flex:1;min-height:0;padding:14px 10px;display:flex;flex-direction:column;gap:2px;overflow-y:auto;overscroll-behavior:contain;background:transparent;border:0;box-shadow:none}
-.admin-sidebar .admin-nav-btn{position:relative;display:flex;align-items:center;gap:13px;width:100%;min-height:48px;padding:8px 14px;border:0;border-radius:0;background:transparent;color:#a99bb3;font:700 14px 'Rajdhani';text-align:left;cursor:pointer;transition:color .16s ease,background .16s ease}
+.admin-sidebar .admin-nav{flex:1;min-height:0;padding:12px 0;display:flex;flex-direction:column;gap:2px;overflow-y:auto;overscroll-behavior:contain;background:transparent;border:0;box-shadow:none;scrollbar-width:none;-ms-overflow-style:none}
+.admin-sidebar .admin-nav-btn{position:relative;display:flex;align-items:center;gap:12px;width:100%;min-height:46px;padding:8px 18px;border:0;border-radius:0;background:transparent;color:#a99bb3;font:700 14px 'Rajdhani';text-align:left;cursor:pointer;transition:color .16s ease,background .16s ease}
 .admin-sidebar .admin-nav-btn::before{content:'';position:absolute;left:0;top:10px;bottom:10px;width:3px;border-radius:3px;background:transparent;transition:background .16s ease}
 .admin-sidebar .admin-nav-btn:hover{background:rgba(255,255,255,.04);color:#fff}
 .admin-sidebar .admin-nav-btn:hover .admin-nav-ico{color:var(--lime)}
@@ -24,6 +24,7 @@
 .admin-sidebar .admin-nav-btn.active:hover{background:rgba(214,238,70,.12)}
 .admin-sidebar .admin-nav-btn.active .admin-nav-ico{color:var(--lime)}
 .admin-sidebar .admin-nav-btn.active .admin-nav-label{font-weight:800}
+.admin-sidebar .admin-nav::-webkit-scrollbar{display:none;width:0;height:0}
 .admin-sidebar .admin-nav-dot{display:none}
 .admin-side-foot{padding:16px;border-top:1px solid rgba(255,255,255,.06)}
 .admin-exit{display:flex;align-items:center;justify-content:center;gap:9px;min-height:45px;padding:0 14px;border:1px solid #4a3a5e;border-radius:13px;background:rgba(255,255,255,.03);color:#b9abc5;text-decoration:none;font:700 12px 'Rajdhani';transition:all .18s}
