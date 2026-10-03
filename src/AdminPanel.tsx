@@ -709,41 +709,45 @@ function SuperUserDeposits() {
 }
 
 function SuperCommission() {
-  const [admins, setAdmins] = useState<Row[]>([]);
-  const [totals, setTotals] = useState<Row>({});
+  const today = () => new Date().toISOString().slice(0, 10);
+  const [date, setDate] = useState(today);
+  const [data, setData] = useState<Row[]>([]);
+  const [totals, setTotals] = useState({ admins: 0, earned: 0, unpaid: 0, deposits: 0 });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const load = async () => {
+  const load = async (day: string) => {
     setLoading(true); setError('');
     try {
-      // Backend returns { admins: [...], totalAdmins, totalEarned, totalUnpaid, totalPaidOut }
-      const payload = await api<Row>('GET', '/api/super-admin/commission/daily');
-      const list = Array.isArray(payload.admins) ? (payload.admins as Row[]) : rows(payload);
-      setAdmins(list.map(a => ({
-        ...a,
-        commissionRate: `${numberValue(a.commissionRate)}%`,
-        unpaidBalance: money(a.unpaidBalance),
-        lifetimeEarned: money(a.lifetimeEarned),
-        lifetimePaidOut: money(a.lifetimePaidOut),
+      // Real backend shape: GET /api/super-admin/commission/daily?date=YYYY-MM-DD
+      // -> [{ adminId, adminEmail, adminName, commissionPercent, commissionEarned,
+      //      commissionCurrency, commissionBalance, totalDeposits, depositCount }]
+      const list = rows(await api('GET', `/api/super-admin/commission/daily?date=${encodeURIComponent(day)}`));
+      const sum = (key: string) => list.reduce((t, r) => t + numberValue(r[key]), 0);
+      setTotals({ admins: list.length, earned: sum('commissionEarned'), unpaid: sum('commissionBalance'), deposits: sum('totalDeposits') });
+      setData(list.map(r => ({
+        ...r,
+        commissionPercent: `${numberValue(r.commissionPercent)}%`,
+        commissionEarned: money(r.commissionEarned),
+        commissionBalance: money(r.commissionBalance),
+        totalDeposits: money(r.totalDeposits),
       })));
-      setTotals(payload);
     } catch (e) { setError(e instanceof Error ? e.message : 'Could not load commission data'); }
     finally { setLoading(false); }
   };
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(date); }, [date]);
   const stats: Array<[string, string, string]> = [
-    ['Admins', text(totals.totalAdmins ?? (admins.length || undefined), '0'), 'group'],
-    ['Total earned', money(totals.totalEarned), 'payments'],
-    ['Unpaid balance', money(totals.totalUnpaid), 'account_balance_wallet'],
-    ['Paid out', money(totals.totalPaidOut), 'check_circle'],
+    ['Admins', String(totals.admins), 'group'],
+    ['Commission earned', money(totals.earned), 'payments'],
+    ['Unpaid balance', money(totals.unpaid), 'account_balance_wallet'],
+    ['Referred deposits', money(totals.deposits), 'savings'],
   ];
   return <div className="admin-stack">
-    <Intro title="Commission analytics" description="Per-admin commission earned — see who is actively working." onRefresh={load} loading={loading} />
+    <Intro title="Commission analytics" description="Per-admin commission earned — see who is actively working." onRefresh={() => load(date)} loading={loading} />
     <Notice message={error} error />
     <div className="admin-stat-grid">{stats.map(([t, v, icon]) => <div className="admin-stat" key={t}><span className="material-symbols-rounded">{icon}</span><small>{t}</small><strong>{loading ? '…' : v}</strong></div>)}</div>
-    <Panel title="Commission by admin">
-      <Table data={admins} columns={['adminName', 'email', 'commissionRate', 'unpaidBalance', 'lifetimeEarned', 'lifetimePaidOut']}
-        labels={{ adminName: 'Admin', commissionRate: 'Rate', unpaidBalance: 'Unpaid', lifetimeEarned: 'Lifetime earned', lifetimePaidOut: 'Paid out' }} />
+    <Panel title={`Commission by admin — ${date}`} action={<div className="admin-toolbar" style={{ margin: 0 }}><input type="date" value={date} max={today()} onChange={e => { if (e.target.value) setDate(e.target.value); }} aria-label="Commission date" /></div>}>
+      <Table data={data} columns={['adminName', 'adminEmail', 'commissionPercent', 'commissionEarned', 'commissionBalance', 'totalDeposits', 'depositCount']}
+        labels={{ adminName: 'Admin', adminEmail: 'Email', commissionPercent: 'Rate', commissionEarned: 'Earned', commissionBalance: 'Unpaid', totalDeposits: 'Deposits', depositCount: 'Deposit count' }} />
     </Panel>
   </div>;
 }
