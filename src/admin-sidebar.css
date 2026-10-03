@@ -83,3 +83,5 @@
 /* Panel header polish */
 .admin-panel{border-radius:16px}
 .admin-panel-title h2{letter-spacing:.01em}
+
+.admin-proof{display:block;max-width:320px;width:100%;border-radius:10px;border:1px solid #4a3859;margin:10px 0}
