@@ -28,7 +28,11 @@
 .admin-exit:hover{border-color:var(--lime);color:var(--lime);background:rgba(214,238,70,.07);transform:translateY(-1px)}
 .admin-exit .material-symbols-rounded{font-size:18px}
 @media(max-width:850px){
-  .admin-sidebar{position:fixed;top:0;left:0;width:284px;max-width:86vw;height:100vh;height:100dvh;transform:translateX(-104%);transition:transform .24s cubic-bezier(.32,.72,.35,1);box-shadow:20px 0 50px rgba(0,0,0,.45);border-right:1px solid rgba(214,238,70,.12)}
+  .admin-app{display:block;min-height:calc(100vh - 104px)}
+  .admin-sidebar{position:fixed;top:0;left:0;width:min(340px,94vw);max-width:94vw;height:100vh;height:100dvh;transform:translateX(-104%);transition:transform .24s cubic-bezier(.32,.72,.35,1);box-shadow:20px 0 50px rgba(0,0,0,.45);border-right:1px solid rgba(214,238,70,.12)}
+  .admin-sidebar.open{transform:translateX(0)}
+  .admin-sidebar .admin-nav-btn{min-height:50px;font-size:14px}
+  .admin-sidebar .admin-nav-label{white-space:normal;line-height:1.25}
   .admin-mobile-bar .admin-role-pill{margin-left:auto}
 }
 
