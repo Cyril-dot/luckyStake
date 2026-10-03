@@ -792,24 +792,196 @@ function SuperUsers() {
   </div>;
 }
 
+// ------------------------------------------------------------------ super-admin MoMo deposits
+// Manual MoMo proofs — same flow as powerBetUi's MomoDepositQueue: the amount
+// deposited comes from `ngnAmountSent`, and approve/reject go through the
+// bank-deposits endpoints (there are no momo-deposits approve/reject endpoints).
+function SuperMomoQueue() {
+  const [data, setData] = useState<Row[]>([]);
+  const [filter, setFilter] = useState<'pending' | 'all'>('pending');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
+  const [selected, setSelected] = useState<Row | null>(null);
+  const [credited, setCredited] = useState('');
+  const [note, setNote] = useState('');
+  const [rejectReason, setRejectReason] = useState('');
+  const [formErr, setFormErr] = useState('');
+  const [busy, setBusy] = useState(false);
+  const load = async () => {
+    setLoading(true);
+    try {
+      const payload = await api('GET', filter === 'pending' ? '/api/admin/momo-deposits/pending?page=0&size=50' : '/api/admin/momo-deposits?page=0&size=50');
+      setData(rows(payload)); setError('');
+    } catch (e) { setError(e instanceof Error ? e.message : 'Could not load MoMo deposits'); }
+    finally { setLoading(false); }
+  };
+  useEffect(() => { load(); }, [filter]);
+  const openDetail = (row: Row) => {
+    setSelected(row);
+    setCredited(String(row.expectedNgnCredit ?? row.ngnAmountSent ?? ''));
+    setNote(String(row.adminNote ?? ''));
+    setRejectReason(''); setFormErr('');
+  };
+  const approve = async () => {
+    if (!selected) return;
+    const amt = Number(credited);
+    if (!Number.isFinite(amt) || amt <= 0) { setFormErr('Enter a valid credited GHS amount.'); return; }
+    const id = idOf(selected); if (!id) return;
+    setBusy(true); setFormErr('');
+    try {
+      await api('POST', `/api/admin/bank-deposits/${encodeURIComponent(id)}/approve`, { creditedNgnAmount: amt, adminNote: note.trim() || undefined });
+      setMessage('MoMo deposit approved and wallet credited.'); setSelected(null); await load();
+    } catch (e) { setFormErr(e instanceof Error ? e.message : 'Approval failed'); }
+    finally { setBusy(false); }
+  };
+  const reject = async () => {
+    if (!selected) return;
+    if (!rejectReason.trim()) { setFormErr('Enter a rejection reason.'); return; }
+    const id = idOf(selected); if (!id) return;
+    setBusy(true); setFormErr('');
+    try {
+      await api('POST', `/api/admin/bank-deposits/${encodeURIComponent(id)}/reject`, { adminNote: rejectReason.trim() });
+      setMessage('MoMo deposit rejected.'); setSelected(null); await load();
+    } catch (e) { setFormErr(e instanceof Error ? e.message : 'Rejection failed'); }
+    finally { setBusy(false); }
+  };
+  const tableData = data.map(r => ({ ...r, amountDeposited: money(r.ngnAmountSent) }));
+  return <div className="admin-stack">
+    <Intro title="MoMo deposits" description="Manual Mobile Money proofs. Open a record to inspect the email, amount, reference, note and screenshot before approving." onRefresh={load} loading={loading} />
+    <Notice message={message} /><Notice message={error} error />
+    <Panel title="MoMo deposit queue" action={<div className="admin-toolbar" style={{ margin: 0 }}><Button tone={filter === 'pending' ? 'primary' : 'secondary'} onClick={() => setFilter('pending')}>Pending</Button><Button tone={filter === 'all' ? 'primary' : 'secondary'} onClick={() => setFilter('all')}>All</Button></div>}>
+      <Table data={tableData} columns={['userEmail', 'amountDeposited', 'transferReference', 'status', 'createdAt']}
+        labels={{ userEmail: 'User', amountDeposited: 'Amount deposited', transferReference: 'Reference', status: 'Status', createdAt: 'Submitted' }}
+        actions={row => <Button onClick={() => openDetail(row)}><span className="material-symbols-rounded">visibility</span>Details</Button>} />
+    </Panel>
+    {selected && <Panel title={`MoMo deposit details · ${text(selected.transferReference, 'record')}`} action={<Button onClick={() => setSelected(null)}><span className="material-symbols-rounded">close</span>Close</Button>}>
+      <Notice message={formErr} error />
+      <div className="admin-status-list">
+        <div><span>User email</span><b>{text(selected.userEmail ?? selected.userId)}</b></div>
+        <div><span>User ID</span><b>{text(selected.userId)}</b></div>
+        <div><span>Amount deposited</span><b>GHS {text(selected.ngnAmountSent, '—')}</b></div>
+        <div><span>Expected credit</span><b>GHS {text(selected.expectedNgnCredit, '—')}</b></div>
+        <div><span>Sender name</span><b>{text(selected.senderAccountName, 'Not provided')}</b></div>
+        <div><span>Transfer reference</span><b>{text(selected.transferReference)}</b></div>
+      </div>
+      {text(selected.userNote, '') !== '' && <p style={{ color: '#a99bb3', fontSize: 12 }}><b style={{ color: '#fff' }}>User note:</b> {text(selected.userNote)}</p>}
+      {text(selected.screenshotUrl, '') !== '' && <a href={text(selected.screenshotUrl)} target="_blank" rel="noreferrer"><img src={text(selected.screenshotUrl)} alt="Deposit proof screenshot" className="admin-proof" /></a>}
+      <div className="admin-form-grid" style={{ gridTemplateColumns: 'repeat(3,minmax(0,1fr))', marginTop: 12 }}>
+        <input type="number" min="1" step="0.01" value={credited} onChange={e => setCredited(e.target.value)} placeholder="Credited GHS amount" />
+        <input value={note} onChange={e => setNote(e.target.value)} placeholder="Admin note for approval" />
+        <input value={rejectReason} onChange={e => setRejectReason(e.target.value)} placeholder="Required rejection reason" />
+      </div>
+      <div className="admin-toolbar" style={{ marginTop: 12 }}>
+        <Button tone="primary" disabled={busy} onClick={approve}><span className="material-symbols-rounded">check</span>Approve & credit wallet</Button>
+        <Button tone="danger" disabled={busy} onClick={reject}><span className="material-symbols-rounded">close</span>Reject deposit</Button>
+      </div>
+    </Panel>}
+  </div>;
+}
+
+// ------------------------------------------------------------------ super-admin Binance deposits
+// Crypto deposit proofs — approve requires the credited GHS amount, reject a reason.
+function SuperBinanceQueue() {
+  const [data, setData] = useState<Row[]>([]);
+  const [filter, setFilter] = useState<'pending' | 'all'>('pending');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
+  const [selected, setSelected] = useState<Row | null>(null);
+  const [credited, setCredited] = useState('');
+  const [note, setNote] = useState('');
+  const [rejectReason, setRejectReason] = useState('');
+  const [formErr, setFormErr] = useState('');
+  const [busy, setBusy] = useState(false);
+  const load = async () => {
+    setLoading(true);
+    try {
+      const payload = await api('GET', filter === 'pending' ? '/api/admin/binance-deposits/pending?page=0&size=50' : '/api/admin/binance-deposits?page=0&size=50');
+      setData(rows(payload)); setError('');
+    } catch (e) { setError(e instanceof Error ? e.message : 'Could not load Binance deposits'); }
+    finally { setLoading(false); }
+  };
+  useEffect(() => { load(); }, [filter]);
+  const openDetail = (row: Row) => {
+    setSelected(row);
+    setCredited(String(row.expectedGhsAmount ?? row.creditedGhsAmount ?? ''));
+    setNote(String(row.adminNote ?? ''));
+    setRejectReason(''); setFormErr('');
+  };
+  const approve = async () => {
+    if (!selected) return;
+    const amt = Number(credited);
+    if (!Number.isFinite(amt) || amt <= 0) { setFormErr('Enter a valid credited GHS amount.'); return; }
+    const id = idOf(selected); if (!id) return;
+    setBusy(true); setFormErr('');
+    try {
+      await api('POST', `/api/admin/binance-deposits/${encodeURIComponent(id)}/approve`, { creditedGhsAmount: amt, adminNote: note.trim() || undefined });
+      setMessage('Binance deposit approved and wallet credited.'); setSelected(null); await load();
+    } catch (e) { setFormErr(e instanceof Error ? e.message : 'Approval failed'); }
+    finally { setBusy(false); }
+  };
+  const reject = async () => {
+    if (!selected) return;
+    if (!rejectReason.trim()) { setFormErr('Enter a rejection reason.'); return; }
+    const id = idOf(selected); if (!id) return;
+    setBusy(true); setFormErr('');
+    try {
+      await api('POST', `/api/admin/binance-deposits/${encodeURIComponent(id)}/reject`, { adminNote: rejectReason.trim() });
+      setMessage('Binance deposit rejected.'); setSelected(null); await load();
+    } catch (e) { setFormErr(e instanceof Error ? e.message : 'Rejection failed'); }
+    finally { setBusy(false); }
+  };
+  const tableData = data.map(r => ({ ...r, amountDeposited: money(r.expectedGhsAmount ?? r.cryptoAmount), crypto: `${text(r.cryptoAmount, '—')} ${text(r.coin, '')}`.trim() }));
+  return <div className="admin-stack">
+    <Intro title="Binance deposits" description="Crypto deposit proofs. Open a record to inspect the coin, amount, TXID and screenshot before approving." onRefresh={load} loading={loading} />
+    <Notice message={message} /><Notice message={error} error />
+    <Panel title="Binance deposit queue" action={<div className="admin-toolbar" style={{ margin: 0 }}><Button tone={filter === 'pending' ? 'primary' : 'secondary'} onClick={() => setFilter('pending')}>Pending</Button><Button tone={filter === 'all' ? 'primary' : 'secondary'} onClick={() => setFilter('all')}>All</Button></div>}>
+      <Table data={tableData} columns={['crypto', 'amountDeposited', 'txid', 'network', 'status', 'createdAt']}
+        labels={{ crypto: 'Crypto', amountDeposited: 'Expected GHS', txid: 'TXID', network: 'Network', status: 'Status', createdAt: 'Submitted' }}
+        actions={row => <Button onClick={() => openDetail(row)}><span className="material-symbols-rounded">visibility</span>Details</Button>} />
+    </Panel>
+    {selected && <Panel title={`Binance deposit details · ${text(selected.txid, 'record')}`} action={<Button onClick={() => setSelected(null)}><span className="material-symbols-rounded">close</span>Close</Button>}>
+      <Notice message={formErr} error />
+      <div className="admin-status-list">
+        <div><span>User ID</span><b>{text(selected.userId)}</b></div>
+        <div><span>Crypto amount</span><b>{text(selected.cryptoAmount, '—')} {text(selected.coin, '')}</b></div>
+        <div><span>Expected GHS</span><b>GHS {text(selected.expectedGhsAmount, '—')}</b></div>
+        <div><span>TXID</span><b>{text(selected.txid)}</b></div>
+        <div><span>Network</span><b>{text(selected.network, '—')}</b></div>
+        <div><span>Sender address</span><b>{text(selected.senderAddress, '—')}</b></div>
+      </div>
+      {text(selected.userNote, '') !== '' && <p style={{ color: '#a99bb3', fontSize: 12 }}><b style={{ color: '#fff' }}>User note:</b> {text(selected.userNote)}</p>}
+      {text(selected.screenshotUrl, '') !== '' && <a href={text(selected.screenshotUrl)} target="_blank" rel="noreferrer"><img src={text(selected.screenshotUrl)} alt="Deposit proof screenshot" className="admin-proof" /></a>}
+      <div className="admin-form-grid" style={{ gridTemplateColumns: 'repeat(3,minmax(0,1fr))', marginTop: 12 }}>
+        <input type="number" min="0.01" step="0.01" value={credited} onChange={e => setCredited(e.target.value)} placeholder="Credited GHS amount" />
+        <input value={note} onChange={e => setNote(e.target.value)} placeholder="Admin note for approval" />
+        <input value={rejectReason} onChange={e => setRejectReason(e.target.value)} placeholder="Required rejection reason" />
+      </div>
+      <div className="admin-toolbar" style={{ marginTop: 12 }}>
+        <Button tone="primary" disabled={busy} onClick={approve}><span className="material-symbols-rounded">check</span>Approve & credit wallet</Button>
+        <Button tone="danger" disabled={busy} onClick={reject}><span className="material-symbols-rounded">close</span>Reject deposit</Button>
+      </div>
+    </Panel>}
+  </div>;
+}
+
+
 function SuperFinanceQueue({ page }: { page: SuperPageKey }) {
   const [data, setData] = useState<Row[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
-  const [filter, setFilter] = useState('pending');
   const endpoint = useMemo(() => {
     const qs = '?page=0&size=50';
     switch (page) {
       case 'transactions': return `/api/super-admin/transactions${qs}`;
-      case 'binance': return filter === 'pending' ? `/api/admin/binance-deposits/pending${qs}` : `/api/admin/binance-deposits${qs}`;
-      case 'momo': return filter === 'pending' ? `/api/admin/momo-deposits/pending${qs}` : `/api/admin/momo-deposits${qs}`;
       case 'affwithdrawals': return `/api/super-admin/affiliate-withdrawals${qs}`;
       case 'payouts': return `/api/super-admin/payout-requests${qs}`;
       case 'walletwithdrawals': return `/api/wallet/withdrawals?page=0&size=50`;
       default: return `/api/super-admin/transactions${qs}`;
     }
-  }, [page, filter]);
+  }, [page]);
   const load = async () => {
     setLoading(true);
     try {
@@ -826,9 +998,7 @@ function SuperFinanceQueue({ page }: { page: SuperPageKey }) {
     const reason = kind === 'reject' ? window.prompt('Rejection reason (optional)', '') ?? '' : '';
     try {
       let path = '';
-      if (page === 'binance') path = `/api/admin/binance-deposits/${encodeURIComponent(id)}/${kind}`;
-      else if (page === 'momo') path = `/api/admin/momo-deposits/${encodeURIComponent(id)}/${kind}`;
-      else if (page === 'affwithdrawals') path = `/api/super-admin/affiliate-withdrawals/${encodeURIComponent(id)}/${kind}`;
+      if (page === 'affwithdrawals') path = `/api/super-admin/affiliate-withdrawals/${encodeURIComponent(id)}/${kind}`;
       else if (page === 'payouts') path = `/api/super-admin/payout-requests/${encodeURIComponent(id)}/${kind}`;
       else if (page === 'walletwithdrawals') path = kind === 'settle'
         ? `/api/wallet/withdrawals/super-admin/${encodeURIComponent(id)}/settle`
@@ -840,14 +1010,14 @@ function SuperFinanceQueue({ page }: { page: SuperPageKey }) {
       await load();
     } catch (e) { setError(e instanceof Error ? e.message : 'Action failed'); }
   };
-  const title = page === 'transactions' ? 'Transactions' : page === 'binance' ? 'Binance deposits' : page === 'momo' ? 'MoMo deposits' : page === 'affwithdrawals' ? 'Affiliate withdrawals' : page === 'payouts' ? 'Payout requests' : 'Wallet withdrawals';
+  const title = page === 'transactions' ? 'Transactions' : page === 'affwithdrawals' ? 'Affiliate withdrawals' : page === 'payouts' ? 'Payout requests' : 'Wallet withdrawals';
   const desc = page === 'transactions' ? 'Paginated wallet transaction ledger.' : 'Review and action pending items.';
   const columns = data.length ? Object.keys(data[0]).filter(key => !['password', 'token'].includes(key)).slice(0, 8) : ['id', 'status', 'createdAt', 'amount'];
   const actionable = page !== 'transactions';
   return <div className="admin-stack">
     <Intro title={title} description={desc} onRefresh={load} loading={loading} />
     <Notice message={message} /><Notice message={error} error />
-    <Panel title={actionable ? 'Pending review' : 'Latest records'} action={(page === 'binance' || page === 'momo') ? <div className="admin-toolbar" style={{ margin: 0 }}><Button tone={filter === 'pending' ? 'primary' : 'secondary'} onClick={() => setFilter('pending')}>Pending</Button><Button tone={filter === 'all' ? 'primary' : 'secondary'} onClick={() => setFilter('all')}>All</Button></div> : undefined}>
+    <Panel title={actionable ? 'Pending review' : 'Latest records'}>
       <Table data={data} columns={columns} actions={actionable ? row => <><Button tone="primary" onClick={() => act(row, 'approve')}>Approve</Button>{page === 'walletwithdrawals' && <Button onClick={() => act(row, 'settle')}>Settle</Button>}{page === 'walletwithdrawals' && <Button onClick={() => act(row, 'mark-failed')}>Mark failed</Button>}{page === 'payouts' && <Button onClick={() => act(row, 'mark-paid')}>Mark paid</Button>}<Button tone="danger" onClick={() => act(row, 'reject')}>Reject</Button></> : undefined} />
     </Panel>
   </div>;
@@ -1065,6 +1235,8 @@ export default function AdminPanel({ role }: { role: Role }) {
       case 'commission': return <SuperCommission />;
       case 'chats': return <SuperChats />;
       case 'audit': return <SuperAudit />;
+      case 'momo': return <SuperMomoQueue />;
+      case 'binance': return <SuperBinanceQueue />;
       default: return <SuperFinanceQueue page={page as SuperPageKey} />;
     }
   })();
