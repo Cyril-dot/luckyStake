@@ -14,3 +14,21 @@
 .ls-ticket-booking small{display:block;color:#a99bb3;font-size:10px;text-transform:uppercase;letter-spacing:.08em}
 .ls-ticket-booking strong{color:var(--lime);font-size:18px;letter-spacing:.06em}
 .ls-ticket-booking button{padding:8px 14px;border:1px solid #6a5280;border-radius:6px;background:#2c2138;color:#fff;font-size:12px;font-weight:700;cursor:pointer}
+/* Bubbly premium buttons — LuckyStake admin */
+.admin-button{position:relative;overflow:hidden;border-radius:999px!important;min-height:40px!important;padding:0 20px!important;font-size:12px!important;letter-spacing:.02em;transition:transform .18s cubic-bezier(.34,1.56,.64,1),box-shadow .18s,background .18s,border-color .18s!important;box-shadow:0 4px 14px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.08)}
+.admin-button::before{content:'';position:absolute;top:0;left:-80%;width:60%;height:100%;background:linear-gradient(105deg,transparent,rgba(255,255,255,.22),transparent);transform:skewX(-20deg);transition:left .5s}
+.admin-button:hover{transform:translateY(-2px) scale(1.03);box-shadow:0 8px 22px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.12)}
+.admin-button:hover::before{left:130%}
+.admin-button:active{transform:translateY(0) scale(.97);box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.admin-button.primary{background:linear-gradient(135deg,#efff72,#c8ec3f 60%,#a8d42e)!important;border:0!important;color:#1a1520!important;font-weight:800!important;box-shadow:0 6px 20px rgba(214,238,70,.35),inset 0 1px 0 rgba(255,255,255,.4)}
+.admin-button.primary:hover{box-shadow:0 10px 28px rgba(214,238,70,.5),inset 0 1px 0 rgba(255,255,255,.4)}
+.admin-button.danger{background:linear-gradient(135deg,rgba(200,70,100,.25),rgba(160,40,70,.2))!important;box-shadow:0 4px 14px rgba(180,50,80,.2)}
+.admin-button.danger:hover{box-shadow:0 8px 22px rgba(200,70,100,.35)}
+.admin-actions .admin-button{min-height:34px!important;padding:0 14px!important;font-size:11px!important}
+.admin-refresh{border-radius:50%!important;transition:transform .2s,box-shadow .2s!important;box-shadow:0 4px 12px rgba(0,0,0,.3)}
+.admin-refresh:hover{transform:rotate(40deg) scale(1.08);box-shadow:0 6px 18px rgba(214,238,70,.25)}
+.admin-stat{border-radius:18px!important;transition:transform .22s cubic-bezier(.34,1.56,.64,1),border-color .2s,box-shadow .2s!important}
+.admin-stat:hover{transform:translateY(-4px) scale(1.02)!important;box-shadow:0 12px 30px rgba(0,0,0,.4),0 0 0 1px rgba(214,238,70,.3)}
+.admin-sidebar nav button{border-radius:12px!important;transition:all .18s cubic-bezier(.34,1.3,.64,1)!important}
+.admin-sidebar nav button:hover{transform:translateX(4px)}
+.admin-sidebar nav button.active{box-shadow:0 4px 16px rgba(214,238,70,.15)}
