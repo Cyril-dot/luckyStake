@@ -18,7 +18,7 @@
 .admin-sidebar .admin-nav-btn:hover .admin-nav-ico{color:var(--lime)}
 .admin-sidebar .admin-nav-ico{display:grid;place-items:center;width:24px;height:24px;flex-shrink:0;background:transparent;color:#8a7a99;transition:color .16s ease}
 .admin-sidebar .admin-nav-ico .material-symbols-rounded{font-size:22px}
-.admin-sidebar .admin-nav-label{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.admin-sidebar .admin-nav-label{flex:1 1 auto;min-width:0;white-space:normal;overflow:visible;text-overflow:clip;line-height:1.3}
 .admin-sidebar .admin-nav-btn.active{background:rgba(214,238,70,.09);color:var(--lime)}
 .admin-sidebar .admin-nav-btn.active::before{background:var(--lime);box-shadow:0 0 10px rgba(214,238,70,.6)}
 .admin-sidebar .admin-nav-btn.active:hover{background:rgba(214,238,70,.12)}
@@ -83,7 +83,3 @@
 /* Panel header polish */
 .admin-panel{border-radius:16px}
 .admin-panel-title h2{letter-spacing:.01em}
-
-.admin-sidebar .admin-nav::-webkit-scrollbar{width:5px}
-.admin-sidebar .admin-nav::-webkit-scrollbar-thumb{background:#3d2c52;border-radius:4px}
-.admin-sidebar .admin-nav::-webkit-scrollbar-track{background:transparent}
