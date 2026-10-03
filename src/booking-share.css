@@ -66,3 +66,67 @@
 .alphapay-otp-form input{height:56px;padding:0 16px;border:1px solid #514064;border-radius:14px;background:#181220;color:#fff;font-size:22px;font-weight:800;letter-spacing:.35em;text-align:center;outline:0;transition:border-color .15s,box-shadow .15s}
 .alphapay-otp-form input:focus{border-color:var(--lime);box-shadow:0 0 0 3px rgba(214,238,70,.12)}
 .alphapay-otp-form input::placeholder{letter-spacing:.1em;font-size:15px;font-weight:500}
+
+/* LuckyPay deposit wizard — premium stepper, mobile-first */
+.lp-deposit{display:flex;flex-direction:column;gap:20px;padding:4px 2px}
+.lp-steps{display:flex;list-style:none;margin:0;padding:0;gap:4px}
+.lp-steps li{flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;position:relative}
+.lp-steps li:not(:last-child)::after{content:'';position:absolute;top:17px;left:calc(50% + 22px);right:calc(-50% + 22px);height:2px;background:#3a2c4d;border-radius:2px}
+.lp-steps li.done:not(:last-child)::after{background:var(--lime)}
+.lp-step-dot{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:#241a31;border:2px solid #3a2c4d;color:#8a7a99;font:800 14px 'Rajdhani';position:relative;z-index:1;transition:all .25s}
+.lp-step-dot .material-symbols-rounded{font-size:18px}
+.lp-steps li.active .lp-step-dot{background:var(--lime);border-color:var(--lime);color:#18121e;box-shadow:0 0 18px rgba(214,238,70,.4)}
+.lp-steps li.done .lp-step-dot{background:rgba(214,238,70,.15);border-color:var(--lime);color:var(--lime)}
+.lp-step-label{font:700 11px 'Rajdhani';letter-spacing:.08em;text-transform:uppercase;color:#8a7a99}
+.lp-steps li.active .lp-step-label{color:var(--lime)}
+.lp-pane{display:flex;flex-direction:column;gap:16px;align-items:stretch}
+.lp-center{align-items:center;text-align:center}
+.lp-amount-hero{background:linear-gradient(135deg,#241a31,#1a1226);border:1px solid #3a2c4d;border-radius:20px;padding:22px;text-align:center}
+.lp-amount-hero small{font:700 11px 'Rajdhani';letter-spacing:.14em;color:#8a7a99}
+.lp-amount-input{display:flex;align-items:baseline;justify-content:center;gap:8px;margin-top:6px}
+.lp-amount-input span{font:800 24px 'Rajdhani';color:var(--lime)}
+.lp-amount-input input{width:180px;background:transparent;border:0;outline:0;color:#fff;font:800 44px 'Rajdhani';text-align:left}
+.lp-amount-input input::placeholder{color:#4a3d5c}
+.lp-chips{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.lp-chips button{padding:14px 8px;border:1px solid #3a2c4d;border-radius:14px;background:#241a31;color:#ddd2e3;font:800 15px 'Rajdhani';cursor:pointer;transition:all .18s}
+.lp-chips button.on{background:var(--lime);border-color:var(--lime);color:#18121e;box-shadow:0 4px 18px rgba(214,238,70,.3);transform:scale(1.03)}
+.lp-chips button:active{transform:scale(.97)}
+.lp-field{display:flex;flex-direction:column;gap:8px}
+.lp-field span{font:700 11px 'Rajdhani';letter-spacing:.1em;text-transform:uppercase;color:#8a7a99}
+.lp-field input{height:54px;padding:0 18px;border:1px solid #3a2c4d;border-radius:14px;background:#181220;color:#fff;font-size:17px;font-weight:600;outline:0;transition:border-color .15s,box-shadow .15s}
+.lp-field input:focus{border-color:var(--lime);box-shadow:0 0 0 3px rgba(214,238,70,.12)}
+.lp-cta{display:flex;align-items:center;justify-content:center;gap:10px;min-height:56px;border:0;border-radius:16px;background:linear-gradient(135deg,var(--lime),#b8d63a);color:#18121e;font:800 16px 'Rajdhani';letter-spacing:.04em;cursor:pointer;transition:transform .15s,box-shadow .15s,opacity .15s;box-shadow:0 6px 24px rgba(214,238,70,.25)}
+.lp-cta:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 10px 32px rgba(214,238,70,.35)}
+.lp-cta:active:not(:disabled){transform:scale(.98)}
+.lp-cta:disabled{opacity:.45;cursor:not-allowed;box-shadow:none}
+.lp-secure{display:flex!important;align-items:center;justify-content:center;gap:6px;color:#6b5c7d!important;font-size:11px!important;margin:0!important}
+.lp-secure .material-symbols-rounded{font-size:15px;color:var(--lime)}
+.lp-error{display:flex;align-items:center;gap:8px;margin:0!important;padding:12px 16px;border-radius:12px;background:rgba(255,80,80,.08);border:1px solid rgba(255,80,80,.25);color:#ff9a9a!important;font-size:13px!important}
+.lp-error .material-symbols-rounded{font-size:18px;flex-shrink:0}
+.lp-icon-ring{width:84px;height:84px;border-radius:50%;display:grid;place-items:center;background:rgba(214,238,70,.1);border:2px solid rgba(214,238,70,.3);margin:8px auto 0}
+.lp-icon-ring .material-symbols-rounded{font-size:38px;color:var(--lime)}
+.lp-icon-ring.pulse{animation:lp-pulse 1.6s ease-in-out infinite}
+@keyframes lp-pulse{0%,100%{box-shadow:0 0 0 0 rgba(214,238,70,.3)}50%{box-shadow:0 0 0 16px rgba(214,238,70,0)}}
+.lp-icon-ring.success{background:var(--lime);border-color:var(--lime)}
+.lp-icon-ring.success .material-symbols-rounded{color:#18121e;font-size:44px}
+.lp-pane h3{margin:0;color:#fff;font-size:22px;font-weight:800}
+.lp-sub{margin:0!important;color:#a99bb3!important;font-size:14px!important;line-height:1.6!important}
+.lp-sub b{color:#fff}
+.lp-otp{display:flex;flex-direction:column;gap:14px;width:100%;max-width:320px;margin:0 auto}
+.lp-otp input{height:68px;border:1px solid #3a2c4d;border-radius:16px;background:#181220;color:#fff;font-size:28px;font-weight:800;letter-spacing:.4em;text-align:center;outline:0;text-indent:.4em;transition:border-color .15s,box-shadow .15s}
+.lp-otp input:focus{border-color:var(--lime);box-shadow:0 0 0 4px rgba(214,238,70,.12)}
+.lp-otp input::placeholder{color:#4a3d5c;letter-spacing:.2em}
+.lp-alt{display:flex;align-items:center;justify-content:center;gap:20px}
+.lp-link{display:inline-flex;align-items:center;gap:4px;background:none;border:0;color:#8a7a99;font:700 13px 'Rajdhani';cursor:pointer;text-decoration:none;padding:8px}
+.lp-link:hover{color:var(--lime)}
+.lp-link .material-symbols-rounded{font-size:16px}
+.lp-wait{display:flex;flex-direction:column;align-items:center;gap:14px;padding:8px 0}
+.lp-wait p{margin:0!important;color:#8a7a99!important;font-size:13px!important;line-height:1.6!important}
+.lp-spinner{width:44px;height:44px;border-radius:50%;border:3px solid #3a2c4d;border-top-color:var(--lime);animation:ap-spin .8s linear infinite}
+@media(max-width:480px){
+  .lp-amount-input input{width:150px;font-size:38px}
+  .lp-chips{grid-template-columns:repeat(3,1fr);gap:8px}
+  .lp-chips button{padding:12px 6px;font-size:14px}
+  .lp-icon-ring{width:72px;height:72px}
+  .lp-icon-ring .material-symbols-rounded{font-size:32px}
+}
