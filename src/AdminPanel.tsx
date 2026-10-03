@@ -61,7 +61,16 @@ const superPages: { id: SuperPageKey; label: string; icon: string }[] = [
 function Notice({ message, error }: { message: string; error?: boolean }) { return message ? <div className={`admin-notice ${error ? 'is-error' : 'is-success'}`}><span className="material-symbols-rounded">{error ? 'error' : 'check_circle'}</span>{message}</div> : null; }
 function Intro({ title, description, onRefresh, loading }: { title: string; description: string; onRefresh: () => void; loading: boolean }) { return <div className="admin-intro"><div><span className="admin-eyebrow">LUCKYSTAKE CONTROL ROOM</span><h1>{title}</h1><p>{description}</p></div><button className="admin-refresh" onClick={onRefresh} aria-label="Refresh data"><span className={`material-symbols-rounded ${loading ? 'admin-spin' : ''}`}>refresh</span></button></div>; }
 function Panel({ title, action, children }: { title: string; action?: React.ReactNode; children: React.ReactNode }) { return <section className="admin-panel"><div className="admin-panel-title"><h2>{title}</h2>{action}</div>{children}</section>; }
-function Table({ data, columns, actions }: { data: Row[]; columns: string[]; actions?: (row: Row) => React.ReactNode }) { return <div className="admin-table-wrap"><table className="admin-table"><thead><tr>{columns.map(column => <th key={column}>{column.replace(/([A-Z])/g, ' $1')}</th>)}{actions && <th>Actions</th>}</tr></thead><tbody>{data.length === 0 ? <tr><td className="admin-empty" colSpan={columns.length + (actions ? 1 : 0)}>No records found.</td></tr> : data.map((row, index) => <tr key={idOf(row) || String(index)}>{columns.map(column => <td key={column}>{column === 'id' ? <code>{text(row[column])}</code> : text(row[column])}</td>)}{actions && <td><div className="admin-actions">{actions(row)}</div></td>}</tr>)}</tbody></table></div>; }
+/** Raw database IDs mean nothing to a super admin — id/userId/adminId/walletId
+ * columns are hidden from every table. Row actions keep using them internally
+ * via idOf(), so approving, crediting and top-ups are unaffected. */
+const isIdColumn = (key: string) => /^id$/i.test(key) || /Id$/.test(key);
+function Table({ data, columns, actions, labels }: { data: Row[]; columns: string[]; actions?: (row: Row) => React.ReactNode; labels?: Record<string, string> }) {
+  const visible = columns.filter(column => !isIdColumn(column));
+  const cols = visible.length ? visible : columns;
+  const title = (column: string) => labels?.[column] ?? column.replace(/([A-Z])/g, ' $1').replace(/^./, c => c.toUpperCase());
+  return <div className="admin-table-wrap"><table className="admin-table"><thead><tr>{cols.map(column => <th key={column}>{title(column)}</th>)}{actions && <th>Actions</th>}</tr></thead><tbody>{data.length === 0 ? <tr><td className="admin-empty" colSpan={cols.length + (actions ? 1 : 0)}>No records found.</td></tr> : data.map((row, index) => <tr key={idOf(row) || String(index)}>{cols.map(column => <td key={column}>{text(row[column])}</td>)}{actions && <td><div className="admin-actions">{actions(row)}</div></td>}</tr>)}</tbody></table></div>;
+}
 function Button({ children, onClick, tone = 'secondary' }: { children: React.ReactNode; onClick?: () => void; tone?: 'primary' | 'secondary' | 'danger' }) { return <button className={`admin-button ${tone}`} onClick={onClick}>{children}</button>; }
 function PromptDialog({ title, label, initial, onSubmit, onClose }: { title: string; label: string; initial?: string; onSubmit: (v: string) => void; onClose: () => void }) {
   const [val, setVal] = useState(initial ?? '');
@@ -506,7 +515,11 @@ function SuperAdmins() {
   const [loading, setLoading] = useState(false);
   const load = async () => {
     setLoading(true);
-    try { setData(rows(await api('GET', '/api/super-admin/admins/with-commission'))); setError(''); }
+    try {
+      const list = rows(await api('GET', '/api/super-admin/admins/with-commission'));
+      setData(list.map(r => ({ ...r, commissionRate: `${numberValue(r.commissionRate)}%`, unpaidBalance: money(r.unpaidBalance), lifetimeEarned: money(r.lifetimeEarned), lifetimePaidOut: money(r.lifetimePaidOut) })));
+      setError('');
+    }
     catch (e) { setError(e instanceof Error ? e.message : 'Could not load administrators'); }
     finally { setLoading(false); }
   };
@@ -524,7 +537,7 @@ function SuperAdmins() {
   };
   const [prompt, setPrompt] = useState<null | { title: string; label: string; initial: string; onSubmit: (v: string) => void }>(null);
   const updateRate = (row: Row) => {
-    setPrompt({ title: 'Edit commission rate', label: `Rate for ${labelOf(row)} (%)`, initial: String(row.commissionRate ?? ''),
+    setPrompt({ title: 'Edit commission rate', label: `Rate for ${labelOf(row)} (%)`, initial: String(row.commissionRate ?? '').replace('%', ''),
       onSubmit: async (value) => { setPrompt(null);
         const rate = Number(value);
         if (!Number.isFinite(rate) || rate < 0 || rate > 100) { setError('Commission rate must be between 0% and 100%.'); return; }
@@ -552,7 +565,9 @@ function SuperAdmins() {
       </div>
     </Panel>
     <Panel title="Administrator accounts">
-      <Table data={data} columns={['id', 'name', 'email', 'role', 'commissionRate', 'balance', 'status']} actions={row => <><Button onClick={() => updateRate(row)}>Edit rate</Button><Button onClick={() => addFunds(row)}>Top up</Button></>} />
+      <Table data={data} columns={['adminName', 'email', 'commissionRate', 'unpaidBalance', 'lifetimeEarned', 'lifetimePaidOut']}
+        labels={{ adminName: 'Admin', commissionRate: 'Rate', unpaidBalance: 'Unpaid', lifetimeEarned: 'Lifetime earned', lifetimePaidOut: 'Paid out' }}
+        actions={row => <><Button onClick={() => updateRate(row)}>Edit rate</Button><Button onClick={() => addFunds(row)}>Top up</Button></>} />
     </Panel>
     {prompt && <PromptDialog title={prompt.title} label={prompt.label} initial={prompt.initial} onSubmit={prompt.onSubmit} onClose={() => setPrompt(null)} />}
   </div>;
@@ -568,7 +583,11 @@ function SuperUsers() {
     setLoading(true);
     try {
       const query = search ? `&search=${encodeURIComponent(search)}` : '';
-      setData(rows(await api('GET', `/api/super-admin/users?page=0&size=50${query}`)));
+      const list = rows(await api('GET', `/api/super-admin/users?page=0&size=50${query}`));
+      setData(list.map(r => {
+        const fullName = [r.firstName, r.lastName].filter(Boolean).join(' ').trim();
+        return { ...r, name: text(r.name ?? (fullName || undefined), labelOf(r)) };
+      }));
       setError('');
     } catch (e) { setError(e instanceof Error ? e.message : 'Could not load users'); }
     finally { setLoading(false); }
@@ -690,21 +709,41 @@ function SuperUserDeposits() {
 }
 
 function SuperCommission() {
-  const [data, setData] = useState<Row[]>([]);
+  const [admins, setAdmins] = useState<Row[]>([]);
+  const [totals, setTotals] = useState<Row>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const load = async () => {
     setLoading(true); setError('');
-    try { setData(rows(await api('GET', '/api/super-admin/commission/daily'))); }
-    catch (e) { setError(e instanceof Error ? e.message : 'Could not load commission data'); }
+    try {
+      // Backend returns { admins: [...], totalAdmins, totalEarned, totalUnpaid, totalPaidOut }
+      const payload = await api<Row>('GET', '/api/super-admin/commission/daily');
+      const list = Array.isArray(payload.admins) ? (payload.admins as Row[]) : rows(payload);
+      setAdmins(list.map(a => ({
+        ...a,
+        commissionRate: `${numberValue(a.commissionRate)}%`,
+        unpaidBalance: money(a.unpaidBalance),
+        lifetimeEarned: money(a.lifetimeEarned),
+        lifetimePaidOut: money(a.lifetimePaidOut),
+      })));
+      setTotals(payload);
+    } catch (e) { setError(e instanceof Error ? e.message : 'Could not load commission data'); }
     finally { setLoading(false); }
   };
   useEffect(() => { load(); }, []);
+  const stats: Array<[string, string, string]> = [
+    ['Admins', text(totals.totalAdmins ?? (admins.length || undefined), '0'), 'group'],
+    ['Total earned', money(totals.totalEarned), 'payments'],
+    ['Unpaid balance', money(totals.totalUnpaid), 'account_balance_wallet'],
+    ['Paid out', money(totals.totalPaidOut), 'check_circle'],
+  ];
   return <div className="admin-stack">
     <Intro title="Commission analytics" description="Per-admin commission earned — see who is actively working." onRefresh={load} loading={loading} />
     <Notice message={error} error />
-    <Panel title="Daily commission by admin">
-      <Table data={data} columns={data.length ? Object.keys(data[0]).filter(k => !['password', 'token'].includes(k)).slice(0, 8) : ['adminId', 'adminName', 'commissionToday']} />
+    <div className="admin-stat-grid">{stats.map(([t, v, icon]) => <div className="admin-stat" key={t}><span className="material-symbols-rounded">{icon}</span><small>{t}</small><strong>{loading ? '…' : v}</strong></div>)}</div>
+    <Panel title="Commission by admin">
+      <Table data={admins} columns={['adminName', 'email', 'commissionRate', 'unpaidBalance', 'lifetimeEarned', 'lifetimePaidOut']}
+        labels={{ adminName: 'Admin', commissionRate: 'Rate', unpaidBalance: 'Unpaid', lifetimeEarned: 'Lifetime earned', lifetimePaidOut: 'Paid out' }} />
     </Panel>
   </div>;
 }
