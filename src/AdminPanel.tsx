@@ -4,7 +4,7 @@ import { api } from './api';
 type Role = 'admin' | 'super-admin';
 type Row = Record<string, unknown>;
 type AdminPageKey = 'overview' | 'matches' | 'random' | 'codes' | 'affiliate' | 'withdrawals' | 'guide';
-type SuperPageKey = 'dashboard' | 'admins' | 'users' | 'transactions' | 'binance' | 'momo' | 'userdeposits' | 'affwithdrawals' | 'payouts' | 'walletwithdrawals' | 'commission';
+type SuperPageKey = 'dashboard' | 'admins' | 'users' | 'transactions' | 'binance' | 'momo' | 'userdeposits' | 'affwithdrawals' | 'payouts' | 'walletwithdrawals' | 'commission' | 'chats' | 'audit';
 type PageKey = AdminPageKey | SuperPageKey;
 
 const text = (value: unknown, fallback = '—') => value === null || value === undefined || value === '' ? fallback : typeof value === 'object' ? JSON.stringify(value) : String(value);
@@ -20,6 +20,22 @@ const numberValue = (value: unknown) => { const n = Number(value); return Number
 const money = (value: unknown) => `₵${numberValue(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const idOf = (row: Row) => text(row.id ?? row.userId ?? row.adminId ?? row.transactionId, '');
 const labelOf = (row: Row) => text(row.name ?? row.email ?? row.username ?? row.userName ?? row.id, 'Unknown');
+// Referral links point at /signup?ref=CODE. The backend returns the link's
+// `code` (no full URL), so the shareable URL is built here — the code must be
+// in the copied link or attribution is silently lost.
+const referralUrlFor = (row: Row): string => {
+  const rawUrl = text(row.url ?? row.link);
+  if (rawUrl.startsWith('http')) return rawUrl;
+  const code = text(row.code ?? rawUrl);
+  if (typeof window === 'undefined' || !code) return rawUrl || code;
+  return `${window.location.origin}/signup?ref=${encodeURIComponent(code)}`;
+};
+const isUserActive = (row: Row) => {
+  if (row.active === true || row.isActive === true) return true;
+  if (row.active === false || row.isActive === false) return false;
+  const status = String(row.status ?? row.state ?? '').trim().toLowerCase();
+  return status === 'active' || status === 'enabled' || status === 'true' || status === '1';
+};
 
 function decodeToken(): Row {
   try {
@@ -56,6 +72,8 @@ const superPages: { id: SuperPageKey; label: string; icon: string }[] = [
   { id: 'payouts', label: 'Payout requests', icon: 'request_quote' },
   { id: 'walletwithdrawals', label: 'Wallet withdrawals', icon: 'payments' },
   { id: 'commission', label: 'Commission analytics', icon: 'monitoring' },
+  { id: 'chats', label: 'Upgrade chats', icon: 'forum' },
+  { id: 'audit', label: 'Audit trail', icon: 'fact_check' },
 ];
 
 function Notice({ message, error }: { message: string; error?: boolean }) { return message ? <div className={`admin-notice ${error ? 'is-error' : 'is-success'}`}><span className="material-symbols-rounded">{error ? 'error' : 'check_circle'}</span>{message}</div> : null; }
@@ -71,7 +89,7 @@ function Table({ data, columns, actions, labels }: { data: Row[]; columns: strin
   const title = (column: string) => labels?.[column] ?? column.replace(/([A-Z])/g, ' $1').replace(/^./, c => c.toUpperCase());
   return <div className="admin-table-wrap"><table className="admin-table"><thead><tr>{cols.map(column => <th key={column}>{title(column)}</th>)}{actions && <th>Actions</th>}</tr></thead><tbody>{data.length === 0 ? <tr><td className="admin-empty" colSpan={cols.length + (actions ? 1 : 0)}>No records found.</td></tr> : data.map((row, index) => <tr key={idOf(row) || String(index)}>{cols.map(column => <td key={column}>{text(row[column])}</td>)}{actions && <td><div className="admin-actions">{actions(row)}</div></td>}</tr>)}</tbody></table></div>;
 }
-function Button({ children, onClick, tone = 'secondary' }: { children: React.ReactNode; onClick?: () => void; tone?: 'primary' | 'secondary' | 'danger' }) { return <button className={`admin-button ${tone}`} onClick={onClick}>{children}</button>; }
+function Button({ children, onClick, tone = 'secondary', disabled }: { children: React.ReactNode; onClick?: () => void; tone?: 'primary' | 'secondary' | 'danger'; disabled?: boolean }) { return <button className={`admin-button ${tone}`} onClick={onClick} disabled={disabled}>{children}</button>; }
 function PromptDialog({ title, label, initial, onSubmit, onClose }: { title: string; label: string; initial?: string; onSubmit: (v: string) => void; onClose: () => void }) {
   const [val, setVal] = useState(initial ?? '');
   return <div className="admin-modal-scrim" onClick={onClose}><div className="admin-modal" onClick={e => e.stopPropagation()}>
@@ -359,6 +377,7 @@ function AdminBookingCodes() {
 
 function AdminAffiliate() {
   const [stats, setStats] = useState<Row>({});
+  const [daily, setDaily] = useState<Row>({});
   const [links, setLinks] = useState<Row[]>([]);
   const [referred, setReferred] = useState<Row[]>([]);
   const [loading, setLoading] = useState(false);
@@ -367,12 +386,14 @@ function AdminAffiliate() {
   const load = async () => {
     setLoading(true); setError('');
     try {
-      const [s, l, r] = await Promise.allSettled([
+      const [s, d, l, r] = await Promise.allSettled([
         api('GET', '/api/admin/affiliate/stats'),
+        api('GET', '/api/admin/affiliate/commission/daily-summary'),
         api('GET', '/api/admin/affiliate/links'),
         api('GET', '/api/admin/affiliate/referred-users'),
       ]);
       if (s.status === 'fulfilled') setStats((s.value || {}) as Row);
+      if (d.status === 'fulfilled') setDaily((d.value || {}) as Row);
       if (l.status === 'fulfilled') setLinks(rows(l.value));
       if (r.status === 'fulfilled') setReferred(rows(r.value));
     } catch (e) { setError(e instanceof Error ? e.message : 'Could not load affiliate'); }
@@ -392,22 +413,84 @@ function AdminAffiliate() {
     <Intro title="Affiliate" description="Referral stats, links and commission payouts." onRefresh={load} loading={loading} />
     <Notice message={error} error /><Notice message={message} />
     <div className="admin-stat-grid">
-      {[['Referrals', text(stats.totalReferrals, '0'), 'group_add'], ['Lifetime commission', money(stats.lifetimeCommission), 'payments'], ['Balance', money(stats.commissionAmount ?? stats.availableBalance), 'account_balance_wallet'], ['Links', String(links.length), 'link']].map(([t, v, icon]) =>
+      {[['Referrals', text(stats.totalReferrals, '0'), 'group_add'], ['Lifetime commission', money(stats.lifetimeCommission), 'payments'], ['Balance owed', money(stats.commissionBalance), 'account_balance_wallet'], ["Today's deposits", money(daily.totalDeposits), 'savings'], ['Commission today', money(daily.commissionAmount), 'today'], ['Links', String(links.length), 'link']].map(([t, v, icon]) =>
         <div className="admin-stat" key={t}><span className="material-symbols-rounded">{icon}</span><small>{t}</small><strong>{loading ? '…' : v}</strong></div>)}
     </div>
     <div className="admin-two-col">
       <Panel title="Referral links" action={<Button onClick={createLink}><span className="material-symbols-rounded">add_link</span>New link</Button>}>
-        {links.length ? links.map((l, i) => <div className="admin-status-list" key={i}><div><span><code>{text(l.code ?? l.link)}</code></span><b><button className="admin-button" onClick={() => { navigator.clipboard?.writeText(text(l.url ?? l.link)); setMessage('Link copied.'); }}>Copy</button></b></div></div>) : <p style={{ color: '#a99bb3', fontSize: 12 }}>No links yet.</p>}
+        {links.length ? links.map((l, i) => { const url = referralUrlFor(l); return <div className="admin-status-list" key={i}><div><span><code>{url}</code></span><b><button className="admin-button" onClick={() => { navigator.clipboard?.writeText(url); setMessage('Referral link copied.'); }}>Copy</button></b></div></div>; }) : <p style={{ color: '#a99bb3', fontSize: 12 }}>No links yet.</p>}
       </Panel>
       <Panel title="Commission" action={<Button tone="primary" onClick={requestPayout}><span className="material-symbols-rounded">request_quote</span>Request payout</Button>}>
         <div className="admin-status-list">
-          <div><span>Commission today</span><b>{money(stats.commissionToday)}</b></div>
+          <div><span>Commission today</span><b>{money(daily.commissionAmount)}</b></div>
+          <div><span>Deposits today ({text(daily.totalDepositCount, '0')})</span><b>{money(daily.totalDeposits)}</b></div>
+          <div><span>Balance owed</span><b>{money(stats.commissionBalance)}</b></div>
+          <div><span>Lifetime earned</span><b>{money(stats.totalEarnedLifetime ?? stats.lifetimeCommission)}</b></div>
+          <div><span>Lifetime paid out</span><b>{money(stats.totalPaidOutLifetime)}</b></div>
           <div><span>Referred users</span><b>{text(stats.totalReferrals, String(referred.length))}</b></div>
         </div>
       </Panel>
     </div>
+    <Panel title="Today's referred deposits">
+      <Table data={rows(daily.depositsByUser).map(u => ({ ...u, name: [u.firstName, u.lastName].filter(Boolean).join(' ').trim() || text(u.email, '—'), amount: money(u.depositTotal) }))} columns={['name', 'email', 'country', 'amount']} labels={{ name: 'User', email: 'Email', country: 'Country', amount: 'Deposited' }} />
+    </Panel>
+    <AffiliateInsights />
+    <AffiliatePayoutHistory />
     <Panel title="Referred users"><Table data={referred} columns={['id', 'name', 'email', 'createdAt']} /></Panel>
   </div>;
+}
+
+function AffiliateInsights() {
+  const [tab, setTab] = useState<'commission' | 'deposits'>('commission');
+  const [range, setRange] = useState<'daily' | 'weekly' | 'monthly'>('daily');
+  const [commission, setCommission] = useState<Row[]>([]);
+  const [deposits, setDeposits] = useState<Row[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const load = async () => {
+    setLoading(true); setError('');
+    try {
+      if (tab === 'commission') {
+        const path = range === 'daily' ? '/api/admin/affiliate/commission/daily?days=30' : range === 'weekly' ? '/api/admin/affiliate/commission/weekly?weeks=12' : '/api/admin/affiliate/commission/monthly?months=12';
+        setCommission(rows(await api('GET', path)));
+      } else {
+        const path = range === 'daily' ? '/api/admin/affiliate/deposits/by-country/daily?days=30' : range === 'weekly' ? '/api/admin/affiliate/deposits/by-country/weekly?weeks=12' : '/api/admin/affiliate/deposits/by-country/monthly?months=12';
+        setDeposits(rows(await api('GET', path)));
+      }
+    } catch (e) { setError(e instanceof Error ? e.message : 'Could not load insights'); }
+    finally { setLoading(false); }
+  };
+  useEffect(() => { load(); }, [tab, range]);
+  const total = (list: Row[]) => list.reduce((t, r) => t + numberValue(r.amount ?? r.total ?? r.commissionAmount), 0);
+  return <Panel title="Revenue insights" action={<div className="admin-toolbar" style={{ margin: 0 }}>
+    <Button tone={tab === 'commission' ? 'primary' : undefined} onClick={() => setTab('commission')}>Commission</Button>
+    <Button tone={tab === 'deposits' ? 'primary' : undefined} onClick={() => setTab('deposits')}>Deposits by country</Button>
+    {(['daily', 'weekly', 'monthly'] as const).map(r => <Button key={r} tone={range === r ? 'primary' : undefined} onClick={() => setRange(r)}>{r}</Button>)}
+  </div>}>
+    <Notice message={error} error />
+    {loading ? <p style={{ color: '#a99bb3', fontSize: 12 }}>Loading…</p> :
+      tab === 'commission'
+        ? <><p style={{ color: '#a99bb3', fontSize: 12 }}>Total {range} commission: <b style={{ color: '#fff' }}>{money(total(commission))}</b></p>
+            <Table data={commission} columns={['periodLabel', 'periodStart', 'amount', 'currency']} labels={{ periodLabel: 'Period', periodStart: 'Start', amount: 'Amount', currency: 'Currency' }} /></>
+        : <><p style={{ color: '#a99bb3', fontSize: 12 }}>Total deposits: <b style={{ color: '#fff' }}>{money(total(deposits))}</b></p>
+            <Table data={deposits} columns={['periodLabel', 'country', 'amount', 'depositCount']} labels={{ periodLabel: 'Period', country: 'Country', amount: 'Amount', depositCount: 'Deposits' }} /></>}
+  </Panel>;
+}
+
+function AffiliatePayoutHistory() {
+  const [data, setData] = useState<Row[]>([]);
+  const [loading, setLoading] = useState(false);
+  const load = async () => {
+    setLoading(true);
+    try { setData(rows(await api('GET', '/api/admin/affiliate/payout-requests?page=0&size=20'))); }
+    catch { setData([]); }
+    finally { setLoading(false); }
+  };
+  useEffect(() => { load(); }, []);
+  return <Panel title="Affiliate payout history" action={<Button onClick={load}>Refresh</Button>}>
+    {loading ? <p style={{ color: '#a99bb3', fontSize: 12 }}>Loading…</p> :
+      <Table data={data.map(r => ({ ...r, amount: money(r.amount) }))} columns={['amount', 'status', 'method', 'createdAt', 'processedAt']} labels={{ amount: 'Amount', status: 'Status', method: 'Method', createdAt: 'Requested', processedAt: 'Processed' }} />}
+  </Panel>;
 }
 
 function AdminWithdrawals() {
@@ -595,8 +678,9 @@ function SuperUsers() {
   useEffect(() => { load(); }, []);
   const toggle = async (row: Row) => {
     const id = idOf(row);
-    const active = String(row.status ?? row.active ?? '').toLowerCase().includes('active') || row.active === true;
-    try { await api('POST', `/api/v1/super-admin/users/${encodeURIComponent(id)}/${active ? 'deactivate' : 'activate'}`); await load(); }
+    const active = isUserActive(row);
+    if (!window.confirm(`Are you sure you want to ${active ? 'deactivate' : 'activate'} this account?`)) return;
+    try { await api('PATCH', `/api/v1/super-admin/users/${encodeURIComponent(id)}/${active ? 'deactivate' : 'activate'}`); setMessage(`Account ${active ? 'deactivated' : 'activated'}.`); await load(); }
     catch (e) { setError(e instanceof Error ? e.message : 'Could not update user'); }
   };
   const [creditPrompt, setCreditPrompt] = useState<null | { row: Row }>(null);
@@ -616,7 +700,7 @@ function SuperUsers() {
         <input placeholder="Search by name or email" value={search} onChange={e => setSearch(e.target.value)} onKeyDown={e => e.key === 'Enter' && load()} />
         <Button onClick={load}><span className="material-symbols-rounded">search</span>Search</Button>
       </div>
-      <Table data={data} columns={['id', 'name', 'email', 'role', 'status', 'createdAt']} actions={row => <><Button onClick={() => toggle(row)}>{String(row.status ?? row.active ?? '').toLowerCase().includes('active') ? 'Deactivate' : 'Activate'}</Button><Button onClick={() => credit(row)}>Credit</Button></>} />
+      <Table data={data} columns={['id', 'name', 'email', 'role', 'status', 'createdAt']} actions={row => <><Button onClick={() => toggle(row)}>{isUserActive(row) ? 'Deactivate' : 'Activate'}</Button><Button onClick={() => credit(row)}>Credit</Button></>} />
     </Panel>
     {creditPrompt && <PromptDialog title="Credit user" label={`Amount to credit ${labelOf(creditPrompt.row)} (GHS)`} initial="50" onSubmit={doCredit} onClose={() => setCreditPrompt(null)} />}
   </div>;
@@ -715,6 +799,8 @@ function SuperCommission() {
   const [totals, setTotals] = useState({ admins: 0, earned: 0, unpaid: 0, deposits: 0 });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
+  const [settling, setSettling] = useState(false);
   const load = async (day: string) => {
     setLoading(true); setError('');
     try {
@@ -726,6 +812,7 @@ function SuperCommission() {
       setTotals({ admins: list.length, earned: sum('commissionEarned'), unpaid: sum('commissionBalance'), deposits: sum('totalDeposits') });
       setData(list.map(r => ({
         ...r,
+        unpaidRaw: numberValue(r.commissionBalance),
         commissionPercent: `${numberValue(r.commissionPercent)}%`,
         commissionEarned: money(r.commissionEarned),
         commissionBalance: money(r.commissionBalance),
@@ -735,6 +822,27 @@ function SuperCommission() {
     finally { setLoading(false); }
   };
   useEffect(() => { load(date); }, [date]);
+  const markPaid = async (row: Row) => {
+    const name = text(row.adminName ?? row.adminEmail, 'this admin');
+    if (!window.confirm(`Mark ${name}'s commission for ${date} as paid?`)) return;
+    setSettling(true); setError(''); setMessage('');
+    try {
+      await api('POST', `/api/super-admin/commission/admins/${encodeURIComponent(idOf(row))}/pay?date=${encodeURIComponent(date)}`);
+      setMessage(`Commission settled for ${name}.`);
+      await load(date);
+    } catch (e) { setError(e instanceof Error ? e.message : 'Settlement failed'); }
+    finally { setSettling(false); }
+  };
+  const clearDay = async () => {
+    if (!window.confirm(`Mark ALL unpaid commission for ${date} as paid? This settles every admin.`)) return;
+    setSettling(true); setError(''); setMessage('');
+    try {
+      await api('POST', `/api/super-admin/commission/clear?date=${encodeURIComponent(date)}`);
+      setMessage(`All commission for ${date} marked as paid.`);
+      await load(date);
+    } catch (e) { setError(e instanceof Error ? e.message : 'Clear failed'); }
+    finally { setSettling(false); }
+  };
   const stats: Array<[string, string, string]> = [
     ['Admins', String(totals.admins), 'group'],
     ['Commission earned', money(totals.earned), 'payments'],
@@ -743,11 +851,92 @@ function SuperCommission() {
   ];
   return <div className="admin-stack">
     <Intro title="Commission analytics" description="Per-admin commission earned — see who is actively working." onRefresh={() => load(date)} loading={loading} />
-    <Notice message={error} error />
+    <Notice message={error} error /><Notice message={message} />
     <div className="admin-stat-grid">{stats.map(([t, v, icon]) => <div className="admin-stat" key={t}><span className="material-symbols-rounded">{icon}</span><small>{t}</small><strong>{loading ? '…' : v}</strong></div>)}</div>
-    <Panel title={`Commission by admin — ${date}`} action={<div className="admin-toolbar" style={{ margin: 0 }}><input type="date" value={date} max={today()} onChange={e => { if (e.target.value) setDate(e.target.value); }} aria-label="Commission date" /></div>}>
+    <Panel title={`Commission by admin — ${date}`} action={<div className="admin-toolbar" style={{ margin: 0 }}><input type="date" value={date} max={today()} onChange={e => { if (e.target.value) setDate(e.target.value); }} aria-label="Commission date" /><Button onClick={clearDay} disabled={settling || totals.unpaid <= 0}><span className="material-symbols-rounded">done_all</span>{settling ? 'Settling…' : 'Settle day'}</Button></div>}>
       <Table data={data} columns={['adminName', 'adminEmail', 'commissionPercent', 'commissionEarned', 'commissionBalance', 'totalDeposits', 'depositCount']}
-        labels={{ adminName: 'Admin', adminEmail: 'Email', commissionPercent: 'Rate', commissionEarned: 'Earned', commissionBalance: 'Unpaid', totalDeposits: 'Deposits', depositCount: 'Deposit count' }} />
+        labels={{ adminName: 'Admin', adminEmail: 'Email', commissionPercent: 'Rate', commissionEarned: 'Earned', commissionBalance: 'Unpaid', totalDeposits: 'Deposits', depositCount: 'Deposit count' }}
+        actions={row => numberValue(row.unpaidRaw) > 0 ? <Button onClick={() => markPaid(row)} disabled={settling}>{settling ? '…' : 'Mark paid'}</Button> : null} />
+    </Panel>
+  </div>;
+}
+
+function SuperChats() {
+  const [chats, setChats] = useState<Row[]>([]);
+  const [msgs, setMsgs] = useState<Row[]>([]);
+  const [active, setActive] = useState<Row | null>(null);
+  const [draft, setDraft] = useState('');
+  const [rate, setRate] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
+  const load = async () => {
+    setLoading(true); setError('');
+    try { setChats(rows(await api('GET', '/api/super-admin/upgrade-chats/pending'))); }
+    catch (e) { setError(e instanceof Error ? e.message : 'Could not load chats'); }
+    finally { setLoading(false); }
+  };
+  useEffect(() => { load(); }, []);
+  const open = async (row: Row) => {
+    setActive(row); setMsgs([]);
+    try { setMsgs(rows(await api('GET', `/api/super-admin/upgrade-chats/${encodeURIComponent(idOf(row))}/messages`))); }
+    catch { setMsgs([]); }
+  };
+  const send = async () => {
+    if (!active || !draft.trim()) return;
+    try {
+      await api('POST', `/api/super-admin/upgrade-chats/${encodeURIComponent(idOf(active))}/messages`, { content: draft.trim() });
+      setDraft(''); setMessage('Reply sent.'); open(active);
+    } catch (e) { setError(e instanceof Error ? e.message : 'Send failed'); }
+  };
+  const setCommission = async () => {
+    if (!active) return;
+    const value = Number(rate);
+    if (!Number.isFinite(value) || value < 0 || value > 100) { setError('Enter a commission rate between 0 and 100.'); return; }
+    try {
+      await api('POST', `/api/super-admin/upgrade-chats/${encodeURIComponent(idOf(active))}/set-commission`, { commissionRate: value });
+      setMessage(`Commission set to ${value}%.`); setRate(''); load();
+    } catch (e) { setError(e instanceof Error ? e.message : 'Could not set commission'); }
+  };
+  return <div className="admin-stack">
+    <Intro title="Upgrade chats" description="Review pending upgrade conversations and commission requests." onRefresh={load} loading={loading} />
+    <Notice message={error} error /><Notice message={message} />
+    <Panel title="Pending chats">
+      {chats.length === 0 ? <p style={{ color: '#a99bb3', fontSize: 12 }}>{loading ? 'Loading…' : 'No pending chats.'}</p> :
+        chats.map((r, i) => <div className="admin-status-list" key={idOf(r) || i}><div><span>{text(r.adminEmail ?? r.email ?? r.subject, 'Chat')}<br /><small style={{ color: '#a99bb3' }}>{text(r.updatedAt ?? r.createdAt)}</small></span><b><span style={{ marginRight: 8 }}>{text(r.status)}</span><button className="admin-button" onClick={() => open(r)}>Open</button></b></div></div>)}
+    </Panel>
+    {active && <Panel title={`Chat — ${text(active.adminEmail ?? active.email ?? 'conversation')}`} action={<Button onClick={() => setActive(null)}>Close</Button>}>
+      {msgs.length === 0 ? <p style={{ color: '#a99bb3', fontSize: 12 }}>No messages yet.</p> :
+        msgs.map((m, i) => <div className="admin-status-list" key={i}><div><span><b>{text(m.sender ?? m.from, 'Message')}</b><br />{text(m.content ?? m.body ?? m.message)}</span><b><small style={{ color: '#a99bb3' }}>{text(m.createdAt)}</small></b></div></div>)}
+      <div className="admin-toolbar" style={{ marginTop: 12 }}>
+        <input value={draft} onChange={e => setDraft(e.target.value)} placeholder="Type a reply…" onKeyDown={e => { if (e.key === 'Enter') send(); }} />
+        <Button tone="primary" onClick={send}>Send</Button>
+      </div>
+      <div className="admin-toolbar">
+        <input value={rate} onChange={e => setRate(e.target.value)} placeholder="Commission % (0–100)" inputMode="decimal" style={{ maxWidth: 200 }} />
+        <Button onClick={setCommission}>Set commission</Button>
+      </div>
+    </Panel>}
+  </div>;
+}
+
+function SuperAudit() {
+  const [data, setData] = useState<Row[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const load = async () => {
+    setLoading(true); setError('');
+    try { setData(rows(await api('GET', '/api/super-admin/audit-log?page=0&size=50'))); }
+    catch (e) { setError(e instanceof Error ? e.message : 'Could not load audit trail'); }
+    finally { setLoading(false); }
+  };
+  useEffect(() => { load(); }, []);
+  return <div className="admin-stack">
+    <Intro title="Audit trail" description="Staff actions across the platform, newest first." onRefresh={load} loading={loading} />
+    <Notice message={error} error />
+    <Panel title="Recent activity">
+      <Table data={data} columns={['actor', 'actorEmail', 'action', 'entity', 'createdAt']}
+        labels={{ actor: 'Actor', actorEmail: 'Email', action: 'Action', entity: 'Entity', createdAt: 'When' }} />
     </Panel>
   </div>;
 }
@@ -782,6 +971,8 @@ export default function AdminPanel({ role }: { role: Role }) {
       case 'users': return <SuperUsers />;
       case 'userdeposits': return <SuperUserDeposits />;
       case 'commission': return <SuperCommission />;
+      case 'chats': return <SuperChats />;
+      case 'audit': return <SuperAudit />;
       default: return <SuperFinanceQueue page={page as SuperPageKey} />;
     }
   })();

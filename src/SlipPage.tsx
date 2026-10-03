@@ -173,10 +173,101 @@ function SlipStyles() {
     .ls-ticket-match{font-size:16px!important;line-height:1.15!important}.ls-ticket-match span{font-weight:700!important}.ls-ticket-match em{color:#a99db2!important;font-style:normal!important;font-weight:500!important}.ls-ticket-match b{min-width:42px;text-align:right;font-size:15px!important;line-height:1!important}.ls-ticket-meta{font-size:12px!important;flex-wrap:wrap!important}.ls-ticket-pick{font-size:13px!important}.ls-ticket-pick strong{min-width:42px;text-align:right;color:#d6ee46!important;font-size:15px!important;line-height:1!important}.ls-live-label{color:#d6ee46!important;font-size:12px!important}.ls-ended-check{color:#39c878!important;font-size:18px!important;line-height:1!important}.ls-live-score{color:#fff!important;font-size:14px!important;margin-left:3px!important}.ls-ticket-actions .ls-primary{width:100%!important}@media(max-width:560px){.ls-ticket-match{font-size:17px!important}.ls-ticket-match b{font-size:16px!important}.ls-ticket-meta{font-size:13px!important}.ls-ticket-pick{padding:10px!important;font-size:14px!important}.ls-ticket-pick strong{font-size:16px!important}.ls-ticket-head small,.ls-ticket-head strong{font-size:12px!important}.ls-ticket-total span{font-size:12px!important}.ls-ticket-total strong{font-size:16px!important}.ls-ticket-total .return strong{font-size:28px!important}}
     .ls-ticket{cursor:pointer;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}.ls-ticket:active{transform:scale(.99)}.ls-ticket-open{border-color:#5a456b!important}.ls-ticket-won{border-color:#d6ee46!important;background:linear-gradient(145deg,#2b2531,#21182e)!important;box-shadow:0 12px 30px rgba(214,238,70,.12)!important}.ls-ticket-won .ls-ticket-status{background:#d6ee46!important;color:#211b29!important}.ls-ticket-status-wrap{display:flex;align-items:center;justify-content:flex-end;gap:7px;flex-wrap:wrap}.ls-ticket-win-badge{display:inline-flex;align-items:center;gap:4px;color:#d6ee46;font-size:10px;font-weight:900;letter-spacing:.04em}.ls-ticket-win-badge img{width:22px;height:22px;object-fit:contain;filter:drop-shadow(0 2px 3px rgba(0,0,0,.35))}.ls-ticket-won .ls-ticket-total .return{border-color:rgba(214,238,70,.55)!important}.ls-ticket-lost{border-color:#7b4050!important;background:linear-gradient(145deg,#291c2b,#21182e)!important}.ls-ticket-lost .ls-ticket-status{background:#4a2734!important;color:#ffb4be!important}.ls-ticket-lost .ls-ticket-total .return strong{color:#ff9cab!important}.ls-ticket-actions{pointer-events:auto!important}
     .ls-ticket-total .return{display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:space-between!important;gap:12px!important;white-space:nowrap!important;text-align:left!important}.ls-ticket-total .return strong{margin-left:auto!important;color:#d6ee46!important;font-family:'Rajdhani',sans-serif!important;font-size:20px!important;font-weight:600!important;letter-spacing:.01em!important}
+    /* Cashout dialog */
+    .ls-cashout-scrim{position:fixed;inset:0;z-index:90;display:grid;place-items:center;padding:18px;background:rgba(10,6,16,.72);backdrop-filter:blur(3px)}
+    .ls-cashout-dialog{width:min(420px,100%);border:1px solid #5a456b;border-radius:14px;background:linear-gradient(145deg,#2b2138,#1c1527);color:#fff;box-shadow:0 24px 60px rgba(0,0,0,.5);overflow:hidden;font-family:'Rajdhani',Manrope,system-ui,sans-serif}
+    .ls-cashout-head{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid #433253}
+    .ls-cashout-head h3{margin:0;font-size:18px;font-weight:800}
+    .ls-cashout-x{border:0;background:transparent;color:#a99db2;font-size:20px;cursor:pointer;line-height:1}
+    .ls-cashout-body{padding:18px;display:grid;gap:14px}
+    .ls-cashout-amount{text-align:center;padding:14px;border-radius:10px;background:rgba(214,238,70,.08);border:1px solid rgba(214,238,70,.25)}
+    .ls-cashout-amount small{display:block;color:#a99db2;font-size:11px;letter-spacing:.08em;text-transform:uppercase}
+    .ls-cashout-amount strong{display:block;margin-top:4px;font-size:34px;color:#d6ee46;font-weight:800}
+    .ls-cashout-modes{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .ls-cashout-modes button{padding:11px;border:1px solid #5a456b;border-radius:8px;background:#21182e;color:#b7abbf;font:800 13px 'Rajdhani';cursor:pointer}
+    .ls-cashout-modes button.active{border-color:#d6ee46;background:rgba(214,238,70,.12);color:#d6ee46}
+    .ls-cashout-slider label{display:flex;justify-content:space-between;color:#a99db2;font-size:12px;margin-bottom:6px}
+    .ls-cashout-slider label b{color:#d6ee46}
+    .ls-cashout-slider input{width:100%;accent-color:#d6ee46}
+    .ls-cashout-meta{display:flex;justify-content:space-between;color:#a99db2;font-size:12px}
+    .ls-cashout-meta b{color:#fff}
+    .ls-cashout-confirm{padding:14px;border:0;border-radius:8px;background:#d6ee46;color:#211b29;font:800 15px 'Rajdhani';cursor:pointer}
+    .ls-cashout-confirm:disabled{opacity:.55;cursor:wait}
+    .ls-cashout-error{padding:10px 12px;border-radius:8px;background:rgba(174,64,91,.16);border:1px solid #854459;color:#ffb7c5;font-size:12px}
+    .ls-cashout-success{text-align:center;padding:26px 18px;display:grid;gap:10px;justify-items:center}
+    .ls-cashout-success .material-symbols-rounded{font-size:46px;color:#d6ee46}
+    .ls-cashout-success h3{margin:0;font-size:20px}
+    .ls-cashout-success strong{font-size:30px;color:#d6ee46}
+    .ls-cashout-success p{margin:0;color:#a99db2;font-size:12px}
   `}</style>;
 }
 
-function TicketCard({ bet, matchUpdates, onDetails, onCashout, cashingOut }: { bet: SlipBet; matchUpdates: Record<string, MatchRow>; onDetails: () => void; onCashout: () => void; cashingOut: boolean }) {
+function CashoutDialog({ bet, onClose, onDone }: { bet: SlipBet; onClose: () => void; onDone: () => void }) {
+  const [mode, setMode] = useState<'full' | 'partial'>('full');
+  const [pct, setPct] = useState(50);
+  const [preview, setPreview] = useState<number | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState<number | null>(null);
+
+  useEffect(() => {
+    let dead = false;
+    (async () => {
+      try {
+        const p = await api<Record<string, unknown>>('GET', `/api/bets/${encodeURIComponent(bet.id)}/cashout/preview?pct=100`);
+        const base = Number(p.estimatedPayout ?? p.amount ?? p.cashoutAmount ?? NaN);
+        if (!dead) setPreview(Number.isFinite(base) ? base : Math.max(0, bet.potentialReturn * 0.5));
+      } catch {
+        if (!dead) setPreview(Math.max(0, bet.potentialReturn * 0.5));
+      }
+    })();
+    return () => { dead = true; };
+  }, [bet.id]);
+
+  const offer = preview == null ? null : mode === 'full' ? preview : Math.round(preview * pct) / 100;
+
+  const confirm = async () => {
+    if (busy || offer == null) return;
+    setBusy(true); setError('');
+    try {
+      const updated = mode === 'full'
+        ? await api<Record<string, unknown>>('POST', `/api/bets/${encodeURIComponent(bet.id)}/cashout/full`)
+        : await api<Record<string, unknown>>('POST', `/api/bets/${encodeURIComponent(bet.id)}/cashout/partial?pct=${pct}`);
+      const payout = Number(updated?.payout ?? updated?.cashoutAmount ?? offer);
+      setSuccess(Number.isFinite(payout) ? payout : offer);
+    } catch (e) { setError(e instanceof Error ? e.message : 'Cashout failed. Try again.'); }
+    finally { setBusy(false); }
+  };
+
+  return <div className="ls-cashout-scrim" onClick={onClose}>
+    <div className="ls-cashout-dialog" onClick={e => e.stopPropagation()}>
+      <div className="ls-cashout-head"><h3>Cash out</h3><button type="button" className="ls-cashout-x" onClick={onClose} aria-label="Close">×</button></div>
+      {success != null ? <div className="ls-cashout-success">
+        <span className="material-symbols-rounded">check_circle</span>
+        <h3>Cashout successful</h3>
+        <strong>{money(success)}</strong>
+        <p>Credited to your wallet.</p>
+        <button type="button" className="ls-cashout-confirm" onClick={() => { onDone(); onClose(); }}>Done</button>
+      </div> : <div className="ls-cashout-body">
+        <div className="ls-cashout-amount"><small>{mode === 'full' ? 'Full cashout — you get' : `Partial cashout (${pct}%) — you get`}</small><strong>{offer == null ? '…' : money(offer)}</strong></div>
+        <div className="ls-cashout-modes">
+          <button type="button" className={mode === 'full' ? 'active' : ''} onClick={() => setMode('full')}>Full</button>
+          <button type="button" className={mode === 'partial' ? 'active' : ''} onClick={() => setMode('partial')}>Partial</button>
+        </div>
+        {mode === 'partial' && <div className="ls-cashout-slider">
+          <label><span>Cashout percentage</span><b>{pct}%</b></label>
+          <input type="range" min={10} max={90} step={5} value={pct} onChange={e => setPct(Number(e.target.value))} aria-label="Cashout percentage" />
+        </div>}
+        <div className="ls-cashout-meta"><span>Stake</span><b>{money(bet.stake)}</b></div>
+        <div className="ls-cashout-meta"><span>Potential return</span><b>{money(bet.potentialReturn)}</b></div>
+        {error && <div className="ls-cashout-error">{error}</div>}
+        <button type="button" className="ls-cashout-confirm" onClick={confirm} disabled={busy || offer == null}>{busy ? 'Processing…' : offer == null ? 'Loading offer…' : `Cash out ${money(offer)}`}</button>
+      </div>}
+    </div>
+  </div>;
+}
+
+function TicketCard({ bet, matchUpdates, onDetails, onCashout }: { bet: SlipBet; matchUpdates: Record<string, MatchRow>; onDetails: () => void; onCashout: () => void }) {
   const open = isOpen(bet);
   const status = statusLabel(bet.status);
   return <article className={`ls-ticket ${status === 'WON' ? 'ls-ticket-won' : status === 'LOST' ? 'ls-ticket-lost' : 'ls-ticket-open'}`} onClick={open ? undefined : onDetails} role={open ? undefined : 'button'} tabIndex={open ? undefined : 0} onKeyDown={open ? undefined : event => { if (event.key === 'Enter' || event.key === ' ') onDetails(); }}>
@@ -196,7 +287,7 @@ function TicketCard({ bet, matchUpdates, onDetails, onCashout, cashingOut }: { b
         return <div className="ls-ticket-leg" key={`${selection.id}-${index}`}><div className="ls-ticket-match"><span>{homeTeam} <em>vs</em> {awayTeam}</span></div><div className="ls-ticket-meta">{ended ? <><span className="ls-ended-check material-symbols-rounded" aria-label="Match ended">check_circle</span>{scoreHome != null && scoreAway != null && <strong className="ls-live-score">{scoreHome} - {scoreAway}</strong>}</> : live ? <><i className="ls-live-dot" /> <strong className="ls-live-label">LIVE {match ? liveClock(match) : 'Live'}</strong>{scoreHome != null && scoreAway != null && <strong className="ls-live-score">{scoreHome} - {scoreAway}</strong>}</> : kickoff && <span>{formatKickoff(kickoff)}</span>}<span>· {selection.market}</span></div><div className="ls-ticket-pick"><span>{selection.selection}</span><strong>{displayOdds > 0 ? displayOdds.toFixed(2) : 'Not available'}</strong></div></div>;
       })}
       <div className="ls-ticket-total"><span>Stake<strong>{money(bet.stake)}</strong></span><span>Odds<strong>{bet.odds.toFixed(2)}×</strong></span><span className="return">{open ? 'Potential return' : 'Return'}<strong>{money(bet.potentialReturn)}</strong></span></div>
-      {open && <div className="ls-ticket-actions"><button className="ls-primary" type="button" onClick={event => { event.stopPropagation(); onCashout(); }} disabled={cashingOut}>{cashingOut ? 'Cashing out…' : 'Cash out'}</button></div>}
+      {open && <div className="ls-ticket-actions"><button className="ls-primary" type="button" onClick={event => { event.stopPropagation(); onCashout(); }}>Cash out</button></div>}
     </div>
   </article>;
 }
@@ -210,7 +301,7 @@ export default function SlipPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
-  const [cashoutId, setCashoutId] = useState('');
+  const [cashoutBet, setCashoutBet] = useState<SlipBet | null>(null);
   const [, repaintClock] = useState(0);
 
   const load = async (quiet = false) => {
@@ -271,18 +362,12 @@ export default function SlipPage() {
     window.dispatchEvent(new PopStateEvent('popstate'));
   }
 
-  async function cashout(bet: SlipBet) {
-    setCashoutId(bet.id);
-    try { await api('POST', `/api/bets/${encodeURIComponent(bet.id)}/cashout`); await load(true); setSelected(null); }
-    catch (e) { setError(e instanceof Error ? e.message : 'Cashout could not be completed.'); }
-    finally { setCashoutId(''); }
-  }
-
   return <main className="ls-slip-page"><SlipStyles /><div className="ls-slip-tabs"><button className={tab === 'open' ? 'active' : ''} type="button" onClick={() => { setTab('open'); setFilter('all'); setSelected(null); }}>Open Bets <span>({openBets.length})</span></button><button className={tab === 'history' ? 'active' : ''} type="button" onClick={() => { setTab('history'); setSelected(null); }}>Bet History <span>({history.length})</span></button></div>
     {tab === 'history' && <div className="ls-slip-tools"><button className={filter === 'all' ? 'active' : ''} type="button" onClick={() => setFilter('all')}>All results</button><button className={filter === 'won' ? 'active' : ''} type="button" onClick={() => setFilter('won')}>Won</button><button className={filter === 'lost' ? 'active' : ''} type="button" onClick={() => setFilter('lost')}>Lost</button></div>}
     {error && <div className="ls-error"><span className="material-symbols-rounded">error</span><strong>{error}</strong><p>Check your session and try refreshing the page.</p><a href="/login">Log in</a></div>}
     {!error && loading && <div className="ls-busy"><span className="ls-spin" /> Loading your bets…</div>}
     {!error && !loading && !visible.length && <div className="ls-empty"><span className="material-symbols-rounded">receipt_long</span><strong>{tab === 'open' ? 'No open bets yet' : 'No settled bets yet'}</strong><p>{tab === 'open' ? 'Your active tickets will appear here after you place a bet.' : 'Completed tickets will appear here after a match is settled.'}</p><a href="/sports">Browse sportsbook</a></div>}
-    {!error && !loading && visible.length > 0 && <div className="ls-slip-grid">{visible.map(bet => <TicketCard key={bet.id} bet={bet} matchUpdates={matchUpdates} onDetails={() => openTicket(bet.id)} onCashout={() => cashout(bet)} cashingOut={cashoutId === bet.id} />)}</div>}
+    {!error && !loading && visible.length > 0 && <div className="ls-slip-grid">{visible.map(bet => <TicketCard key={bet.id} bet={bet} matchUpdates={matchUpdates} onDetails={() => openTicket(bet.id)} onCashout={() => setCashoutBet(bet)} />)}</div>}
+    {cashoutBet && <CashoutDialog bet={cashoutBet} onClose={() => setCashoutBet(null)} onDone={() => { setCashoutBet(null); setSelected(null); load(true); }} />}
   </main>;
 }
