@@ -1250,7 +1250,7 @@ export default function AdminPanel({ role }: { role: Role }) {
         {pages.map(navBtn)}
       </nav>
       <div className="admin-side-foot">
-        <a className="admin-exit" href="/"><span className="material-symbols-rounded">arrow_back</span>Back to sportsbook</a>
+        <a className="admin-exit" href="/me"><span className="material-symbols-rounded">arrow_back</span>Back to account</a>
       </div>
     </aside>
     {mobileNav && <button className="admin-backdrop" aria-label="Close navigation" onClick={() => setMobileNav(false)} />}

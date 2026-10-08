@@ -291,7 +291,10 @@ button.admin-stat:hover { transform: translateY(-2px); border-color: var(--lime)
   .admin-nav-chev { display: none; }
   .admin-sidebar .admin-nav-btn.active { background: var(--lime); border-color: var(--lime); color: #1a1520; box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .18); }
   .admin-sidebar .admin-nav-btn.active .admin-nav-ico { color: #1a1520; }
-  .admin-side-foot { display: none; }
+  /* The exit stays visible on mobile: with the site header + bottom nav
+     hidden inside the panels, this is the only way back to the account. */
+  .admin-side-foot { display: block; margin-top: 2px; }
+  .admin-exit { min-height: 44px; padding: 10px 6px 4px; font-size: 13px; }
   .admin-main { padding: 20px 14px 110px; }
   .admin-form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .admin-form-grid.cols-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
