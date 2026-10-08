@@ -252,7 +252,12 @@ button.admin-stat:hover { transform: translateY(-2px); border-color: var(--lime)
   /* PlusBet phone layout: sidebar stacks — brand row, then a full-width
      scrollable pill tab bar with a right-edge fade; role + back hidden. */
   .admin-sidebar {
-    position: sticky; top: 0; height: auto; max-height: none;
+    /* Neutralize index.css's legacy <=850px off-canvas drawer rule
+       (.admin-sidebar{position:fixed;width:250px;transform:translateX(-102%)}):
+       it was never reset, so the whole strip sat 255px off-screen left,
+       only the nav's overflow showed, and the page laid out 872px wide. */
+    position: sticky; top: 0; left: auto; width: auto; height: auto; max-height: none;
+    transform: none; transition: none;
     flex-direction: column; align-items: stretch; gap: 8px;
     padding: 8px 8px 8px 12px;
     border-right: 0; border-bottom: 1px solid #3e2e51;
@@ -327,6 +332,7 @@ button.admin-stat:hover { transform: translateY(-2px); border-color: var(--lime)
   .admin-seg .admin-button { width: auto; flex: 1 1 auto; }
   .admin-panel-title .admin-toolbar { margin-bottom: 0; }
   .ref-link-card { flex-direction: column; align-items: stretch; }
+  .ref-link-info { flex: 0 1 auto; }
   .ref-copy-btn { justify-content: center; width: 100%; }
   .rnd-library-strip { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .rnd-library-strip p { grid-column: 1 / -1; }
