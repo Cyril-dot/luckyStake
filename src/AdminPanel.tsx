@@ -3,7 +3,7 @@ import { api } from './api';
 
 type Role = 'admin' | 'super-admin';
 type Row = Record<string, unknown>;
-type AdminPageKey = 'overview' | 'matches' | 'random' | 'codes' | 'affiliate' | 'withdrawals' | 'guide';
+type AdminPageKey = 'overview' | 'matches' | 'random' | 'codes' | 'affiliate' | 'guide';
 type SuperPageKey = 'dashboard' | 'admins' | 'users' | 'transactions' | 'binance' | 'userdeposits' | 'affwithdrawals' | 'payouts' | 'walletwithdrawals' | 'commission' | 'chats' | 'audit';
 type PageKey = AdminPageKey | SuperPageKey;
 
@@ -58,7 +58,6 @@ const adminPages: { id: AdminPageKey; label: string; icon: string; group: string
   { id: 'random', label: 'Random games', icon: 'casino', group: 'Operate' },
   { id: 'codes', label: 'Booking codes', icon: 'confirmation_number', group: 'Operate' },
   { id: 'affiliate', label: 'Affiliate', icon: 'group_add', group: 'Money' },
-  { id: 'withdrawals', label: 'Withdrawals', icon: 'payments', group: 'Money' },
   { id: 'guide', label: 'How to use', icon: 'help', group: 'Help' },
 ];
 
@@ -680,33 +679,6 @@ function AffiliatePayoutHistory() {
   </Panel>;
 }
 
-function AdminWithdrawals() {
-  const [data, setData] = useState<Row[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
-  const load = async () => {
-    setLoading(true); setError('');
-    try { setData(rows(await api('GET', '/api/wallet/withdrawals/admin/pending?page=0&size=50'))); }
-    catch (e) { setError(e instanceof Error ? e.message : 'Could not load withdrawals'); }
-    finally { setLoading(false); }
-  };
-  useEffect(() => { load(); }, []);
-  const act = async (row: Row, kind: 'approve' | 'reject') => {
-    try {
-      await api('POST', `/api/wallet/withdrawals/admin/${encodeURIComponent(idOf(row))}/${kind}`, { note: '' });
-      setMessage(`${kind === 'approve' ? 'Approved' : 'Rejected'}.`); load();
-    } catch (e) { setError(e instanceof Error ? e.message : 'Action failed'); }
-  };
-  return <div className="admin-stack">
-    <Intro title="Withdrawals" description="Review and action pending withdrawal requests." onRefresh={load} loading={loading} />
-    <Notice message={error} error /><Notice message={message} />
-    <Panel title="Pending review">
-      <Table data={data} columns={['id', 'amount', 'status', 'createdAt']} actions={row => <><Button tone="primary" onClick={() => act(row, 'approve')}>Approve</Button><Button tone="danger" onClick={() => act(row, 'reject')}>Reject</Button></>} />
-    </Panel>
-  </div>;
-}
-
 function AdminGuide() {
   return <div className="admin-stack">
     <Intro title="How to use" description="A quick guide to the admin control room." onRefresh={() => {}} loading={false} />
@@ -1249,7 +1221,6 @@ export default function AdminPanel({ role }: { role: Role }) {
         case 'random': return <AdminRandomGames />;
         case 'codes': return <AdminBookingCodes />;
         case 'affiliate': return <AdminAffiliate />;
-        case 'withdrawals': return <AdminWithdrawals />;
         case 'guide': return <AdminGuide />;
         default: return <AdminOverview onNavigate={setPage as (p: AdminPageKey) => void} />;
       }
