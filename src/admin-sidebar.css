@@ -28,7 +28,7 @@ body { overscroll-behavior-y: auto; }
 .admin-app {
   --adm-top: 152px;
   display: grid;
-  grid-template-columns: 272px minmax(0, 1fr);
+  grid-template-columns: 248px minmax(0, 1fr);
   align-items: start;
   width: 100%;
   max-width: 100%;
@@ -38,50 +38,48 @@ body { overscroll-behavior-y: auto; }
   color: #fff;
 }
 .admin-app *, .admin-app *::before, .admin-app *::after { box-sizing: border-box; }
-.admin-main { min-width: 0; max-width: 100%; padding: 30px clamp(18px, 3.5vw, 52px) 80px; }
-.admin-stack { max-width: 1240px; margin: 0 auto; min-width: 0; }
+.admin-main { min-width: 0; max-width: 100%; padding: 32px clamp(18px, 4vw, 48px) 80px; }
+.admin-stack { max-width: 1400px; margin: 0 auto; min-width: 0; }
 
-/* ---- Sidebar (desktop) --------------------------------------------------- */
+/* ---- Sidebar (desktop) — geometry copied from PlusBet's .adm-sidebar ----
+   248px column, 24px/14px padding, 18px rhythm: brand, role bar, flat nav,
+   back link pinned to the bottom. LuckyStake skin (ink purple + lime). */
 .admin-sidebar {
   position: sticky; top: var(--adm-top);
   height: calc(100dvh - var(--adm-top));
-  display: flex; flex-direction: column;
-  background: linear-gradient(180deg, #261c38 0%, #1b1328 55%, #150e1f 100%);
-  border-right: 1px solid rgba(214, 238, 70, .09);
+  display: flex; flex-direction: column; gap: 18px;
+  padding: 24px 14px;
+  background: linear-gradient(180deg, #201631 0%, #1b1328 55%, #150e1f 100%);
+  border-right: 1px solid #3e2e51;
   z-index: 30; overflow-y: auto; overflow-x: hidden;
   scrollbar-width: thin; scrollbar-color: #3d2c52 transparent;
 }
 .admin-sidebar::-webkit-scrollbar { width: 5px; }
 .admin-sidebar::-webkit-scrollbar-thumb { background: #3d2c52; border-radius: 4px; }
-.admin-brand { display: flex; align-items: center; gap: 12px; padding: 20px 18px 16px; border-bottom: 1px solid rgba(255, 255, 255, .06); }
-.admin-brand-mark { display: grid; place-items: center; width: 44px; height: 44px; flex-shrink: 0; border-radius: 15px; background: linear-gradient(135deg, #f2ff7e, #c8ec3f 55%, #9fd12c); color: #191423; font: 900 25px/1 'Barlow Condensed'; box-shadow: 0 6px 20px rgba(214, 238, 70, .35), inset 0 1px 0 rgba(255, 255, 255, .5); }
+.admin-brand { display: flex; align-items: center; gap: 10px; padding: 0 10px 10px; }
+.admin-brand-mark { display: grid; place-items: center; width: 38px; height: 38px; flex-shrink: 0; border-radius: 12px; background: rgba(214, 238, 70, .13); border: 1px solid rgba(214, 238, 70, .28); color: var(--lime); font: 900 20px/1 'Barlow Condensed'; }
 .admin-brand-text { flex: 1; min-width: 0; }
-.admin-brand-text strong { display: block; font: 800 23px/1 'Barlow Condensed'; letter-spacing: .02em; color: #fff; white-space: nowrap; }
+.admin-brand-text strong { display: block; font: 800 17px/1.1 'Barlow Condensed'; letter-spacing: .02em; color: #fff; white-space: nowrap; }
 .admin-brand-text strong span { color: var(--lime); }
-.admin-brand-text small { display: block; margin-top: 3px; color: #8f7fa0; font: 700 9px 'Rajdhani'; letter-spacing: .14em; text-transform: uppercase; white-space: nowrap; }
+.admin-brand-text small { display: block; margin-top: 2px; color: #98a1b0; font-size: 10px; white-space: nowrap; }
+.admin-role { display: flex; align-items: center; gap: 7px; padding: 9px 11px; border-radius: 10px; background: rgba(255, 255, 255, .04); color: #c4cbd6; font: 600 11px 'Rajdhani'; }
+.admin-role .material-symbols-rounded { font-size: 15px; color: var(--lime); }
 .admin-role-pill { flex-shrink: 0; padding: 5px 10px; border-radius: 999px; font: 800 9px 'Rajdhani'; letter-spacing: .12em; text-transform: uppercase; background: rgba(120, 170, 255, .13); border: 1px solid rgba(120, 170, 255, .38); color: #a9c6ff; white-space: nowrap; }
 .admin-role-pill.super { background: rgba(214, 238, 70, .12); border-color: rgba(214, 238, 70, .42); color: var(--lime); }
 .admin-drawer-close { display: none; }
-.admin-sidebar .admin-nav { flex: 1; min-height: 0; padding: 14px 12px; display: flex; flex-direction: column; gap: 14px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; }
+.admin-sidebar .admin-nav { display: grid; gap: 4px; padding: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; }
 .admin-sidebar .admin-nav::-webkit-scrollbar { display: none; }
-.admin-nav-group { display: flex; flex-direction: column; gap: 2px; }
-.admin-nav-group-title { padding: 0 10px 6px; color: #6f5f80; font: 800 9px 'Rajdhani'; letter-spacing: .18em; text-transform: uppercase; }
-.admin-sidebar .admin-nav-btn { position: relative; display: flex; align-items: center; gap: 11px; width: 100%; min-height: 44px; padding: 8px 12px; border: 0; border-radius: 10px; background: transparent; color: #a99bb3; font: 700 13.5px 'Rajdhani'; text-align: left; cursor: pointer; transition: color .16s ease, background .16s ease; }
-.admin-sidebar .admin-nav-btn::before { content: ''; position: absolute; left: 0; top: 10px; bottom: 10px; width: 3px; border-radius: 3px; background: transparent; transition: background .16s ease; }
-.admin-sidebar .admin-nav-btn:hover { background: rgba(255, 255, 255, .04); color: #fff; }
-.admin-sidebar .admin-nav-btn:hover .admin-nav-ico { color: var(--lime); }
-.admin-nav-ico { display: grid; place-items: center; width: 24px; height: 24px; flex-shrink: 0; color: #8a7a99; transition: color .16s ease; }
-.admin-nav-ico .material-symbols-rounded { font-size: 21px; }
+.admin-sidebar .admin-nav-btn { display: flex; align-items: center; gap: 10px; width: 100%; padding: 11px 12px; border: 0; border-radius: 10px !important; background: transparent; color: #c4cbd6; font: 600 13px 'Rajdhani'; text-align: left; cursor: pointer; transition: color .16s ease, background .16s ease; }
+.admin-sidebar .admin-nav-btn:hover { background: #2b2039; color: #fff; }
+.admin-nav-ico { display: grid; place-items: center; width: 20px; height: 20px; flex-shrink: 0; color: inherit; }
+.admin-nav-ico .material-symbols-rounded { font-size: 19px; }
 .admin-nav-label { flex: 1 1 auto; min-width: 0; line-height: 1.25; overflow-wrap: anywhere; }
-.admin-nav-chev { flex-shrink: 0; font-size: 15px !important; color: #5d4c70; opacity: 0; transition: opacity .16s ease; }
-.admin-sidebar .admin-nav-btn:hover .admin-nav-chev, .admin-sidebar .admin-nav-btn.active .admin-nav-chev { opacity: 1; }
-.admin-sidebar .admin-nav-btn.active { background: rgba(214, 238, 70, .09); color: var(--lime); }
-.admin-sidebar .admin-nav-btn.active::before { background: var(--lime); box-shadow: 0 0 10px rgba(214, 238, 70, .6); }
+.admin-nav-chev { flex-shrink: 0; font-size: 14px !important; opacity: .4; }
+.admin-sidebar .admin-nav-btn.active { background: #2b2039; color: #fff; box-shadow: inset 3px 0 var(--lime); }
 .admin-sidebar .admin-nav-btn.active .admin-nav-ico { color: var(--lime); }
-.admin-sidebar .admin-nav-btn.active .admin-nav-label { font-weight: 800; }
-.admin-side-foot { padding: 14px 12px 16px; border-top: 1px solid rgba(255, 255, 255, .06); }
-.admin-exit { display: flex; align-items: center; justify-content: center; gap: 9px; min-height: 45px; padding: 0 14px; border: 1px solid #4a3a5e; border-radius: 13px; background: rgba(255, 255, 255, .03); color: #b9abc5; text-decoration: none; font: 700 12px 'Rajdhani'; transition: all .18s; }
-.admin-exit:hover { border-color: var(--lime); color: var(--lime); background: rgba(214, 238, 70, .07); }
+.admin-side-foot { margin-top: auto; }
+.admin-exit { display: flex; align-items: center; gap: 10px; padding: 18px 12px 4px; border-top: 1px solid #3e2e51; color: #c4cbd6; text-decoration: none; font: 600 13px 'Rajdhani'; transition: color .16s; }
+.admin-exit:hover { color: var(--lime); }
 .admin-exit .material-symbols-rounded { font-size: 18px; }
 .admin-backdrop { display: none; }
 .admin-mobile-bar { display: none; }
@@ -249,36 +247,40 @@ button.admin-stat:hover { transform: translateY(-2px); border-color: var(--lime)
 /* ---- <=1024px: sidebar becomes the sticky tab strip (PlusBet pattern) ---- */
 @media (max-width: 1024px) {
   .admin-app { --adm-top: 162px; display: block; min-height: 0; }
+  /* PlusBet phone layout: sidebar stacks — brand row, then a full-width
+     scrollable pill tab bar with a right-edge fade; role + back hidden. */
   .admin-sidebar {
     position: sticky; top: var(--adm-top); height: auto; max-height: none;
-    border-right: 0; border-bottom: 1px solid rgba(214, 238, 70, .14);
+    flex-direction: column; align-items: stretch; gap: 8px;
+    padding: 8px 8px 8px 12px;
+    border-right: 0; border-bottom: 1px solid #3e2e51;
     overflow: visible; box-shadow: 0 12px 28px rgba(0, 0, 0, .35);
   }
-  .admin-brand { padding: 10px 14px; gap: 10px; border-bottom: 1px solid rgba(255, 255, 255, .05); }
-  .admin-brand-mark { width: 34px; height: 34px; border-radius: 11px; font-size: 19px; }
-  .admin-brand-text strong { font-size: 19px; }
-  .admin-brand-text small { display: none; }
+  .admin-brand { padding: 0; gap: 8px; }
+  .admin-brand-mark { width: 36px; height: 36px; border-radius: 10px; background: var(--lime); border-color: var(--lime); color: #1a1520; font-size: 19px; }
+  .admin-brand-text strong { font-size: 18px; }
+  .admin-brand-text small { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: #8f7fa0; }
+  .admin-role { display: none; }
   .admin-sidebar .admin-nav {
-    flex-direction: row; gap: 8px; padding: 10px 12px 12px;
+    display: flex; flex-direction: row; align-items: center; gap: 8px;
+    flex: 1 1 auto; min-width: 0; padding: 4px 2px 8px;
     overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain;
     scrollbar-width: none; -webkit-overflow-scrolling: touch;
-    scroll-padding-inline: 12px;
+    -webkit-mask-image: linear-gradient(to right, #000 92%, transparent);
+    mask-image: linear-gradient(to right, #000 92%, transparent);
   }
-  .admin-nav-group { flex-direction: row; gap: 8px; align-items: center; flex-shrink: 0; }
-  .admin-nav-group + .admin-nav-group { border-left: 1px solid rgba(255, 255, 255, .08); padding-left: 8px; }
-  .admin-nav-group-title { display: none; }
   .admin-sidebar .admin-nav-btn {
-    width: auto; flex-shrink: 0; min-height: 40px; padding: 7px 13px;
-    border: 1px solid #453257; border-radius: 999px; background: rgba(255, 255, 255, .03);
-    font-size: 12.5px; white-space: nowrap;
+    flex: 0 0 auto; min-height: 44px; width: auto; gap: 8px;
+    padding: 0 13px !important; border: 1px solid #453257; border-radius: 999px !important;
+    background: rgba(43, 32, 57, .55); color: #b9abc5;
+    font-size: 12.5px; font-weight: 700; white-space: nowrap;
+    transform: none !important;
   }
-  .admin-sidebar .admin-nav-btn::before { display: none; }
-  .admin-nav-ico { width: 20px; height: 20px; }
-  .admin-nav-ico .material-symbols-rounded { font-size: 18px; }
-  .admin-nav-label { white-space: nowrap; overflow: visible; }
+  .admin-sidebar .admin-nav-btn:hover { background: rgba(214, 238, 70, .16); color: #fff; transform: none !important; }
+  .admin-nav-label { flex: 0 0 auto; white-space: nowrap; overflow: visible; }
   .admin-nav-chev { display: none; }
-  .admin-sidebar .admin-nav-btn.active { background: var(--lime); border-color: var(--lime); color: #18121e; }
-  .admin-sidebar .admin-nav-btn.active .admin-nav-ico { color: #18121e; }
+  .admin-sidebar .admin-nav-btn.active { background: var(--lime); border-color: var(--lime); color: #1a1520; box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .18); }
+  .admin-sidebar .admin-nav-btn.active .admin-nav-ico { color: #1a1520; }
   .admin-side-foot { display: none; }
   .admin-main { padding: 20px 14px 110px; }
   .admin-form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }

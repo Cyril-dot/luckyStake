@@ -1230,11 +1230,12 @@ export default function AdminPanel({ role }: { role: Role }) {
       <span className="material-symbols-rounded admin-nav-chev">chevron_right</span>
     </button>
   );
-  const navGroups: { name: string; items: typeof pages }[] = [];
-  for (const item of pages) {
-    const found = navGroups.find(g => g.name === item.group);
-    if (found) found.items.push(item); else navGroups.push({ name: item.group, items: [item] });
-  }
+  // PlusBet behaviour: the active tab scrolls itself into view in the strip.
+  useEffect(() => {
+    try {
+      document.querySelector('.admin-sidebar .admin-nav-btn.active')?.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
+    } catch { /* older engines */ }
+  }, [page]);
 
   const content = (() => {
     if (!isSuper) {
@@ -1266,15 +1267,12 @@ export default function AdminPanel({ role }: { role: Role }) {
     <aside className={`admin-sidebar ${mobileNav ? 'open' : ''}`} aria-label={isSuper ? 'Super admin sections' : 'Admin sections'}>
       <div className="admin-brand">
         <span className="admin-brand-mark">S</span>
-        <div className="admin-brand-text"><strong>Lucky<span>Stake</span></strong><small>{isSuper ? 'Super admin console' : 'Admin console'}</small></div>
-        <span className={`admin-role-pill${isSuper ? ' super' : ''}`}>{isSuper ? 'Super admin' : 'Admin'}</span>
+        <div className="admin-brand-text"><strong>Lucky<span>Stake</span></strong><small>{isSuper ? 'Super admin centre' : 'Admin centre'}</small></div>
         <button className="admin-drawer-close" onClick={() => setMobileNav(false)} aria-label="Close navigation"><span className="material-symbols-rounded">close</span></button>
       </div>
+      <div className="admin-role"><span className="material-symbols-rounded">{isSuper ? 'shield_person' : 'verified_user'}</span>{isSuper ? 'Super administrator' : 'Administrator'}</div>
       <nav className="admin-nav">
-        {navGroups.map(group => <div className="admin-nav-group" key={group.name}>
-          <span className="admin-nav-group-title">{group.name}</span>
-          {group.items.map(navBtn)}
-        </div>)}
+        {pages.map(navBtn)}
       </nav>
       <div className="admin-side-foot">
         <a className="admin-exit" href="/"><span className="material-symbols-rounded">arrow_back</span>Back to sportsbook</a>
