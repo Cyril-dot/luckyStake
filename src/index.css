@@ -1027,3 +1027,10 @@ footer a:hover{color:#fff}
 
 /* A vertical swipe that started on the sports rail was swallowed by pan-x */
 .top-sports-carousel, .icon-row, .home-today-carousel, .home-live-carousel, .league-row-carousel, .casino-carousel, .featured-matches-carousel, .aurora-sport-rail, .top-sports-grid { touch-action: pan-x pan-y; }
+
+/* Password visibility toggle (login + registration) */
+.pw-wrap{position:relative;display:block}
+.pw-wrap input{padding-right:46px!important}
+.pw-eye{position:absolute;right:4px;top:50%;transform:translateY(-50%);background:none;border:0;color:#bdb2c6;cursor:pointer;display:grid;place-items:center;padding:7px;border-radius:5px}
+.pw-eye:hover{color:#fff}
+.pw-eye .material-symbols-rounded{font-size:19px}
