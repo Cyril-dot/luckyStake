@@ -25,9 +25,11 @@ const labelOf = (row: Row) => text(row.name ?? row.email ?? row.username ?? row.
 // in the copied link or attribution is silently lost.
 const referralUrlFor = (row: Row): string => {
   const rawUrl = text(row.url ?? row.link);
-  if (rawUrl.startsWith('http')) return rawUrl;
-  const code = text(row.code ?? rawUrl);
-  if (typeof window === 'undefined' || !code) return rawUrl || code;
+  if (rawUrl.startsWith('http') && rawUrl.includes('ref=')) return rawUrl;
+  if (typeof window === 'undefined') return rawUrl;
+  const fromParam = rawUrl.match(/[?&]ref=([^&#]+)/)?.[1] ?? '';
+  const code = text(row.code ?? row.referralCode ?? row.refCode ?? fromParam ?? (rawUrl && !rawUrl.startsWith('http') && !rawUrl.includes('/') ? rawUrl : ''));
+  if (!code) return rawUrl || '';
   return `${window.location.origin}/signup?ref=${encodeURIComponent(code)}`;
 };
 const isUserActive = (row: Row) => {
@@ -117,9 +119,7 @@ function PromptDialog({ title, label, initial, onSubmit, onClose }: { title: str
 
 function ReferralLinkCard({ link, onCopied }: { link: any; onCopied: () => void }) {
   const [copied, setCopied] = useState(false);
-  const url = String(link.url ?? link.link ?? '');
-  const origin = typeof window !== 'undefined' ? window.location.origin : '';
-  const fullUrl = url.startsWith('http') ? url : `${origin}${url.startsWith('/') ? '' : '/'}${url}`;
+  const fullUrl = referralUrlFor(link as Row);
   const copy = async () => {
     try { await navigator.clipboard.writeText(fullUrl); } catch { try { const t = document.createElement('textarea'); t.value = fullUrl; document.body.appendChild(t); t.select(); document.execCommand('copy'); t.remove(); } catch {} }
     setCopied(true); onCopied(); setTimeout(() => setCopied(false), 2000);
