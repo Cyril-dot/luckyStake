@@ -22,79 +22,78 @@ function withdrawalRoleFromToken(): string {
 }
 
 
+// Ghana MoMo prefixes for network pre-selection (the backend resolves
+// the same way; the user can override with the chips).
+const LP_NETWORK_PREFIXES: Record<string, string> = {
+  '024': 'MTN', '025': 'MTN', '053': 'MTN', '054': 'MTN', '055': 'MTN', '059': 'MTN',
+  '020': 'TELECEL', '050': 'TELECEL',
+  '026': 'AIRTELTIGO', '027': 'AIRTELTIGO', '056': 'AIRTELTIGO', '057': 'AIRTELTIGO',
+};
+function lpDetectNetwork(phone: string): string {
+  const digits = phone.replace(/[^0-9]/g, '');
+  const local = digits.startsWith('233') && digits.length === 12 ? '0' + digits.slice(3) : digits;
+  return LP_NETWORK_PREFIXES[local.slice(0, 3)] ?? '';
+}
+
+// Deposit via the integrated ShinobiPay gateway (AkwaPay): creating the
+// payment sends a MoMo prompt to the phone at once — approve it with the
+// PIN and the wallet is credited automatically. Replaced the old
+// AlphaPay OTP flow and the manual proof flow on 2026-10-08.
 function LuckyPayDeposit({ onDone, fixedAmount }: { onDone: (amount: number) => void; fixedAmount?: number }) {
-  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
+  const [step, setStep] = useState<1 | 3 | 4>(1);
   const [amount, setAmount] = useState('');
   const [phone, setPhone] = useState('');
+  const [network, setNetwork] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [checkoutUrl, setCheckoutUrl] = useState('');
-  const [reference, setReference] = useState('');
-  const [otp, setOtp] = useState('');
-  const [otpLoading, setOtpLoading] = useState(false);
+  const [intentId, setIntentId] = useState('');
 
   const start = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
     const value = fixedAmount || Number(amount);
     if (!fixedAmount && (!Number.isFinite(value) || value < 20)) { setError('Minimum deposit is GH₵20.'); return; }
-    if (!phone.trim()) { setError('Enter your MoMo number to receive the code.'); return; }
+    if (!phone.trim()) { setError('Enter your MoMo number to receive the payment prompt.'); return; }
+    const chosenNetwork = network || lpDetectNetwork(phone);
+    if (!chosenNetwork) { setError('Choose your network — MTN, Telecel or AirtelTigo.'); return; }
     setLoading(true);
-    console.log('[LuckyPay] init request', { amount: value });
     try {
-      const res = await api<any>('POST', '/api/wallet/deposit/alphapay/init', { amount: value, phone: phone.trim() });
-      console.log('[LuckyPay] init response', res);
+      const res = await api<any>('POST', '/api/wallet/deposit/akwapay/init', { amount: value, phone: phone.trim(), network: chosenNetwork });
       const url = String(res?.checkout_url ?? res?.checkoutUrl ?? '');
-      const ref = String(res?.reference ?? '');
-      if (!ref) { setError('LuckyPay did not start the deposit. Try again.'); return; }
+      const id = String(res?.id ?? '');
+      if (!id) { setError('The payment could not be started. Try again.'); return; }
       setCheckoutUrl(url);
-      setReference(ref);
-      setStep(2);
+      setIntentId(id);
+      setStep(3);
     } catch (err) {
-      console.error('[LuckyPay] init failed', err);
       setError(err instanceof Error ? err.message : 'Could not start the deposit.');
     }
     finally { setLoading(false); }
   };
 
-  const submitOtp = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setError('');
-    if (otp.trim().length < 4) { setError('Enter the full code from your SMS.'); return; }
-    setOtpLoading(true);
-    console.log('[LuckyPay] submit otp', reference);
-    try {
-      const res = await api<any>('POST', '/api/wallet/deposit/alphapay/submit-otp', { reference, code: otp.trim() });
-      console.log('[LuckyPay] submit otp response', res);
-      setStep(3);
-    } catch (err) {
-      console.error('[LuckyPay] submit otp failed', err);
-      setError(err instanceof Error ? err.message : 'Wrong or expired code. Try again.');
-    } finally { setOtpLoading(false); }
-  };
-
   useEffect(() => {
-    if (step !== 3 || !reference) return;
+    if (step !== 3 || !intentId) return;
     let cancelled = false;
     let tries = 0;
     const poll = async () => {
       tries++;
       try {
-        const res = await api<any>('GET', `/api/wallet/deposit/alphapay/verify/${encodeURIComponent(reference)}`);
-        console.log('[LuckyPay] verify poll', reference, res?.status);
+        const res = await api<any>('GET', `/api/wallet/deposit/akwapay/status/${encodeURIComponent(intentId)}`);
         if (cancelled) return;
-        if (String(res?.status).toLowerCase() === 'success') { setStep(4); onDone(Number(amount) || fixedAmount || 0); return; }
-        if (String(res?.status).toLowerCase() === 'failed') { setError('The payment failed. Try again.'); setStep(1); return; }
-      } catch (err) { console.warn('[LuckyPay] verify poll error', err); }
+        const s = String(res?.status ?? '').toLowerCase();
+        if (s === 'succeeded') { setStep(4); onDone(Number(amount) || fixedAmount || 0); return; }
+        if (['failed', 'declined', 'cancelled', 'canceled', 'expired'].includes(s)) { setError('The payment was not completed. You have not been charged — try again.'); setStep(1); return; }
+      } catch (err) { console.warn('[LuckyPay] status poll error', err); }
       if (!cancelled && tries < 120) setTimeout(poll, 5000);
     };
     poll();
     return () => { cancelled = true; };
-  }, [step, reference]);
+  }, [step, intentId]);
 
   const reset = () => {
-    setStep(1); setAmount(''); setPhone(''); setOtp(''); setError('');
-    setCheckoutUrl(''); setReference(''); setLoading(false); setOtpLoading(false);
+    setStep(1); setAmount(''); setPhone(''); setError('');
+    setCheckoutUrl(''); setIntentId(''); setLoading(false);
   };
 
   // Fixed-amount mode (withdrawal gate): prefill and lock the amount
@@ -102,7 +101,7 @@ function LuckyPayDeposit({ onDone, fixedAmount }: { onDone: (amount: number) => 
     if (fixedAmount) { setAmount(String(fixedAmount)); }
   }, [fixedAmount]);
 
-  const steps = ['Amount', 'Verify', 'Approve'];
+  const steps = ['Amount', 'Approve', 'Confirm'];
 
   return <div className="lp-deposit">
     {step < 4 && <ol className="lp-steps">
@@ -123,26 +122,12 @@ function LuckyPayDeposit({ onDone, fixedAmount }: { onDone: (amount: number) => 
       <p className="lp-min-hint">Minimum deposit GH₵20</p></>}
       </div>
       {!fixedAmount && <div className="lp-chips">{[20, 50, 100, 200, 500, 1000].map(v => <button key={v} type="button" className={Number(amount) === v ? 'on' : ''} onClick={() => setAmount(String(v))}>₵{v.toLocaleString()}</button>)}</div>}
-      <label className="lp-field"><span>MoMo number</span><input value={phone} onChange={e => setPhone(e.target.value.replace(/[^0-9+]/g, ''))} inputMode="tel" placeholder="024 123 4567" /></label>
+      <label className="lp-field"><span>MoMo number</span><input value={phone} onChange={e => { setPhone(e.target.value.replace(/[^0-9+]/g, '')); const detected = lpDetectNetwork(e.target.value); if (detected) setNetwork(detected); }} inputMode="tel" placeholder="024 123 4567" /></label>
+      <div className="lp-chips">{(['MTN', 'TELECEL', 'AIRTELTIGO'] as const).map(n => <button key={n} type="button" className={network === n ? 'on' : ''} onClick={() => setNetwork(n)}>{n === 'AIRTELTIGO' ? 'AirtelTigo' : n === 'MTN' ? 'MTN' : 'Telecel'}</button>)}</div>
       {error && <p className="lp-error"><span className="material-symbols-rounded">error</span>{error}</p>}
       <button className="lp-cta" type="submit" disabled={loading || (!fixedAmount && (!Number.isFinite(Number(amount)) || Number(amount) < 20))}><span className="material-symbols-rounded">bolt</span>{loading ? 'Starting…' : 'Continue'}</button>
-      <p className="lp-secure"><span className="material-symbols-rounded">verified_user</span>Secured by LuckyPay</p>
+      <p className="lp-secure"><span className="material-symbols-rounded">verified_user</span>Payments by ShinobiPay · credited automatically</p>
     </form>}
-
-    {step === 2 && <div className="lp-pane">
-      <div className="lp-icon-ring"><span className="material-symbols-rounded">sms</span></div>
-      <h3>Check your SMS</h3>
-      <p className="lp-sub">We sent a verification code to<br /><b>{phone}</b></p>
-      <form className="lp-otp" onSubmit={submitOtp}>
-        <input value={otp} onChange={e => setOtp(e.target.value.replace(/[^0-9]/g, '').slice(0, 8))} inputMode="numeric" placeholder="••••••" autoComplete="one-time-code" autoFocus />
-        {error && <p className="lp-error"><span className="material-symbols-rounded">error</span>{error}</p>}
-        <button className="lp-cta" type="submit" disabled={otpLoading || otp.trim().length < 4}><span className="material-symbols-rounded">verified</span>{otpLoading ? 'Verifying…' : 'Verify code'}</button>
-      </form>
-      <div className="lp-alt">
-        <button type="button" className="lp-link" onClick={() => setStep(1)}>Change number</button>
-        {checkoutUrl && <a className="lp-link" href={checkoutUrl} target="_blank" rel="noreferrer">Open in browser <span className="material-symbols-rounded">open_in_new</span></a>}
-      </div>
-    </div>}
 
     {step === 3 && <div className="lp-pane lp-center">
       <div className="lp-icon-ring pulse"><span className="material-symbols-rounded">smartphone</span></div>
@@ -150,7 +135,10 @@ function LuckyPayDeposit({ onDone, fixedAmount }: { onDone: (amount: number) => 
       <p className="lp-sub">The MoMo prompt is on its way to<br /><b>{phone}</b> — enter your PIN to approve<br />GH₵{Number(amount).toLocaleString('en-GH', { minimumFractionDigits: 2 })}.</p>
       <div className="lp-wait"><span className="lp-spinner" /><p>Waiting for approval…<br />this updates automatically</p></div>
       {error && <p className="lp-error"><span className="material-symbols-rounded">error</span>{error}</p>}
-      <button type="button" className="lp-link" onClick={reset}>Cancel deposit</button>
+      <div className="lp-alt">
+        <button type="button" className="lp-link" onClick={reset}>Cancel deposit</button>
+        {checkoutUrl && <a className="lp-link" href={checkoutUrl} target="_blank" rel="noreferrer">Open secure checkout <span className="material-symbols-rounded">open_in_new</span></a>}
+      </div>
     </div>}
 
     {step === 4 && <div className="lp-pane lp-center">

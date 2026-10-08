@@ -4,7 +4,7 @@ import { api } from './api';
 type Role = 'admin' | 'super-admin';
 type Row = Record<string, unknown>;
 type AdminPageKey = 'overview' | 'matches' | 'random' | 'codes' | 'affiliate' | 'withdrawals' | 'guide';
-type SuperPageKey = 'dashboard' | 'admins' | 'users' | 'transactions' | 'binance' | 'momo' | 'userdeposits' | 'affwithdrawals' | 'payouts' | 'walletwithdrawals' | 'commission' | 'chats' | 'audit';
+type SuperPageKey = 'dashboard' | 'admins' | 'users' | 'transactions' | 'binance' | 'userdeposits' | 'affwithdrawals' | 'payouts' | 'walletwithdrawals' | 'commission' | 'chats' | 'audit';
 type PageKey = AdminPageKey | SuperPageKey;
 
 const text = (value: unknown, fallback = '—') => value === null || value === undefined || value === '' ? fallback : typeof value === 'object' ? JSON.stringify(value) : String(value);
@@ -69,7 +69,6 @@ const superPages: { id: SuperPageKey; label: string; icon: string }[] = [
   { id: 'audit', label: 'Audit trail', icon: 'fact_check' },
   { id: 'transactions', label: 'Transactions', icon: 'receipt_long' },
   { id: 'binance', label: 'Binance deposits', icon: 'currency_bitcoin' },
-  { id: 'momo', label: 'MoMo deposits', icon: 'smartphone' },
   { id: 'userdeposits', label: 'User deposits', icon: 'account_balance' },
   { id: 'affwithdrawals', label: 'Affiliate withdrawals', icon: 'partner_exchange' },
   { id: 'payouts', label: 'Payout requests', icon: 'request_quote' },
@@ -659,7 +658,6 @@ function SuperDashboard({ onNavigate }: { onNavigate: (page: SuperPageKey) => vo
     <div className="admin-two-col">
       <Panel title="Quick actions">
         <div className="admin-quick-grid">
-          <Button onClick={() => onNavigate('momo')}><span className="material-symbols-rounded">smartphone</span>MoMo deposits</Button>
           <Button onClick={() => onNavigate('walletwithdrawals')}><span className="material-symbols-rounded">payments</span>Wallet withdrawals</Button>
           <Button onClick={() => onNavigate('payouts')}><span className="material-symbols-rounded">request_quote</span>Payout requests</Button>
           <Button onClick={() => onNavigate('commission')}><span className="material-symbols-rounded">monitoring</span>Commission analytics</Button>
@@ -789,94 +787,6 @@ function SuperUsers() {
       <Table data={data} columns={['id', 'name', 'email', 'role', 'status', 'createdAt']} actions={row => <><Button onClick={() => toggle(row)}>{isUserActive(row) ? 'Deactivate' : 'Activate'}</Button><Button onClick={() => credit(row)}>Credit</Button></>} />
     </Panel>
     {creditPrompt && <PromptDialog title="Credit user" label={`Amount to credit ${labelOf(creditPrompt.row)} (GHS)`} initial="50" onSubmit={doCredit} onClose={() => setCreditPrompt(null)} />}
-  </div>;
-}
-
-// ------------------------------------------------------------------ super-admin MoMo deposits
-// Manual MoMo proofs — same flow as powerBetUi's MomoDepositQueue: the amount
-// deposited comes from `ngnAmountSent`, and approve/reject go through the
-// bank-deposits endpoints (there are no momo-deposits approve/reject endpoints).
-function SuperMomoQueue() {
-  const [data, setData] = useState<Row[]>([]);
-  const [filter, setFilter] = useState<'pending' | 'all'>('pending');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
-  const [selected, setSelected] = useState<Row | null>(null);
-  const [credited, setCredited] = useState('');
-  const [note, setNote] = useState('');
-  const [rejectReason, setRejectReason] = useState('');
-  const [formErr, setFormErr] = useState('');
-  const [busy, setBusy] = useState(false);
-  const load = async () => {
-    setLoading(true);
-    try {
-      const payload = await api('GET', filter === 'pending' ? '/api/admin/momo-deposits/pending?page=0&size=50' : '/api/admin/momo-deposits?page=0&size=50');
-      setData(rows(payload)); setError('');
-    } catch (e) { setError(e instanceof Error ? e.message : 'Could not load MoMo deposits'); }
-    finally { setLoading(false); }
-  };
-  useEffect(() => { load(); }, [filter]);
-  const openDetail = (row: Row) => {
-    setSelected(row);
-    setCredited(String(row.expectedNgnCredit ?? row.ngnAmountSent ?? ''));
-    setNote(String(row.adminNote ?? ''));
-    setRejectReason(''); setFormErr('');
-  };
-  const approve = async () => {
-    if (!selected) return;
-    const amt = Number(credited);
-    if (!Number.isFinite(amt) || amt <= 0) { setFormErr('Enter a valid credited GHS amount.'); return; }
-    const id = idOf(selected); if (!id) return;
-    setBusy(true); setFormErr('');
-    try {
-      await api('POST', `/api/admin/bank-deposits/${encodeURIComponent(id)}/approve`, { creditedNgnAmount: amt, adminNote: note.trim() || undefined });
-      setMessage('MoMo deposit approved and wallet credited.'); setSelected(null); await load();
-    } catch (e) { setFormErr(e instanceof Error ? e.message : 'Approval failed'); }
-    finally { setBusy(false); }
-  };
-  const reject = async () => {
-    if (!selected) return;
-    if (!rejectReason.trim()) { setFormErr('Enter a rejection reason.'); return; }
-    const id = idOf(selected); if (!id) return;
-    setBusy(true); setFormErr('');
-    try {
-      await api('POST', `/api/admin/bank-deposits/${encodeURIComponent(id)}/reject`, { adminNote: rejectReason.trim() });
-      setMessage('MoMo deposit rejected.'); setSelected(null); await load();
-    } catch (e) { setFormErr(e instanceof Error ? e.message : 'Rejection failed'); }
-    finally { setBusy(false); }
-  };
-  const tableData = data.map(r => ({ ...r, amountDeposited: money(r.ngnAmountSent) }));
-  return <div className="admin-stack">
-    <Intro title="MoMo deposits" description="Manual Mobile Money proofs. Open a record to inspect the email, amount, reference, note and screenshot before approving." onRefresh={load} loading={loading} />
-    <Notice message={message} /><Notice message={error} error />
-    <Panel title="MoMo deposit queue" action={<div className="admin-toolbar" style={{ margin: 0 }}><Button tone={filter === 'pending' ? 'primary' : 'secondary'} onClick={() => setFilter('pending')}>Pending</Button><Button tone={filter === 'all' ? 'primary' : 'secondary'} onClick={() => setFilter('all')}>All</Button></div>}>
-      <Table data={tableData} columns={['userEmail', 'amountDeposited', 'transferReference', 'status', 'createdAt']}
-        labels={{ userEmail: 'User', amountDeposited: 'Amount deposited', transferReference: 'Reference', status: 'Status', createdAt: 'Submitted' }}
-        actions={row => <Button onClick={() => openDetail(row)}><span className="material-symbols-rounded">visibility</span>Details</Button>} />
-    </Panel>
-    {selected && <Panel title={`MoMo deposit details · ${text(selected.transferReference, 'record')}`} action={<Button onClick={() => setSelected(null)}><span className="material-symbols-rounded">close</span>Close</Button>}>
-      <Notice message={formErr} error />
-      <div className="admin-status-list">
-        <div><span>User email</span><b>{text(selected.userEmail ?? selected.userId)}</b></div>
-        <div><span>User ID</span><b>{text(selected.userId)}</b></div>
-        <div><span>Amount deposited</span><b>GHS {text(selected.ngnAmountSent, '—')}</b></div>
-        <div><span>Expected credit</span><b>GHS {text(selected.expectedNgnCredit, '—')}</b></div>
-        <div><span>Sender name</span><b>{text(selected.senderAccountName, 'Not provided')}</b></div>
-        <div><span>Transfer reference</span><b>{text(selected.transferReference)}</b></div>
-      </div>
-      {text(selected.userNote, '') !== '' && <p style={{ color: '#a99bb3', fontSize: 12 }}><b style={{ color: '#fff' }}>User note:</b> {text(selected.userNote)}</p>}
-      {text(selected.screenshotUrl, '') !== '' && <a href={text(selected.screenshotUrl)} target="_blank" rel="noreferrer"><img src={text(selected.screenshotUrl)} alt="Deposit proof screenshot" className="admin-proof" /></a>}
-      <div className="admin-form-grid" style={{ gridTemplateColumns: 'repeat(3,minmax(0,1fr))', marginTop: 12 }}>
-        <input type="number" min="1" step="0.01" value={credited} onChange={e => setCredited(e.target.value)} placeholder="Credited GHS amount" />
-        <input value={note} onChange={e => setNote(e.target.value)} placeholder="Admin note for approval" />
-        <input value={rejectReason} onChange={e => setRejectReason(e.target.value)} placeholder="Required rejection reason" />
-      </div>
-      <div className="admin-toolbar" style={{ marginTop: 12 }}>
-        <Button tone="primary" disabled={busy} onClick={approve}><span className="material-symbols-rounded">check</span>Approve & credit wallet</Button>
-        <Button tone="danger" disabled={busy} onClick={reject}><span className="material-symbols-rounded">close</span>Reject deposit</Button>
-      </div>
-    </Panel>}
   </div>;
 }
 
@@ -1235,7 +1145,6 @@ export default function AdminPanel({ role }: { role: Role }) {
       case 'commission': return <SuperCommission />;
       case 'chats': return <SuperChats />;
       case 'audit': return <SuperAudit />;
-      case 'momo': return <SuperMomoQueue />;
       case 'binance': return <SuperBinanceQueue />;
       default: return <SuperFinanceQueue page={page as SuperPageKey} />;
     }
