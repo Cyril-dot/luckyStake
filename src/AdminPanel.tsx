@@ -50,29 +50,29 @@ export function roleFromToken(): string {
   return values.find(value => value.includes('super')) || values.find(value => value.includes('admin')) || 'user';
 }
 
-const adminPages: { id: AdminPageKey; label: string; icon: string }[] = [
-  { id: 'overview', label: 'Overview', icon: 'space_dashboard' },
-  { id: 'matches', label: 'Matches', icon: 'sports_soccer' },
-  { id: 'random', label: 'Random games', icon: 'casino' },
-  { id: 'codes', label: 'Booking codes', icon: 'confirmation_number' },
-  { id: 'affiliate', label: 'Affiliate', icon: 'group_add' },
-  { id: 'withdrawals', label: 'Withdrawals', icon: 'payments' },
-  { id: 'guide', label: 'How to use', icon: 'help' },
+const adminPages: { id: AdminPageKey; label: string; icon: string; group: string }[] = [
+  { id: 'overview', label: 'Overview', icon: 'space_dashboard', group: 'Operate' },
+  { id: 'matches', label: 'Matches', icon: 'sports_soccer', group: 'Operate' },
+  { id: 'random', label: 'Random games', icon: 'casino', group: 'Operate' },
+  { id: 'codes', label: 'Booking codes', icon: 'confirmation_number', group: 'Operate' },
+  { id: 'affiliate', label: 'Affiliate', icon: 'group_add', group: 'Money' },
+  { id: 'withdrawals', label: 'Withdrawals', icon: 'payments', group: 'Money' },
+  { id: 'guide', label: 'How to use', icon: 'help', group: 'Help' },
 ];
 
-const superPages: { id: SuperPageKey; label: string; icon: string }[] = [
-  { id: 'commission', label: 'Commission analytics', icon: 'monitoring' },
-  { id: 'dashboard', label: 'Dashboard', icon: 'space_dashboard' },
-  { id: 'admins', label: 'Administrators', icon: 'admin_panel_settings' },
-  { id: 'users', label: 'Users', icon: 'group' },
-  { id: 'chats', label: 'Upgrade chats', icon: 'forum' },
-  { id: 'audit', label: 'Audit trail', icon: 'fact_check' },
-  { id: 'transactions', label: 'Transactions', icon: 'receipt_long' },
-  { id: 'binance', label: 'Binance deposits', icon: 'currency_bitcoin' },
-  { id: 'userdeposits', label: 'User deposits', icon: 'account_balance' },
-  { id: 'affwithdrawals', label: 'Affiliate withdrawals', icon: 'partner_exchange' },
-  { id: 'payouts', label: 'Payout requests', icon: 'request_quote' },
-  { id: 'walletwithdrawals', label: 'Wallet withdrawals', icon: 'payments' },
+const superPages: { id: SuperPageKey; label: string; icon: string; group: string }[] = [
+  { id: 'dashboard', label: 'Dashboard', icon: 'space_dashboard', group: 'Overview' },
+  { id: 'commission', label: 'Commission analytics', icon: 'monitoring', group: 'Overview' },
+  { id: 'admins', label: 'Administrators', icon: 'admin_panel_settings', group: 'People' },
+  { id: 'users', label: 'Users', icon: 'group', group: 'People' },
+  { id: 'chats', label: 'Upgrade chats', icon: 'forum', group: 'People' },
+  { id: 'transactions', label: 'Transactions', icon: 'receipt_long', group: 'Money' },
+  { id: 'binance', label: 'Binance deposits', icon: 'currency_bitcoin', group: 'Money' },
+  { id: 'userdeposits', label: 'User deposits', icon: 'account_balance', group: 'Money' },
+  { id: 'affwithdrawals', label: 'Affiliate withdrawals', icon: 'partner_exchange', group: 'Money' },
+  { id: 'payouts', label: 'Payout requests', icon: 'request_quote', group: 'Money' },
+  { id: 'walletwithdrawals', label: 'Wallet withdrawals', icon: 'payments', group: 'Money' },
+  { id: 'audit', label: 'Audit trail', icon: 'fact_check', group: 'System' },
 ];
 
 function Notice({ message, error }: { message: string; error?: boolean }) { return message ? <div className={`admin-notice ${error ? 'is-error' : 'is-success'}`}><span className="material-symbols-rounded">{error ? 'error' : 'check_circle'}</span>{message}</div> : null; }
@@ -86,9 +86,23 @@ function Table({ data, columns, actions, labels }: { data: Row[]; columns: strin
   const visible = columns.filter(column => !isIdColumn(column));
   const cols = visible.length ? visible : columns;
   const title = (column: string) => labels?.[column] ?? column.replace(/([A-Z])/g, ' $1').replace(/^./, c => c.toUpperCase());
-  return <div className="admin-table-wrap"><table className="admin-table"><thead><tr>{cols.map(column => <th key={column}>{title(column)}</th>)}{actions && <th>Actions</th>}</tr></thead><tbody>{data.length === 0 ? <tr><td className="admin-empty" colSpan={cols.length + (actions ? 1 : 0)}>No records found.</td></tr> : data.map((row, index) => <tr key={idOf(row) || String(index)}>{cols.map(column => <td key={column}>{text(row[column])}</td>)}{actions && <td><div className="admin-actions">{actions(row)}</div></td>}</tr>)}</tbody></table></div>;
+  return <div className="admin-table-wrap"><table className="admin-table"><thead><tr>{cols.map(column => <th key={column}>{title(column)}</th>)}{actions && <th>Actions</th>}</tr></thead><tbody>{data.length === 0 ? <tr><td className="admin-empty" colSpan={cols.length + (actions ? 1 : 0)}>No records found.</td></tr> : data.map((row, index) => <tr key={idOf(row) || String(index)}>{cols.map(column => <td key={column} data-label={title(column)}>{text(row[column])}</td>)}{actions && <td data-label="Actions"><div className="admin-actions">{actions(row)}</div></td>}</tr>)}</tbody></table></div>;
 }
 function Button({ children, onClick, tone = 'secondary', disabled }: { children: React.ReactNode; onClick?: () => void; tone?: 'primary' | 'secondary' | 'danger'; disabled?: boolean }) { return <button className={`admin-button ${tone}`} onClick={onClick} disabled={disabled}>{children}</button>; }
+function ScoreDialog({ home, away, initialHome, initialAway, onSubmit, onClose }: { home: string; away: string; initialHome: string; initialAway: string; onSubmit: (h: number, a: number) => void; onClose: () => void }) {
+  const [h, setH] = useState(initialHome);
+  const [a, setA] = useState(initialAway);
+  const valid = h.trim() !== '' && a.trim() !== '' && Number.isFinite(Number(h)) && Number.isFinite(Number(a));
+  return <div className="admin-modal-scrim" onClick={onClose}><div className="admin-modal" onClick={e => e.stopPropagation()}>
+    <h3>Update score</h3>
+    <div className="admin-score-grid">
+      <label>{home}<input autoFocus type="number" min={0} value={h} onChange={e => setH(e.target.value)} aria-label="Home score" /></label>
+      <span className="admin-score-dash">–</span>
+      <label>{away}<input type="number" min={0} value={a} onChange={e => setA(e.target.value)} aria-label="Away score" onKeyDown={e => e.key === 'Enter' && valid && onSubmit(Number(h), Number(a))} /></label>
+    </div>
+    <div className="admin-modal-actions"><Button onClick={onClose}>Cancel</Button><Button tone="primary" disabled={!valid} onClick={() => valid && onSubmit(Number(h), Number(a))}>Save score</Button></div>
+  </div></div>;
+}
 function PromptDialog({ title, label, initial, onSubmit, onClose }: { title: string; label: string; initial?: string; onSubmit: (v: string) => void; onClose: () => void }) {
   const [val, setVal] = useState(initial ?? '');
   return <div className="admin-modal-scrim" onClick={onClose}><div className="admin-modal" onClick={e => e.stopPropagation()}>
@@ -188,6 +202,7 @@ function AdminMatches() {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [step, setStep] = useState(1);
+  const [scoreFor, setScoreFor] = useState<Row | null>(null);
   const [form, setForm] = useState({ homeTeam: '', awayTeam: '', league: '', kickoffAt: '', homeScore: '', awayScore: '' });
   const load = async () => {
     setLoading(true); setError('');
@@ -224,12 +239,10 @@ function AdminMatches() {
     try { await api('PATCH', `/api/admin/matches/${encodeURIComponent(idOf(row))}/status`, { status: 'LIVE' }); setMessage('Match set live.'); load(); }
     catch (e) { setError(e instanceof Error ? e.message : 'Failed'); }
   };
-  const setScore = async (row: Row) => {
-    const home = window.prompt('Home score', String(row.scoreHome ?? '0'));
-    if (home === null) return;
-    const away = window.prompt('Away score', String(row.scoreAway ?? '0'));
-    if (away === null) return;
-    try { await api('PATCH', `/api/admin/matches/${encodeURIComponent(idOf(row))}/score`, { scoreHome: Number(home), scoreAway: Number(away) }); setMessage('Score updated.'); load(); }
+  const setScore = (row: Row) => setScoreFor(row);
+  const saveScore = async (home: number, away: number) => {
+    const row = scoreFor; setScoreFor(null); if (!row) return;
+    try { await api('PATCH', `/api/admin/matches/${encodeURIComponent(idOf(row))}/score`, { scoreHome: home, scoreAway: away }); setMessage('Score updated.'); load(); }
     catch (e) { setError(e instanceof Error ? e.message : 'Failed'); }
   };
   const setFullTime = async (row: Row) => {
@@ -268,18 +281,76 @@ function AdminMatches() {
     <Panel title="Managed matches">
       <Table data={matches} columns={['id', 'homeTeam', 'awayTeam', 'status', 'scoreHome', 'scoreAway', 'kickoffAt']} actions={row => <><Button onClick={() => setLive(row)}>Go live</Button><Button onClick={() => setScore(row)}>Score</Button><Button tone="danger" onClick={() => setFullTime(row)}>Full time</Button></>} />
     </Panel>
+    {scoreFor && <ScoreDialog home={text(scoreFor.homeTeam, 'Home')} away={text(scoreFor.awayTeam, 'Away')} initialHome={String(scoreFor.scoreHome ?? '0')} initialAway={String(scoreFor.scoreAway ?? '0')} onSubmit={saveScore} onClose={() => setScoreFor(null)} />}
   </div>;
 }
 
-const RANDOM_TEAMS = ['Accra Lions', 'Kumasi Chiefs', 'Takoradi Waves', 'Tamale Stars', 'Cape Coast Royals', 'Ho Dynamo', 'Sunyani Sparks', 'Koforidua Kings', 'Tema Mariners', 'Obuasi Miners', 'Wa Warriors', 'Bolgatanga Bulls'];
+// ============================================================================
+// RANDOM GAMES — lower-division league library.
+// Real lower-division leagues with their real clubs, grouped by region.
+// "Mixed" mode draws each fixture from a different league; a single league
+// keeps every fixture inside that competition, like PlusBet's generator
+// but with a far deeper league + club pool (36 leagues, 450+ clubs).
+// ============================================================================
+type LeagueDef = { name: string; region: string; tier: string; teams: string[] };
+const LOWER_LEAGUES: LeagueDef[] = [
+  { name: 'EFL Championship', region: 'England', tier: 'Tier 2', teams: ['Coventry City', 'Middlesbrough', 'Ipswich Town', 'Southampton', 'Leicester City', 'West Bromwich Albion', 'Norwich City', 'Watford', 'Sheffield United', 'Blackburn Rovers', 'Millwall', 'Queens Park Rangers', 'Bristol City', 'Swansea City', 'Stoke City', 'Preston North End'] },
+  { name: 'EFL League One', region: 'England', tier: 'Tier 3', teams: ['Barnsley', 'Blackpool', 'Bolton Wanderers', 'Bristol Rovers', 'Burton Albion', 'Cambridge United', 'Charlton Athletic', 'Exeter City', 'Leyton Orient', 'Lincoln City', 'Northampton Town', 'Peterborough United', 'Reading', 'Shrewsbury Town', 'Stevenage', 'Stockport County', 'Wigan Athletic', 'Wycombe Wanderers'] },
+  { name: 'EFL League Two', region: 'England', tier: 'Tier 4', teams: ['Accrington Stanley', 'Barrow', 'Bradford City', 'Bromley', 'Carlisle United', 'Cheltenham Town', 'Chesterfield', 'Colchester United', 'Crewe Alexandra', 'Doncaster Rovers', 'Gillingham', 'Grimsby Town', 'Harrogate Town', 'MK Dons', 'Newport County', 'Notts County', 'Port Vale', 'Salford City', 'Swindon Town', 'Tranmere Rovers', 'Walsall'] },
+  { name: 'National League', region: 'England', tier: 'Tier 5', teams: ['Aldershot Town', 'Altrincham', 'Barnet', 'Boston United', 'Braintree Town', 'Dagenham & Redbridge', 'Eastleigh', 'Ebbsfleet United', 'FC Halifax Town', 'Forest Green Rovers', 'Gateshead', 'Hartlepool United', 'Maidenhead United', 'Oldham Athletic', 'Rochdale', 'Solihull Moors', 'Southend United', 'Sutton United', 'Tamworth', 'Woking', 'Yeovil Town', 'York City'] },
+  { name: 'National League North', region: 'England', tier: 'Tier 6', teams: ['AFC Fylde', 'Alfreton Town', 'Brackley Town', 'Buxton', 'Chester', 'Chorley', 'Curzon Ashton', 'Darlington', 'Hereford', 'Kidderminster Harriers', "King's Lynn Town", 'Leamington', 'Marine', 'Oxford City', 'Radcliffe', 'Scarborough Athletic', 'Scunthorpe United', 'South Shields', 'Southport', 'Spennymoor Town'] },
+  { name: 'National League South', region: 'England', tier: 'Tier 6', teams: ['Bath City', 'Boreham Wood', 'Chelmsford City', 'Chesham United', 'Chippenham Town', 'Dorking Wanderers', 'Dover Athletic', 'Eastbourne Borough', 'Enfield Town', 'Farnborough', 'Hampton & Richmond', 'Hemel Hempstead Town', 'Hornchurch', 'Maidstone United', 'Salisbury', 'Slough Town', 'St Albans City', 'Tonbridge Angels', 'Torquay United', 'Truro City', 'Welling United', 'Weston-super-Mare', 'Worthing'] },
+  { name: 'Isthmian Premier Division', region: 'England', tier: 'Tier 7', teams: ['Billericay Town', 'Bognor Regis Town', 'Canvey Island', 'Carshalton Athletic', 'Chatham Town', 'Cheshunt', 'Chichester City', 'Cray Wanderers', 'Dartford', 'Dulwich Hamlet', 'Folkestone Invicta', 'Hashtag United', 'Hastings United', 'Horsham', 'Lewes', 'Whitehawk'] },
+  { name: 'Northern Premier League', region: 'England', tier: 'Tier 7', teams: ['Ashton United', 'Basford United', 'Blyth Spartans', 'Gainsborough Trinity', 'Guiseley', 'Hebburn Town', 'Hyde United', 'Ilkeston Town', 'Lancaster City', 'Leek Town', 'Macclesfield', 'Matlock Town', 'Morpeth Town', 'Prescot Cables', 'Stafford Rangers', 'Stockton Town', 'Warrington Town', 'Whitby Town', 'Worksop Town'] },
+  { name: 'Southern League Premier Central', region: 'England', tier: 'Tier 7', teams: ['AFC Sudbury', 'Alvechurch', 'Banbury United', 'Barwell', 'Bedford Town', "Bishop's Stortford", 'Bromsgrove Sporting', 'Coalville Town', 'Halesowen Town', 'Harborough Town', 'Hitchin Town', 'Kettering Town', 'Leiston', 'Lowestoft Town', 'Redditch United', 'Royston Town', 'Spalding United', 'St Ives Town', 'Stamford', 'Stratford Town', 'AFC Telford United'] },
+  { name: 'Scottish Championship', region: 'Scotland & Wales', tier: 'Tier 2', teams: ['Airdrieonians', 'Arbroath', 'Ayr United', 'Dunfermline Athletic', 'Falkirk', 'Greenock Morton', 'Livingston', 'Partick Thistle', "Queen's Park", 'Raith Rovers'] },
+  { name: 'Scottish League One', region: 'Scotland & Wales', tier: 'Tier 3', teams: ['Alloa Athletic', 'Annan Athletic', 'Cove Rangers', 'Dumbarton', 'Hamilton Academical', 'Inverness Caledonian Thistle', 'Kelty Hearts', 'Montrose', 'Queen of the South', 'Stenhousemuir'] },
+  { name: 'Scottish League Two', region: 'Scotland & Wales', tier: 'Tier 4', teams: ['Bonnyrigg Rose', 'Clyde', 'East Fife', 'Edinburgh City', 'Elgin City', 'Forfar Athletic', 'Peterhead', 'The Spartans', 'Stirling Albion', 'Stranraer'] },
+  { name: 'Cymru Premier', region: 'Scotland & Wales', tier: 'Tier 1 · Wales', teams: ['Aberystwyth Town', 'Bala Town', 'Barry Town United', 'Caernarfon Town', 'Cardiff Metropolitan', "Connah's Quay Nomads", 'Flint Town United', 'Haverfordwest County', 'Llanelli Town', 'Newtown', 'Penybont', 'The New Saints'] },
+  { name: 'Cymru South', region: 'Scotland & Wales', tier: 'Tier 2 · Wales', teams: ['Afan Lido', 'Ammanford', 'Baglan Dragons', 'Briton Ferry Llansawel', 'Caerau Ely', 'Cambrian United', 'Carmarthen Town', 'Cwmbran Celtic', 'Goytre United', 'Llantwit Major', 'Newport City', 'Pontardawe Town', 'Taffs Well', 'Trethomas Bluebirds', 'Ynyshir Albions'] },
+  { name: 'League of Ireland First Division', region: 'Ireland', tier: 'Tier 2', teams: ['Athlone Town', 'Bray Wanderers', 'Cobh Ramblers', 'Dundalk', 'Finn Harps', 'Kerry FC', 'Longford Town', 'Treaty United', 'UCD', 'Wexford FC'] },
+  { name: '2. Bundesliga', region: 'Europe', tier: 'Tier 2 · Germany', teams: ['Darmstadt 98', 'Dynamo Dresden', 'Eintracht Braunschweig', '1. FC Kaiserslautern', '1. FC Magdeburg', 'Fortuna Düsseldorf', 'Greuther Fürth', 'Hannover 96', 'Hertha BSC', 'Holstein Kiel', 'Karlsruher SC', '1. FC Nürnberg', 'SC Paderborn', 'Preußen Münster', 'Schalke 04', 'SV Elversberg', 'VfL Bochum'] },
+  { name: '3. Liga', region: 'Europe', tier: 'Tier 3 · Germany', teams: ['1. FC Saarbrücken', 'Alemannia Aachen', 'Borussia Dortmund II', 'Energie Cottbus', 'Erzgebirge Aue', 'FC Ingolstadt', 'Hansa Rostock', 'MSV Duisburg', 'Rot-Weiss Essen', 'SC Verl', 'SSV Ulm', 'SV Waldhof Mannheim', 'TSV 1860 Munich', 'VfB Stuttgart II', 'VfL Osnabrück', 'Viktoria Köln', 'Wehen Wiesbaden'] },
+  { name: 'Segunda División', region: 'Europe', tier: 'Tier 2 · Spain', teams: ['Albacete', 'Almería', 'FC Andorra', 'Burgos', 'Cádiz', 'Castellón', 'Córdoba', 'Deportivo La Coruña', 'Eibar', 'Granada', 'Huesca', 'Las Palmas', 'Leganés', 'Málaga', 'Mirandés', 'Racing Santander', 'Sporting Gijón', 'Real Valladolid', 'Real Zaragoza'] },
+  { name: 'Primera Federación', region: 'Europe', tier: 'Tier 3 · Spain', teams: ['Antequera', 'Atlético Madrid B', 'Betis Deportivo', 'Celta Fortuna', 'Eldense', 'Gimnàstic Tarragona', 'UD Ibiza', 'Mérida', 'Real Murcia', 'Ponferradina', 'Sabadell', 'Sevilla Atlético', 'Tenerife', 'Unionistas de Salamanca', 'Villarreal B'] },
+  { name: 'Serie B', region: 'Europe', tier: 'Tier 2 · Italy', teams: ['Avellino', 'Bari', 'Carrarese', 'Catanzaro', 'Cesena', 'Empoli', 'Frosinone', 'Juve Stabia', 'Mantova', 'Modena', 'Monza', 'Padova', 'Palermo', 'Pescara', 'Reggiana', 'Sampdoria', 'Spezia', 'Südtirol', 'Venezia', 'Virtus Entella'] },
+  { name: 'Serie C', region: 'Europe', tier: 'Tier 3 · Italy', teams: ['Arezzo', 'Ascoli', 'Audace Cerignola', 'Benevento', 'Campobasso', 'Catania', 'Cosenza', 'Crotone', 'Foggia', 'Giugliano', 'Latina', 'Livorno', 'Monopoli', 'Perugia', 'Picerno', 'Potenza', 'Ravenna', 'Rimini', 'Salernitana', 'Siracusa', 'Sorrento', 'Torres', 'Trapani', 'Vicenza'] },
+  { name: 'Ligue 2', region: 'Europe', tier: 'Tier 2 · France', teams: ['Amiens', 'Annecy', 'Bastia', 'Clermont Foot', 'Dunkerque', 'Grenoble', 'Guingamp', 'Laval', 'Le Mans', 'Montpellier', 'Nancy', 'Pau FC', 'Red Star', 'Stade de Reims', 'Rodez', 'Saint-Étienne', 'Troyes'] },
+  { name: 'Championnat National', region: 'Europe', tier: 'Tier 3 · France', teams: ['Bourg-Péronnas', 'Caen', 'Châteauroux', 'Concarneau', 'Dijon', 'Fleury 91', 'Le Puy', 'Nîmes', 'Orléans', 'Paris 13 Atletico', 'Quevilly-Rouen', 'Rouen', 'Sochaux', 'Valenciennes', 'Versailles', 'Villefranche'] },
+  { name: 'Eerste Divisie', region: 'Europe', tier: 'Tier 2 · Netherlands', teams: ['ADO Den Haag', 'Almere City', 'Cambuur', 'De Graafschap', 'Den Bosch', 'Dordrecht', 'FC Eindhoven', 'Emmen', 'Excelsior', 'Helmond Sport', 'Jong Ajax', 'Jong PSV', 'Jong Utrecht', 'MVV Maastricht', 'RKC Waalwijk', 'Roda JC', 'TOP Oss', 'Vitesse', 'VVV-Venlo', 'Willem II'] },
+  { name: 'Liga Portugal 2', region: 'Europe', tier: 'Tier 2 · Portugal', teams: ['Académico Viseu', 'Benfica B', 'Chaves', 'Farense', 'Feirense', 'Felgueiras', 'Leixões', 'União Leiria', 'Marítimo', 'Oliveirense', 'Paços Ferreira', 'Penafiel', 'Porto B', 'Portimonense', 'Sporting CP B', 'Torreense', 'Vizela'] },
+  { name: 'Challenger Pro League', region: 'Europe', tier: 'Tier 2 · Belgium', teams: ['Anderlecht Futures', 'Beerschot', 'SK Beveren', 'Club NXT', 'Eupen', 'Francs Borains', 'Jong Genk', 'Kortrijk', 'Lierse', 'Lokeren-Temse', 'Lommel', 'RWDM Brussels', 'Patro Eisden', 'RFC Liège', 'Seraing'] },
+  { name: 'TFF 1. Lig', region: 'Europe', tier: 'Tier 2 · Türkiye', teams: ['Adanaspor', 'Amed SK', 'Ankara Keçiörengücü', 'Bandırmaspor', 'Bodrum FK', 'Boluspor', 'Çorum FK', 'Erzurumspor', 'Esenler Erokspor', 'Hatayspor', 'Iğdır FK', 'İstanbulspor', 'Manisa FK', 'Pendikspor', 'Sakaryaspor', 'Sivasspor', 'Ümraniyespor', 'Van Spor'] },
+  { name: 'Ghana Premier League', region: 'Ghana & Africa', tier: 'Tier 1 · Ghana', teams: ['Accra Hearts of Oak', 'Asante Kotoko', 'Bechem United', 'Berekum Chelsea', 'Bibiani Gold Stars', 'Dreams FC', 'Heart of Lions', 'Karela United', 'Legon Cities', 'Medeama SC', 'Nations FC', 'Samartex', 'Vision FC', 'Young Apostles'] },
+  { name: 'Ghana Division One League', region: 'Ghana & Africa', tier: 'Tier 2 · Ghana', teams: ['Asekem FC', 'Attram De Visser', 'BA United', 'Bofoakwa Tano', 'Ebusua Dwarfs', 'Eleven Wonders', 'Great Olympics', 'Hohoe United', 'King Faisal', 'Liberty Professionals', 'Mighty Jets', 'New Edubiase United', 'Nzema Kotoko', 'Okwawu United', 'Pac Academy', 'Skyy FC', 'Soccer Intellectuals', 'Steadfast FC', 'Tema Youth'] },
+  { name: 'Nigeria National League', region: 'Ghana & Africa', tier: 'Tier 2 · Nigeria', teams: ['Abia Comets', 'Adamawa United', 'Beyond Limits FA', 'Crown FC', 'Dakkada FC', 'Edel FC', 'Gateway United', 'Gombe United', 'Kebbi United', 'Kogi United', 'Kun Khalifat FC', 'Osun United', 'Sokoto United', 'Sporting Lagos', 'Warri Wolves', 'Wikki Tourists'] },
+  { name: 'USL Championship', region: 'Americas', tier: 'Tier 2 · USA', teams: ['Birmingham Legion', 'Charleston Battery', 'Colorado Springs Switchbacks', 'Detroit City FC', 'El Paso Locomotive', 'FC Tulsa', 'Hartford Athletic', 'Indy Eleven', 'Las Vegas Lights', 'Lexington SC', 'Loudoun United', 'Louisville City', 'Miami FC', 'Monterey Bay FC', 'New Mexico United', 'North Carolina FC', 'Oakland Roots', 'Orange County SC', 'Phoenix Rising', 'Pittsburgh Riverhounds', 'Rhode Island FC', 'Sacramento Republic', 'San Antonio FC', 'Tampa Bay Rowdies'] },
+  { name: 'USL League One', region: 'Americas', tier: 'Tier 3 · USA', teams: ['AV Alta FC', 'Charlotte Independence', 'Chattanooga Red Wolves', 'FC Naples', 'Forward Madison', 'Greenville Triumph', 'One Knoxville', 'Portland Hearts of Pine', 'Richmond Kickers', 'South Georgia Tormenta', 'Spokane Velocity', 'Union Omaha', 'Westchester SC'] },
+  { name: 'Brasileirão Série B', region: 'Americas', tier: 'Tier 2 · Brazil', teams: ['América Mineiro', 'Amazonas FC', 'Athletic Club MG', 'Atlético Goianiense', 'Avaí', 'Botafogo-SP', 'Ceará', 'Chapecoense', 'Coritiba', 'CRB', 'Cuiabá', 'Ferroviária', 'Goiás', 'Novorizontino', 'Operário-PR', 'Paysandu', 'Ponte Preta', 'Remo', 'Vila Nova', 'Volta Redonda'] },
+  { name: 'Brasileirão Série C', region: 'Americas', tier: 'Tier 3 · Brazil', teams: ['ABC', 'Anápolis', 'Botafogo-PB', 'Brusque', 'Caxias', 'Confiança', 'CSA', 'Figueirense', 'Floresta', 'Guarani', 'Itabaiana', 'Ituano', 'Londrina', 'Maringá', 'Náutico', 'Retrô', 'São Bernardo', 'Tombense', 'Ypiranga'] },
+  { name: 'Primera Nacional', region: 'Americas', tier: 'Tier 2 · Argentina', teams: ['Agropecuario', 'All Boys', 'Almagro', 'Alvarado', 'Atlanta', 'Atlético de Rafaela', 'Chacarita Juniors', 'Colón', 'Defensores de Belgrano', 'Deportivo Madryn', 'Deportivo Morón', 'Estudiantes BA', 'Ferro Carril Oeste', 'Gimnasia de Jujuy', 'Gimnasia de Mendoza', 'Nueva Chicago', 'Quilmes', 'Racing de Córdoba', 'San Martín de Tucumán', 'Temperley', 'Tristán Suárez'] },
+  { name: 'J2 League', region: 'Asia & Oceania', tier: 'Tier 2 · Japan', teams: ['Blaublitz Akita', 'Ehime FC', 'FC Imabari', 'Fujieda MYFC', 'Iwaki FC', 'JEF United Chiba', 'Júbilo Iwata', 'Kataller Toyama', 'Mito HollyHock', 'Montedio Yamagata', 'Oita Trinita', 'RB Omiya Ardija', 'Renofa Yamaguchi', 'Roasso Kumamoto', 'Sagan Tosu', 'Tokushima Vortis', 'V-Varen Nagasaki', 'Vegalta Sendai', 'Ventforet Kofu'] },
+];
+const MIXED = 'Mixed — all lower divisions';
+const LEAGUE_REGIONS = [...new Set(LOWER_LEAGUES.map(l => l.region))];
+const TOTAL_CLUBS = LOWER_LEAGUES.reduce((n, l) => n + l.teams.length, 0);
+const leagueByName = (name: string) => LOWER_LEAGUES.find(l => l.name === name);
+/** Deterministic pseudo-strength from the club name so odds look priced, not random. */
+const clubStrength = (name: string) => { let h = 0; for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) % 997; return 0.82 + (h % 40) / 100; };
+const shuffle = <T,>(pool: T[]): T[] => { const copy = [...pool]; for (let i = copy.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [copy[i], copy[j]] = [copy[j], copy[i]]; } return copy; };
+const pricedOdds = (home: string, away: string) => {
+  const diff = clubStrength(home) - clubStrength(away) + 0.12; // home edge
+  const raw = 2.45 - diff * 2.1 + (Math.random() - 0.5) * 0.3;
+  return Number(Math.min(4.6, Math.max(1.45, raw)).toFixed(2));
+};
+
 type RndGame = { homeTeam: string; awayTeam: string; league: string; kickoffAt: string; scoreHome: number; scoreAway: number; odds: number; id?: string };
-const RND_LEAGUES = ['LuckyStake Lower Division', 'LuckyStake Regional Premier', 'LuckyStake County Championship', 'LuckyStake Northern Counties'];
 
 function AdminRandomGames() {
-  const [quantity, setQuantity] = useState('4');
+  const [quantity, setQuantity] = useState('6');
   const [date, setDate] = useState('');
   const [time, setTime] = useState('18:00');
-  const [league, setLeague] = useState(RND_LEAGUES[0]);
+  const [league, setLeague] = useState<string>(MIXED);
   const [dHome, setDHome] = useState('1');
   const [dAway, setDAway] = useState('0');
   const [games, setGames] = useState<RndGame[]>([]);
@@ -301,23 +372,31 @@ function AdminRandomGames() {
     const count = Math.max(1, Math.min(30, Number(quantity) || 1));
     const kickoff = new Date(`${date}T${time}:00`);
     if (Number.isNaN(kickoff.getTime()) || kickoff.getTime() <= Date.now()) { setError('Choose a future start date and time.'); return; }
-    const shuffled = [...RANDOM_TEAMS].sort(() => Math.random() - 0.5);
-    const fresh: RndGame[] = Array.from({ length: count }, (_, i) => {
-      const home = shuffled[(i * 2) % shuffled.length];
-      let away = shuffled[(i * 2 + 1) % shuffled.length];
-      if (home === away) away = `${away} Reserves`;
-      return {
-        homeTeam: home, awayTeam: away, league,
+    const usedPairs = new Set<string>();
+    const fresh: RndGame[] = [];
+    const mixedPool = shuffle(LOWER_LEAGUES);
+    for (let i = 0; i < count; i++) {
+      const def = league === MIXED ? mixedPool[i % mixedPool.length] : leagueByName(league) ?? LOWER_LEAGUES[0];
+      const teams = shuffle(def.teams);
+      let home = teams[0]; let away = teams[1];
+      let guard = 0;
+      while (usedPairs.has(`${def.name}|${home}|${away}`) && guard++ < 8) {
+        const again = shuffle(def.teams); home = again[0]; away = again[1];
+      }
+      usedPairs.add(`${def.name}|${home}|${away}`);
+      fresh.push({
+        homeTeam: home, awayTeam: away, league: def.name,
         kickoffAt: new Date(kickoff.getTime() + i * 5 * 60000).toISOString(),
         scoreHome: Number(dHome) || 0, scoreAway: Number(dAway) || 0,
-        odds: Number((1.55 + ((i * 0.37) % 2.35) + Math.random() * 0.35).toFixed(2)),
-      };
-    });
+        odds: pricedOdds(home, away),
+      });
+    }
     setGames(fresh); setCreatedCode(''); setIndividualCodes({}); setError('');
-    setMessage(`${fresh.length} fixtures prepared. Review scores, then create the games.`);
+    setMessage(`${fresh.length} fixtures prepared across ${new Set(fresh.map(g => g.league)).size} league${new Set(fresh.map(g => g.league)).size === 1 ? '' : 's'}. Review scores, then create the games.`);
   };
   const upd = (index: number, patch: Partial<RndGame>) =>
     setGames(rs => rs.map((r, i) => (i === index ? { ...r, ...patch } : r)));
+  const removeGame = (index: number) => setGames(rs => rs.filter((_, i) => i !== index));
   const createGames = async () => {
     if (!games.length) { setError('Generate fixtures first.'); return; }
     setSaving(true); setError(''); setMessage('');
@@ -347,6 +426,7 @@ function AdminRandomGames() {
     if (selected.some(r => !Number.isFinite(r.odds) || r.odds < 1.1)) { setError('Odds must be at least 1.10 for every game.'); return; }
     setLoading(true); setError('');
     try {
+      let combined = '';
       for (const row of selected) {
         const res = await api('POST', '/api/admin/booking-codes', {
           bookingType: 'ADMIN_ONLY',
@@ -357,10 +437,10 @@ function AdminRandomGames() {
         }) as Row;
         const code = text(res.code ?? res.bookingCode);
         if (individual && row.id) setIndividualCodes(c => ({ ...c, [row.id as string]: code }));
-        if (!individual) setCreatedCode(code);
-        if (!individual) break;
+        if (!individual) { combined = code; break; }
       }
-      setMessage(individual ? `Minted ${selected.length} individual codes.` : `Combined booking code minted: ${createdCode || 'done'}.`);
+      if (!individual) setCreatedCode(combined);
+      setMessage(individual ? `Minted ${selected.length} individual codes.` : `Combined booking code minted${combined ? `: ${combined}` : ''}.`);
     } catch (e) { setError(e instanceof Error ? e.message : 'Could not mint code'); }
     finally { setLoading(false); }
   };
@@ -369,39 +449,61 @@ function AdminRandomGames() {
     catch { setError('Clipboard unavailable — copy the code manually.'); }
   };
   const created = games.filter(g => g.id);
+  const activeDef = league === MIXED ? null : leagueByName(league);
   return <div className="admin-stack">
-    <Intro title="Random games" description="Generate fictional lower-division fixtures, create them as real matches, then mint booking codes." onRefresh={generate} loading={loading} />
+    <Intro title="Random games" description="Generate lower-division fixtures from real leagues and clubs, create them as featured matches, then mint booking codes." onRefresh={generate} loading={loading} />
     <Notice message={error} error /><Notice message={message} />
+    <div className="rnd-library-strip">
+      <div><strong>{LOWER_LEAGUES.length}</strong><span>leagues</span></div>
+      <div><strong>{TOTAL_CLUBS}</strong><span>clubs</span></div>
+      <div><strong>{LEAGUE_REGIONS.length}</strong><span>regions</span></div>
+      <p>Lower divisions only — Championship down to tier 7, plus Ghana, Nigeria, USL, Série B/C, J2 and more.</p>
+    </div>
     <Panel title="Generate fixtures">
-      <div className="admin-form-grid">
+      <div className="admin-form-grid rnd-form">
         <label>Games<input type="number" min={1} max={30} value={quantity} onChange={e => setQuantity(e.target.value)} aria-label="Number of games" /></label>
-        <label>League<select value={league} onChange={e => setLeague(e.target.value)} aria-label="League">{RND_LEAGUES.map(l => <option key={l}>{l}</option>)}</select></label>
+        <label className="rnd-league-field">League
+          <select value={league} onChange={e => setLeague(e.target.value)} aria-label="League">
+            <option value={MIXED}>{MIXED}</option>
+            {LEAGUE_REGIONS.map(region => <optgroup key={region} label={region}>
+              {LOWER_LEAGUES.filter(l => l.region === region).map(l => <option key={l.name} value={l.name}>{l.name} · {l.teams.length} clubs</option>)}
+            </optgroup>)}
+          </select>
+        </label>
         <label>Date<input type="date" value={date} onChange={e => setDate(e.target.value)} aria-label="Start date" /></label>
         <label>Time<input type="time" value={time} onChange={e => setTime(e.target.value)} aria-label="Start time" /></label>
         <label>Home score<input type="number" min={0} value={dHome} onChange={e => setDHome(e.target.value)} aria-label="Default home score" /></label>
         <label>Away score<input type="number" min={0} value={dAway} onChange={e => setDAway(e.target.value)} aria-label="Default away score" /></label>
       </div>
+      {activeDef && <p className="rnd-league-note"><span className="material-symbols-rounded">stadium</span>{activeDef.name} — {activeDef.tier} · {activeDef.region} · {activeDef.teams.length} clubs in the pool</p>}
       <div className="admin-toolbar"><Button tone="primary" onClick={generate}><span className="material-symbols-rounded">casino</span>Generate fixtures</Button></div>
     </Panel>
-    {games.length > 0 && <Panel title={`Review & create — ${games.length} fixtures`} action={<span style={{ color: '#a99bb3', fontSize: 11 }}>Kickoffs staggered by 5 min</span>}>
-      {games.map((g, i) => <div className="admin-status-list" key={`${g.homeTeam}-${i}`}><div>
-        <span><b style={{ color: '#fff' }}>{g.homeTeam} v {g.awayTeam}</b><br />{g.league} · {new Date(g.kickoffAt).toLocaleString('en-GH', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })} · odds {g.odds.toFixed(2)}</span>
-        <b style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <input type="number" min={0} value={g.scoreHome} onChange={e => upd(i, { scoreHome: Math.max(0, Number(e.target.value) || 0) })} aria-label="Home score" style={{ width: 64 }} />
-          <span style={{ color: '#a99bb3' }}>–</span>
-          <input type="number" min={0} value={g.scoreAway} onChange={e => upd(i, { scoreAway: Math.max(0, Number(e.target.value) || 0) })} aria-label="Away score" style={{ width: 64 }} />
-          <input type="number" min={1.1} step={0.01} value={g.odds} onChange={e => upd(i, { odds: Number(e.target.value) || 1.1 })} aria-label="Odds" style={{ width: 76 }} />
-          <span className={`admin-pill ${g.id ? 'ok' : 'wait'}`}>{g.id ? 'Created' : 'Ready'}</span>
-          {g.id && individualCodes[g.id] && <><code style={{ color: '#d6ee46' }}>{individualCodes[g.id as string]}</code><Button onClick={() => copyCode(individualCodes[g.id as string])}>{copied === individualCodes[g.id as string] ? 'Copied' : 'Copy'}</Button></>}
-        </b>
-      </div></div>)}
+    {games.length > 0 && <Panel title={`Review & create — ${games.length} fixtures`} action={<span className="admin-panel-note">Kickoffs staggered by 5 min</span>}>
+      <div className="rnd-list">
+        {games.map((g, i) => <article className="rnd-card" key={`${g.homeTeam}-${g.awayTeam}-${i}`}>
+          <header className="rnd-card-head">
+            <span className="rnd-card-league">{g.league}</span>
+            <span className="rnd-card-time">{new Date(g.kickoffAt).toLocaleString('en-GH', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+            <span className={`admin-pill ${g.id ? 'ok' : 'wait'}`}>{g.id ? 'Created' : 'Ready'}</span>
+            {!g.id && <button type="button" className="rnd-remove" onClick={() => removeGame(i)} aria-label={`Remove ${g.homeTeam} vs ${g.awayTeam}`}><span className="material-symbols-rounded">close</span></button>}
+          </header>
+          <div className="rnd-card-teams"><strong>{g.homeTeam}</strong><span>vs</span><strong>{g.awayTeam}</strong></div>
+          <div className="rnd-card-editors">
+            <label>Score<input type="number" min={0} value={g.scoreHome} onChange={e => upd(i, { scoreHome: Math.max(0, Number(e.target.value) || 0) })} aria-label="Home score" /></label>
+            <span className="rnd-dash">–</span>
+            <label className="rnd-away-score">Away<input type="number" min={0} value={g.scoreAway} onChange={e => upd(i, { scoreAway: Math.max(0, Number(e.target.value) || 0) })} aria-label="Away score" /></label>
+            <label>Home odds<input type="number" min={1.1} step={0.01} value={g.odds} onChange={e => upd(i, { odds: Number(e.target.value) || 1.1 })} aria-label="Odds" /></label>
+          </div>
+          {g.id && individualCodes[g.id] && <div className="rnd-card-code"><code>{individualCodes[g.id as string]}</code><Button onClick={() => copyCode(individualCodes[g.id as string])}>{copied === individualCodes[g.id as string] ? 'Copied' : 'Copy'}</Button></div>}
+        </article>)}
+      </div>
       <div className="admin-toolbar" style={{ marginTop: 12 }}>
         <Button tone="primary" onClick={createGames} disabled={saving || created.length === games.length}>{saving ? 'Creating…' : 'Create & feature games'}</Button>
       </div>
     </Panel>}
     {created.length > 0 && <Panel title="Booking codes">
       <div className="admin-toolbar">
-        <input value={codeLabel} onChange={e => setCodeLabel(e.target.value)} placeholder="Code label" aria-label="Code label" style={{ maxWidth: 280 }} />
+        <input value={codeLabel} onChange={e => setCodeLabel(e.target.value)} placeholder="Code label" aria-label="Code label" />
         <Button tone="primary" onClick={() => mintCode(created, false)} disabled={loading}><span className="material-symbols-rounded">confirmation_number</span>{loading ? 'Minting…' : 'Mint combined code'}</Button>
         <Button onClick={() => mintCode(created, true)} disabled={loading}>Mint individual codes</Button>
       </div>
@@ -547,7 +649,7 @@ function AffiliateInsights() {
   };
   useEffect(() => { load(); }, [tab, range]);
   const total = (list: Row[]) => list.reduce((t, r) => t + numberValue(r.amount ?? r.total ?? r.commissionAmount), 0);
-  return <Panel title="Revenue insights" action={<div className="admin-toolbar" style={{ margin: 0 }}>
+  return <Panel title="Revenue insights" action={<div className="admin-toolbar admin-seg" style={{ margin: 0 }}>
     <Button tone={tab === 'commission' ? 'primary' : undefined} onClick={() => setTab('commission')}>Commission</Button>
     <Button tone={tab === 'deposits' ? 'primary' : undefined} onClick={() => setTab('deposits')}>Deposits by country</Button>
     {(['daily', 'weekly', 'monthly'] as const).map(r => <Button key={r} tone={range === r ? 'primary' : undefined} onClick={() => setRange(r)}>{r}</Button>)}
@@ -863,7 +965,7 @@ function SuperBinanceQueue() {
       </div>
       {text(selected.userNote, '') !== '' && <p style={{ color: '#a99bb3', fontSize: 12 }}><b style={{ color: '#fff' }}>User note:</b> {text(selected.userNote)}</p>}
       {text(selected.screenshotUrl, '') !== '' && <a href={text(selected.screenshotUrl)} target="_blank" rel="noreferrer"><img src={text(selected.screenshotUrl)} alt="Deposit proof screenshot" className="admin-proof" /></a>}
-      <div className="admin-form-grid" style={{ gridTemplateColumns: 'repeat(3,minmax(0,1fr))', marginTop: 12 }}>
+      <div className="admin-form-grid cols-3" style={{ marginTop: 12 }}>
         <input type="number" min="0.01" step="0.01" value={credited} onChange={e => setCredited(e.target.value)} placeholder="Credited GHS amount" />
         <input value={note} onChange={e => setNote(e.target.value)} placeholder="Admin note for approval" />
         <input value={rejectReason} onChange={e => setRejectReason(e.target.value)} placeholder="Required rejection reason" />
@@ -902,10 +1004,11 @@ function SuperFinanceQueue({ page }: { page: SuperPageKey }) {
     finally { setLoading(false); }
   };
   useEffect(() => { load(); }, [endpoint]);
-  const act = async (row: Row, kind: 'approve' | 'reject' | 'settle' | 'mark-paid' | 'mark-failed') => {
+  const [rejectFor, setRejectFor] = useState<Row | null>(null);
+  const act = async (row: Row, kind: 'approve' | 'reject' | 'settle' | 'mark-paid' | 'mark-failed', reason = '') => {
     const id = idOf(row);
     if (!id) return;
-    const reason = kind === 'reject' ? window.prompt('Rejection reason (optional)', '') ?? '' : '';
+    if (kind === 'reject' && reason === '' && rejectFor !== row) { setRejectFor(row); return; }
     try {
       let path = '';
       if (page === 'affwithdrawals') path = `/api/super-admin/affiliate-withdrawals/${encodeURIComponent(id)}/${kind}`;
@@ -930,6 +1033,7 @@ function SuperFinanceQueue({ page }: { page: SuperPageKey }) {
     <Panel title={actionable ? 'Pending review' : 'Latest records'}>
       <Table data={data} columns={columns} actions={actionable ? row => <><Button tone="primary" onClick={() => act(row, 'approve')}>Approve</Button>{page === 'walletwithdrawals' && <Button onClick={() => act(row, 'settle')}>Settle</Button>}{page === 'walletwithdrawals' && <Button onClick={() => act(row, 'mark-failed')}>Mark failed</Button>}{page === 'payouts' && <Button onClick={() => act(row, 'mark-paid')}>Mark paid</Button>}<Button tone="danger" onClick={() => act(row, 'reject')}>Reject</Button></> : undefined} />
     </Panel>
+    {rejectFor && <PromptDialog title="Reject request" label="Rejection reason (optional)" initial="" onSubmit={v => { const row = rejectFor; setRejectFor(null); if (row) act(row, 'reject', v || ' '); }} onClose={() => setRejectFor(null)} />}
   </div>;
 }
 
@@ -1117,12 +1221,20 @@ export default function AdminPanel({ role }: { role: Role }) {
   const [mobileNav, setMobileNav] = useState(false);
   useEffect(() => { setPage(isSuper ? 'dashboard' : 'overview'); }, [isSuper]);
   const go = (id: PageKey) => { setPage(id); setMobileNav(false); };
-  const navBtn = (item: { id: PageKey; label: string; icon: string }) => (
-    <button className={`admin-nav-btn${page === item.id ? ' active' : ''}`} key={item.id} onClick={() => go(item.id)}>
+  const pages = (isSuper ? superPages : adminPages) as { id: PageKey; label: string; icon: string; group: string }[];
+  const current = pages.find(item => item.id === page) ?? pages[0];
+  const navBtn = (item: { id: PageKey; label: string; icon: string; group: string }) => (
+    <button className={`admin-nav-btn${page === item.id ? ' active' : ''}`} key={item.id} onClick={() => go(item.id)} aria-current={page === item.id ? 'page' : undefined}>
       <span className="admin-nav-ico"><span className="material-symbols-rounded">{item.icon}</span></span>
       <span className="admin-nav-label">{item.label}</span>
+      <span className="material-symbols-rounded admin-nav-chev">chevron_right</span>
     </button>
   );
+  const navGroups: { name: string; items: typeof pages }[] = [];
+  for (const item of pages) {
+    const found = navGroups.find(g => g.name === item.group);
+    if (found) found.items.push(item); else navGroups.push({ name: item.group, items: [item] });
+  }
 
   const content = (() => {
     if (!isSuper) {
@@ -1151,14 +1263,18 @@ export default function AdminPanel({ role }: { role: Role }) {
   })();
 
   return <div className="admin-app">
-    <aside className={`admin-sidebar ${mobileNav ? 'open' : ''}`}>
+    <aside className={`admin-sidebar ${mobileNav ? 'open' : ''}`} aria-label={isSuper ? 'Super admin sections' : 'Admin sections'}>
       <div className="admin-brand">
         <span className="admin-brand-mark">S</span>
-        <div className="admin-brand-text"><strong>Lucky<span>Stake</span></strong></div>
+        <div className="admin-brand-text"><strong>Lucky<span>Stake</span></strong><small>{isSuper ? 'Super admin console' : 'Admin console'}</small></div>
         <span className={`admin-role-pill${isSuper ? ' super' : ''}`}>{isSuper ? 'Super admin' : 'Admin'}</span>
+        <button className="admin-drawer-close" onClick={() => setMobileNav(false)} aria-label="Close navigation"><span className="material-symbols-rounded">close</span></button>
       </div>
       <nav className="admin-nav">
-        {(isSuper ? superPages : adminPages).map(navBtn)}
+        {navGroups.map(group => <div className="admin-nav-group" key={group.name}>
+          <span className="admin-nav-group-title">{group.name}</span>
+          {group.items.map(navBtn)}
+        </div>)}
       </nav>
       <div className="admin-side-foot">
         <a className="admin-exit" href="/"><span className="material-symbols-rounded">arrow_back</span>Back to sportsbook</a>
@@ -1166,7 +1282,12 @@ export default function AdminPanel({ role }: { role: Role }) {
     </aside>
     {mobileNav && <button className="admin-backdrop" aria-label="Close navigation" onClick={() => setMobileNav(false)} />}
     <main className="admin-main">
-      <div className="admin-mobile-bar"><button onClick={() => setMobileNav(true)} aria-label="Open admin navigation"><span className="material-symbols-rounded">menu</span></button><strong>{isSuper ? 'Super admin' : 'Admin'}</strong><span className={`admin-role-pill${isSuper ? ' super' : ''}`}>{isSuper ? 'Super' : 'Admin'}</span></div>
+      <div className="admin-mobile-bar">
+        <button className="admin-burger" onClick={() => setMobileNav(true)} aria-label="Open admin navigation"><span className="material-symbols-rounded">menu</span></button>
+        <span className="material-symbols-rounded admin-mobile-bar-ico">{current.icon}</span>
+        <div className="admin-mobile-bar-text"><small>{isSuper ? 'Super admin' : 'Admin'} · {current.group}</small><strong>{current.label}</strong></div>
+        <span className={`admin-role-pill${isSuper ? ' super' : ''}`}>{isSuper ? 'Super' : 'Admin'}</span>
+      </div>
       {content}
     </main>
   </div>;
