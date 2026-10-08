@@ -88,7 +88,7 @@ body { overscroll-behavior-y: auto; }
 .admin-intro { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 24px; min-width: 0; }
 .admin-intro > div { min-width: 0; }
 .admin-eyebrow { color: var(--lime); font-size: 10px; font-weight: 800; letter-spacing: .16em; }
-.admin-intro h1 { margin: 8px 0 5px; font: 800 clamp(30px, 4vw, 46px)/.95 'Barlow Condensed'; letter-spacing: -.01em; overflow-wrap: anywhere; }
+.admin-intro h1 { margin: 8px 0 5px; font: 800 clamp(30px, 4vw, 46px)/1.06 'Barlow Condensed'; letter-spacing: -.01em; overflow-wrap: anywhere; padding-bottom: 2px; }
 .admin-intro p { margin: 0; color: #a99bb3; font-size: 13px; line-height: 1.55; }
 .admin-refresh { display: grid; place-items: center; width: 42px; height: 42px; flex-shrink: 0; border: 1px solid #59446d; border-radius: 9px; background: #21182e; color: var(--lime); cursor: pointer; }
 .admin-spin { animation: admin-spin .7s linear infinite; }
@@ -250,7 +250,7 @@ button.admin-stat:hover { transform: translateY(-2px); border-color: var(--lime)
   /* PlusBet phone layout: sidebar stacks — brand row, then a full-width
      scrollable pill tab bar with a right-edge fade; role + back hidden. */
   .admin-sidebar {
-    position: sticky; top: var(--adm-top); height: auto; max-height: none;
+    position: static; height: auto; max-height: none;
     flex-direction: column; align-items: stretch; gap: 8px;
     padding: 8px 8px 8px 12px;
     border-right: 0; border-bottom: 1px solid #3e2e51;
@@ -287,7 +287,7 @@ button.admin-stat:hover { transform: translateY(-2px); border-color: var(--lime)
   .admin-form-grid.cols-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .rnd-form .rnd-league-field { grid-column: 1 / -1; }
 }
-/* <=850px the site header is shorter (top bar 86px + mobile row 76px) */
+/* --adm-top now only anchors the DESKTOP sidebar under the site header. */
 @media (max-width: 850px) { .admin-app { --adm-top: 162px; } }
 @media (max-width: 560px) { .admin-app { --adm-top: 152px; } }
 

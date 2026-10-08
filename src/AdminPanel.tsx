@@ -1230,11 +1230,15 @@ export default function AdminPanel({ role }: { role: Role }) {
       <span className="material-symbols-rounded admin-nav-chev">chevron_right</span>
     </button>
   );
-  // PlusBet behaviour: the active tab scrolls itself into view in the strip.
+  // The active tab scrolls itself into view INSIDE the tab row only —
+  // scrollIntoView would also drag the page and neighbouring scrollers.
   useEffect(() => {
-    try {
-      document.querySelector('.admin-sidebar .admin-nav-btn.active')?.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
-    } catch { /* older engines */ }
+    const nav = document.querySelector('.admin-sidebar .admin-nav') as HTMLElement | null;
+    const btn = nav?.querySelector('.admin-nav-btn.active') as HTMLElement | null;
+    if (nav && btn) {
+      const target = btn.offsetLeft - nav.clientWidth / 2 + btn.clientWidth / 2;
+      nav.scrollTo({ left: Math.max(0, target), behavior: 'smooth' });
+    }
   }, [page]);
 
   const content = (() => {
