@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { api } from './api';
+import { api, roleFromToken } from './api';
+
+export { roleFromToken };
 
 type Role = 'admin' | 'super-admin';
 type Row = Record<string, unknown>;
@@ -39,18 +41,7 @@ const isUserActive = (row: Row) => {
   return status === 'active' || status === 'enabled' || status === 'true' || status === '1';
 };
 
-function decodeToken(): Row {
-  try {
-    const raw = localStorage.getItem('accessToken') || localStorage.getItem('token') || localStorage.getItem('authToken') || '';
-    const part = raw.split('.')[1];
-    return part ? JSON.parse(atob(part.replace(/-/g, '+').replace(/_/g, '/'))) as Row : {};
-  } catch { return {}; }
-}
-export function roleFromToken(): string {
-  const claims = decodeToken();
-  const values = [claims.role, claims.roles, claims.authorities, claims.authority, claims.userRole].flat(Infinity).map(value => String(value).toLowerCase());
-  return values.find(value => value.includes('super')) || values.find(value => value.includes('admin')) || 'user';
-}
+
 
 const adminPages: { id: AdminPageKey; label: string; icon: string; group: string }[] = [
   { id: 'overview', label: 'Overview', icon: 'space_dashboard', group: 'Operate' },

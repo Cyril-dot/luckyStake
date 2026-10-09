@@ -82,3 +82,18 @@ export async function fetchAdminMatches(): Promise<MatchRow[]> {
 export async function fetchMatchDetail(id: string, sport: Sport = 'football') { const candidates = [`/api/public/${sport}/matches/${encodeURIComponent(id)}/detail`, `/api/public/${sport}/matches/${encodeURIComponent(id)}`]; for (const path of candidates) { try { const payload = await api<unknown>('GET', path); if (import.meta.env.DEV) console.log('[LuckyStake][OpenBetScore][raw-detail]', { id, path, payload }); const wrapped = payload && typeof payload === 'object' && 'match' in payload ? (payload as { match: unknown }).match : payload; const rows = normalizeMatches(Array.isArray(wrapped) ? wrapped : [wrapped], sport); if (rows[0]) return rows[0]; } catch { /* try next */ } } for (const feed of ['upcoming', 'today', 'live'] as Feed[]) { try { const feedPayload = await api('GET', sportFeedPath(sport, feed)); if (import.meta.env.DEV) console.log('[LuckyStake][OpenBetScore][raw-feed]', { id, feed, payload: feedPayload }); const rows = normalizeMatches(feedPayload, sport); const found = rows.find(row => row.id === id); if (found) return found; } catch { /* try public feed fallback */ } } return null; }
 export async function fetchMatchOdds(id: string, sport: Sport = 'football') { try { return await api('GET', `/api/public/${sport}/matches/${encodeURIComponent(id)}/odds/all`); } catch { try { return await api('GET', `/api/public/${sport}/matches/${encodeURIComponent(id)}/odds`); } catch { return null; } } }
 export async function catalog() { return (await import('./endpoint-catalog.json')).default as Array<{ namespace: string; method: string; path: string; source_line: number }>; }
+
+/** Role decoded from the stored access token: the first claim value
+ * mentioning super or admin wins, else 'user'. Moved here from the
+ * admin panel so the app shell can check roles without bundling the
+ * whole panel into the first load. */
+export function roleFromToken(): string {
+  try {
+    const raw = localStorage.getItem('accessToken') || localStorage.getItem('token') || localStorage.getItem('authToken') || '';
+    const part = raw.split('.')[1];
+    if (!part) return 'user';
+    const claims = JSON.parse(atob(part.replace(/-/g, '+').replace(/_/g, '/'))) as Record<string, unknown>;
+    const values = [claims.role, claims.roles, claims.authorities, claims.authority, claims.userRole].flat(Infinity).map(value => String(value).toLowerCase());
+    return values.find(value => value.includes('super')) || values.find(value => value.includes('admin')) || 'user';
+  } catch { return 'user'; }
+}

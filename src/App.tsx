@@ -1,28 +1,34 @@
-import { useEffect, useMemo, useState } from 'react';
-import { api, catalog, DEFAULT_API, fetchAdminMatches, fetchMatchDetail, fetchMatchOdds, formatKickoff, formatKickoffDate, parseKickoff, isFinishedMatch, isLiveStatus, liveClock, normalizeMatches, setApiBase, setToken, sportFeedPath, type Feed, type MatchRow, type Sport } from './api';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import { api, catalog, DEFAULT_API, roleFromToken, fetchAdminMatches, fetchMatchDetail, fetchMatchOdds, formatKickoff, formatKickoffDate, parseKickoff, isFinishedMatch, isLiveStatus, liveClock, normalizeMatches, setApiBase, setToken, sportFeedPath, type Feed, type MatchRow, type Sport } from './api';
 import './index.css';
 import './booking-share.css';
 import './admin-sidebar.css';
-import HeaderDesigns, { BottomNavSamples, SlipPreviewPage } from './HeaderDesigns';
-import AuthDesigns from './AuthDesigns';
 import BroadcastAuth from './BroadcastAuth';
-import MatchCardDesigns from './MatchCardDesigns';
 import LeagueStackCard from './LeagueStackCard';
-import LeagueStackMatchDetails from './LeagueStackMatchDetails';
-import MatchDetailsPreview from './MatchDetailsPreview';
-import MatchDetailsDesigns from './MatchDetailsDesigns';
-import MobileOddsPreviews from './MobileOddsPreviews';
-import SlipPage from './SlipPage';
-import TicketDetailsPage from './TicketDetailsPage';
-import AccountHomePage from './AccountHomePage';
-import SecurityPage from './SecurityPage';
-import SupportPage from './SupportPage';
 
-import GlassMatchDetails from './GlassMatchDetails';
-import SportsPagePreviews from './SportsPagePreviews';
-import AuroraSportsPage from './AuroraSportsPage';
-import WalletPage from './WalletPage';
-import AdminPanel, { roleFromToken } from './AdminPanel';
+/* Route-level code splitting: the design previews, the admin
+ * panel and the heavier account / wallet / sports screens are
+ * NOT in the first load — each downloads on first visit to its
+ * route. The single eager bundle was 541KB of JS before this;
+ * the home page should never have paid for admin tooling and
+ * design previews. */
+const HeaderDesigns = lazy(() => import('./HeaderDesigns'));
+const SlipPreviewPage = lazy(() => import('./HeaderDesigns').then(m => ({ default: m.SlipPreviewPage })));
+const AuthDesigns = lazy(() => import('./AuthDesigns'));
+const MatchCardDesigns = lazy(() => import('./MatchCardDesigns'));
+const MatchDetailsPreview = lazy(() => import('./MatchDetailsPreview'));
+const MatchDetailsDesigns = lazy(() => import('./MatchDetailsDesigns'));
+const MobileOddsPreviews = lazy(() => import('./MobileOddsPreviews'));
+const SlipPage = lazy(() => import('./SlipPage'));
+const TicketDetailsPage = lazy(() => import('./TicketDetailsPage'));
+const AccountHomePage = lazy(() => import('./AccountHomePage'));
+const SecurityPage = lazy(() => import('./SecurityPage'));
+const SupportPage = lazy(() => import('./SupportPage'));
+const GlassMatchDetails = lazy(() => import('./GlassMatchDetails'));
+const SportsPagePreviews = lazy(() => import('./SportsPagePreviews'));
+const AuroraSportsPage = lazy(() => import('./AuroraSportsPage'));
+const WalletPage = lazy(() => import('./WalletPage'));
+const AdminPanel = lazy(() => import('./AdminPanel'));
 
 type Nav = { href: string; label: string };
 const nav: Nav[] = [{ href: '/', label: '⌂ Home' }, { href: '/sports', label: '◷ Prematch' }, { href: '/sports?feed=live', label: '⚡ Live' }, { href: '/games', label: '◈ Games' }, { href: '/wallet', label: '▣ Wallet' }, { href: '/me', label: '◎ Me' }, { href: '/admin', label: '▤ Admin' }, { href: '/super-admin', label: '⚙ Super Admin' }];
@@ -82,6 +88,6 @@ function DepositComplete() {
   return <section className="box deposit-complete"><span className="material-symbols-rounded">{status === 'success' ? 'check_circle' : status === 'error' ? 'error' : 'progress_activity'}</span><h1>{status === 'success' ? 'Deposit successful' : status === 'error' ? 'Something went wrong' : 'Confirming deposit'}</h1><p>{message}</p><a className="primary" href="/wallet" style={{ display: 'inline-block', marginTop: 12, padding: '12px 24px', borderRadius: 999, background: 'var(--lime)', color: '#18121e', fontWeight: 800, textDecoration: 'none' }}>Back to wallet</a></section>;
 }
 
-export default function App() { const route = useRoute(); const path = route.split('?')[0]; if (path === '/security') return <SecurityPage />; if (path === '/support') return <SupportPage />; let page: React.ReactNode; if (path === '/sports-previews') page = <SportsPagePreviews />; else if (path === '/mobile-odds-previews') page = <MobileOddsPreviews />; else if (path === '/match-details-designs') page = <MatchDetailsDesigns />; else if (path === '/match-details-preview') page = <MatchDetailsPreview />; else if (path === '/match-card-previews') page = <MatchCardDesigns />; else if (path === '/auth-previews') page = <AuthDesigns />; else if (path === '/header-designs') page = <HeaderDesigns />; else if (path === '/slip-preview') page = <SlipPreviewPage />; else if (path === '/' || path === '/gh') page = <Home />; else if (path === '/sports' || path === '/gh/starting-soon' || path === '/gh/live') page = <AuroraSportsPage />; else if (path.startsWith('/match/')) page = <GlassMatchDetails id={decodeURIComponent(path.split('/')[2] || '')} />; else if (path === '/booking') page = <Booking />; else if (path === '/wallet') page = <WalletPage />; else if (path === '/wallet/deposit/complete') page = <DepositComplete />; else if (path === '/slip') page = <SlipPage />; else if (path.startsWith('/ticket/')) page = <TicketDetailsPage id={decodeURIComponent(path.split('/')[2] || '')} />; else if (path === '/me') page = (localStorage.getItem('accessToken') || localStorage.getItem('token')) ? <AccountHomePage /> : <BroadcastAuth initialMode="login" />; else if (path === '/login' || path === '/signup' || path === '/gh/login' || path === '/gh/signup') page = <BroadcastAuth initialMode={path.includes('signup') ? 'register' : 'login'} />; else if (path === '/games' || path === '/gh/games' || path === '/gh/casino') page = <Games />; else if (path === '/admin') page = (() => { const r = roleFromToken(); return r.includes('admin') && !r.includes('super'); })() ? <AdminPanel role="admin" /> : <AccessDenied role="admin" />; else if (path === '/super-admin') page = roleFromToken().includes('super') ? <AdminPanel role="super-admin" /> : <AccessDenied role="super-admin" />; else if (path === '/api-catalog') page = <Home />; else page = <Home />; const headerlessPage = path === '/slip' || path.startsWith('/ticket/'); return headerlessPage ? <><main className="headerless-page">{page}</main><HomeBottomNav /></> : <Layout>{page}</Layout>; }
+export default function App() { const route = useRoute(); const path = route.split('?')[0]; if (path === '/security') return <Suspense fallback={<LoadingState label="Loading…" />}><SecurityPage /></Suspense>; if (path === '/support') return <Suspense fallback={<LoadingState label="Loading…" />}><SupportPage /></Suspense>; let page: React.ReactNode; if (path === '/sports-previews') page = <SportsPagePreviews />; else if (path === '/mobile-odds-previews') page = <MobileOddsPreviews />; else if (path === '/match-details-designs') page = <MatchDetailsDesigns />; else if (path === '/match-details-preview') page = <MatchDetailsPreview />; else if (path === '/match-card-previews') page = <MatchCardDesigns />; else if (path === '/auth-previews') page = <AuthDesigns />; else if (path === '/header-designs') page = <HeaderDesigns />; else if (path === '/slip-preview') page = <SlipPreviewPage />; else if (path === '/' || path === '/gh') page = <Home />; else if (path === '/sports' || path === '/gh/starting-soon' || path === '/gh/live') page = <AuroraSportsPage />; else if (path.startsWith('/match/')) page = <GlassMatchDetails id={decodeURIComponent(path.split('/')[2] || '')} />; else if (path === '/booking') page = <Booking />; else if (path === '/wallet') page = <WalletPage />; else if (path === '/wallet/deposit/complete') page = <DepositComplete />; else if (path === '/slip') page = <SlipPage />; else if (path.startsWith('/ticket/')) page = <TicketDetailsPage id={decodeURIComponent(path.split('/')[2] || '')} />; else if (path === '/me') page = (localStorage.getItem('accessToken') || localStorage.getItem('token')) ? <AccountHomePage /> : <BroadcastAuth initialMode="login" />; else if (path === '/login' || path === '/signup' || path === '/gh/login' || path === '/gh/signup') page = <BroadcastAuth initialMode={path.includes('signup') ? 'register' : 'login'} />; else if (path === '/games' || path === '/gh/games' || path === '/gh/casino') page = <Games />; else if (path === '/admin') page = (() => { const r = roleFromToken(); return r.includes('admin') && !r.includes('super'); })() ? <AdminPanel role="admin" /> : <AccessDenied role="admin" />; else if (path === '/super-admin') page = roleFromToken().includes('super') ? <AdminPanel role="super-admin" /> : <AccessDenied role="super-admin" />; else if (path === '/api-catalog') page = <Home />; else page = <Home />; const headerlessPage = path === '/slip' || path.startsWith('/ticket/'); return headerlessPage ? <><main className="headerless-page"><Suspense fallback={<LoadingState label="Loading…" />}>{page}</Suspense></main><HomeBottomNav /></> : <Layout><Suspense fallback={<LoadingState label="Loading…" />}>{page}</Suspense></Layout>; }
 
 const GAME_ART = [{ key: 'crash', name: 'Crash', image: 'https://blizbet.co/casino/crash.webp' }, { key: 'mines', name: 'Mines', image: 'https://blizbet.co/casino/mines.webp' }, { key: 'blackjack', name: 'Blackjack', image: 'https://blizbet.co/casino/blackjack.webp' }, { key: 'wheel', name: 'Wheel', image: 'https://blizbet.co/casino/wheel.webp' }, { key: 'plinko', name: 'Plinko', image: 'https://blizbet.co/casino/plinko.webp' }, { key: 'even-odd', name: 'Even or Odd', image: 'https://blizbet.co/casino/even-odd.webp' }, { key: 'flip', name: 'Coin Flip', image: 'https://blizbet.co/casino/flip.webp' }, { key: 'bottle', name: 'Spin the Bottle', image: 'https://blizbet.co/casino/bottle.webp' }];
