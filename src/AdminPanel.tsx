@@ -343,7 +343,42 @@ const pricedOdds = (home: string, away: string) => {
   return Number(Math.min(4.6, Math.max(1.45, raw)).toFixed(2));
 };
 
-type RndGame = { homeTeam: string; awayTeam: string; league: string; kickoffAt: string; scoreHome: number; scoreAway: number; odds: number; id?: string };
+type RndGame = { homeTeam: string; awayTeam: string; league: string; kickoffAt: string; scoreHome: number; scoreAway: number; odds: number; cgHome: number; cgAway: number; id?: string };
+
+/* Booking-code markets + picks, mirroring the PowerBet admin's
+ * random-games code creation: the admin chooses WHAT each code
+ * backs instead of every code silently being a 1X2 home win.
+ * Pick values follow this app's own slip dialect ('1'/'X'/'2'),
+ * and a correct-score pick is derived per game from its
+ * correct-score goals, carried as home_goals / away_goals. */
+const MARKETS = ['1X2', 'CORRECT_SCORE', 'BTTS', 'OVER_UNDER', 'WIN_ONLY'];
+const MARKET_LABELS: Record<string, string> = {
+  '1X2': '1X2 — match result',
+  CORRECT_SCORE: 'Correct score',
+  BTTS: 'Both teams to score',
+  OVER_UNDER: 'Over / Under 2.5 goals',
+  WIN_ONLY: 'Win only (no draw)',
+};
+const MARKET_PICKS: Record<string, { value: string; label: string }[]> = {
+  '1X2': [
+    { value: '1', label: '1 · Home win' },
+    { value: 'X', label: 'X · Draw' },
+    { value: '2', label: '2 · Away win' },
+  ],
+  WIN_ONLY: [
+    { value: '1', label: '1 · Home win' },
+    { value: '2', label: '2 · Away win' },
+  ],
+  BTTS: [
+    { value: 'Yes', label: 'Yes · both teams score' },
+    { value: 'No', label: 'No · both teams do not score' },
+  ],
+  OVER_UNDER: [
+    { value: 'Over 2.5', label: 'Over 2.5 goals' },
+    { value: 'Under 2.5', label: 'Under 2.5 goals' },
+  ],
+  CORRECT_SCORE: [],
+};
 
 function AdminRandomGames() {
   const [quantity, setQuantity] = useState('6');
@@ -358,6 +393,13 @@ function AdminRandomGames() {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [codeLabel, setCodeLabel] = useState('Random games booking code');
+  const [market, setMarket] = useState('1X2');
+  const [pick, setPick] = useState('1');
+  const chooseMarket = (m: string) => {
+    setMarket(m);
+    const options = MARKET_PICKS[m] ?? [];
+    if (options.length && !options.some(o => o.value === pick)) setPick(options[0].value);
+  };
   const [createdCode, setCreatedCode] = useState('');
   const [individualCodes, setIndividualCodes] = useState<Record<string, string>>({});
   const [copied, setCopied] = useState('');
@@ -387,6 +429,7 @@ function AdminRandomGames() {
         homeTeam: home, awayTeam: away, league: def.name,
         kickoffAt: new Date(kickoff.getTime() + i * 5 * 60000).toISOString(),
         scoreHome: Number(dHome) || 0, scoreAway: Number(dAway) || 0,
+        cgHome: Number(dHome) || 0, cgAway: Number(dAway) || 0,
         odds: pricedOdds(home, away),
       });
     }
@@ -417,18 +460,22 @@ function AdminRandomGames() {
   };
   const selectionFor = (row: RndGame) => ({
     fixture_id: row.id, match: `${row.homeTeam} vs ${row.awayTeam}`,
-    market: '1X2', pick: '1', odds: row.odds, result: null,
+    market, odds: row.odds, result: null,
+    pick: market === 'CORRECT_SCORE' ? `${row.cgHome}-${row.cgAway}` : pick,
+    ...(market === 'CORRECT_SCORE' ? { home_goals: row.cgHome, away_goals: row.cgAway } : {}),
   });
   const mintCode = async (targets: RndGame[], individual: boolean) => {
     const selected = targets.filter(r => r.id);
     if (!selected.length) { setError('Create the games first.'); return; }
     if (selected.some(r => !Number.isFinite(r.odds) || r.odds < 1.1)) { setError('Odds must be at least 1.10 for every game.'); return; }
+    if (market === 'CORRECT_SCORE' && selected.some(r => !Number.isInteger(r.cgHome) || !Number.isInteger(r.cgAway) || r.cgHome < 0 || r.cgAway < 0)) { setError('Enter a whole-number correct score (0 or more) for every game.'); return; }
     setLoading(true); setError('');
     try {
       let combined = '';
       for (const row of selected) {
         const res = await api('POST', '/api/admin/booking-codes', {
           bookingType: 'ADMIN_ONLY',
+          kind: market,
           label: individual ? `${codeLabel} — ${row.homeTeam} vs ${row.awayTeam}` : codeLabel,
           stake: 10, currency: 'GHS', maxRedemptions: 100,
           expiresAt: new Date(Date.now() + 24 * 3600 * 1000).toISOString(),
@@ -439,7 +486,8 @@ function AdminRandomGames() {
         if (!individual) { combined = code; break; }
       }
       if (!individual) setCreatedCode(combined);
-      setMessage(individual ? `Minted ${selected.length} individual codes.` : `Combined booking code minted${combined ? `: ${combined}` : ''}.`);
+      const backing = market === 'CORRECT_SCORE' ? 'correct score' : `${MARKET_LABELS[market]} · ${pick}`;
+      setMessage(individual ? `Minted ${selected.length} individual codes (${backing}).` : `Combined booking code minted${combined ? `: ${combined}` : ''} (${backing}).`);
     } catch (e) { setError(e instanceof Error ? e.message : 'Could not mint code'); }
     finally { setLoading(false); }
   };
@@ -491,8 +539,14 @@ function AdminRandomGames() {
             <label>Score<input type="number" min={0} value={g.scoreHome} onChange={e => upd(i, { scoreHome: Math.max(0, Number(e.target.value) || 0) })} aria-label="Home score" /></label>
             <span className="rnd-dash">–</span>
             <label className="rnd-away-score">Away<input type="number" min={0} value={g.scoreAway} onChange={e => upd(i, { scoreAway: Math.max(0, Number(e.target.value) || 0) })} aria-label="Away score" /></label>
-            <label>Home odds<input type="number" min={1.1} step={0.01} value={g.odds} onChange={e => upd(i, { odds: Number(e.target.value) || 1.1 })} aria-label="Odds" /></label>
+            <label>Odds<input type="number" min={1.1} step={0.01} value={g.odds} onChange={e => upd(i, { odds: Number(e.target.value) || 1.1 })} aria-label="Odds" /></label>
           </div>
+          {market === 'CORRECT_SCORE' && <div className="rnd-card-editors" style={{ marginTop: 8 }}>
+            <label>Correct score<input type="number" min={0} value={g.cgHome} onChange={e => upd(i, { cgHome: Math.max(0, Number(e.target.value) || 0) })} aria-label="Correct score home goals" /></label>
+            <span className="rnd-dash">–</span>
+            <label className="rnd-away-score">Away<input type="number" min={0} value={g.cgAway} onChange={e => upd(i, { cgAway: Math.max(0, Number(e.target.value) || 0) })} aria-label="Correct score away goals" /></label>
+            <span className="admin-panel-note">For the booking code only — the game&apos;s final score is set above</span>
+          </div>}
           {g.id && individualCodes[g.id] && <div className="rnd-card-code"><code>{individualCodes[g.id as string]}</code><Button onClick={() => copyCode(individualCodes[g.id as string])}>{copied === individualCodes[g.id as string] ? 'Copied' : 'Copy'}</Button></div>}
         </article>)}
       </div>
@@ -501,6 +555,20 @@ function AdminRandomGames() {
       </div>
     </Panel>}
     {created.length > 0 && <Panel title="Booking codes">
+      <div className="admin-form-grid" style={{ marginBottom: 10 }}>
+        <label>Market
+          <select value={market} onChange={e => chooseMarket(e.target.value)} aria-label="Booking code market">
+            {MARKETS.map(m => <option key={m} value={m}>{MARKET_LABELS[m]}</option>)}
+          </select>
+        </label>
+        {market === 'CORRECT_SCORE'
+          ? <p className="admin-panel-note" style={{ alignSelf: 'end' }}>Each game is booked at its own correct score — set the goals on each fixture card above.</p>
+          : <label>Pick
+              <select value={pick} onChange={e => setPick(e.target.value)} aria-label="Booking code pick">
+                {(MARKET_PICKS[market] ?? []).map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </label>}
+      </div>
       <div className="admin-toolbar">
         <input value={codeLabel} onChange={e => setCodeLabel(e.target.value)} placeholder="Code label" aria-label="Code label" />
         <Button tone="primary" onClick={() => mintCode(created, false)} disabled={loading}><span className="material-symbols-rounded">confirmation_number</span>{loading ? 'Minting…' : 'Mint combined code'}</Button>
