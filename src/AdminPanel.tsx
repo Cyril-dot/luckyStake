@@ -4,7 +4,7 @@ import { api } from './api';
 type Role = 'admin' | 'super-admin';
 type Row = Record<string, unknown>;
 type AdminPageKey = 'overview' | 'matches' | 'random' | 'codes' | 'affiliate' | 'guide';
-type SuperPageKey = 'dashboard' | 'admins' | 'users' | 'transactions' | 'binance' | 'userdeposits' | 'affwithdrawals' | 'payouts' | 'walletwithdrawals' | 'commission' | 'chats' | 'audit';
+type SuperPageKey = 'dashboard' | 'matches' | 'random' | 'admins' | 'users' | 'transactions' | 'binance' | 'userdeposits' | 'affwithdrawals' | 'payouts' | 'walletwithdrawals' | 'commission' | 'chats' | 'audit';
 type PageKey = AdminPageKey | SuperPageKey;
 
 const text = (value: unknown, fallback = '—') => value === null || value === undefined || value === '' ? fallback : typeof value === 'object' ? JSON.stringify(value) : String(value);
@@ -64,6 +64,8 @@ const adminPages: { id: AdminPageKey; label: string; icon: string; group: string
 const superPages: { id: SuperPageKey; label: string; icon: string; group: string }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: 'space_dashboard', group: 'Overview' },
   { id: 'commission', label: 'Commission analytics', icon: 'monitoring', group: 'Overview' },
+  { id: 'matches', label: 'Matches', icon: 'sports_soccer', group: 'Operate' },
+  { id: 'random', label: 'Random games', icon: 'casino', group: 'Operate' },
   { id: 'admins', label: 'Administrators', icon: 'admin_panel_settings', group: 'People' },
   { id: 'users', label: 'Users', icon: 'group', group: 'People' },
   { id: 'chats', label: 'Upgrade chats', icon: 'forum', group: 'People' },
@@ -1295,6 +1297,11 @@ export default function AdminPanel({ role }: { role: Role }) {
     }
     switch (page as SuperPageKey) {
       case 'dashboard': return <SuperDashboard onNavigate={setPage as (p: SuperPageKey) => void} />;
+      // Match creation + the random-games factory live on the super
+      // side too (owner, 2026-10-09) — the same components the admin
+      // panel uses, so both sides create identical matches and codes.
+      case 'matches': return <AdminMatches />;
+      case 'random': return <AdminRandomGames />;
       case 'admins': return <SuperAdmins />;
       case 'users': return <SuperUsers />;
       case 'userdeposits': return <SuperUserDeposits />;
