@@ -54,24 +54,34 @@ export function sportFeedPath(sport: Sport, feed: Feed) { return feed === 'resul
 export function primaryOdds(raw: unknown, homeTeam: string, awayTeam: string) { const rows: Record<string, unknown>[] = []; const walk = (value: unknown) => { if (Array.isArray(value)) { value.forEach(walk); return; } if (!value || typeof value !== 'object') return; const obj = value as Record<string, unknown>; const selection = obj.selection ?? obj.outcome ?? obj.name ?? obj.label ?? obj.type; const odd = obj.odd ?? obj.value ?? obj.odds ?? obj.price; if (selection != null && odd != null) rows.push(obj); for (const [key, child] of Object.entries(obj)) if (['data','odds','match_result','markets','options'].includes(key)) walk(child); }; walk(raw); const norm = (value: unknown) => String(value ?? '').trim().toLowerCase(); const home = norm(homeTeam), away = norm(awayTeam); const teamMatch = (selection: string, team: string) => selection === team || selection.includes(team) || team.includes(selection); let one='', draw='', two=''; for (const row of rows) { const selection = norm(row.selection ?? row.outcome ?? row.name ?? row.label ?? row.type); const value = Number(row.odd ?? row.value ?? row.odds ?? row.price); if (!Number.isFinite(value) || value <= 1 || value > 200) continue; if (selection === '1' || selection === 'home' || teamMatch(selection, home)) one ||= value.toFixed(2); else if (selection === 'x' || selection === 'draw') draw ||= value.toFixed(2); else if (selection === '2' || selection === 'away' || teamMatch(selection, away)) two ||= value.toFixed(2); } if (!one && !draw && !two) { const values = rows.map(row => Number(row.odd ?? row.value ?? row.odds ?? row.price)).filter(value => Number.isFinite(value) && value > 1 && value < 50); if (values.length >= 2) { one = values[0].toFixed(2); if (values.length >= 3) draw = values[1].toFixed(2); two = values[values.length >= 3 ? 2 : 1].toFixed(2); } } return { homeOdds: one, drawOdds: draw, awayOdds: two }; }
 export async function fetchAdminMatches(): Promise<MatchRow[]> {
   try {
-    const payloads = await Promise.all([
+    const [adminPayload, livePayload, upcomingPayload] = await Promise.all([
       api<unknown>('GET', '/api/public/admin-matches').catch(() => []),
       api<unknown>('GET', '/api/public/football/matches/live').catch(() => []),
       api<unknown>('GET', '/api/public/football/matches/upcoming').catch(() => []),
     ]);
-    const rows = normalizeMatches(payloads.flatMap(payload => normalizeMatches(payload, 'football')), 'football');
-    const enriched = await Promise.all(rows.map(async match => {
+    const adminRows = normalizeMatches(adminPayload, 'football');
+    const adminIds = new Set(adminRows.map(match => match.id));
+    // Feed rows count ONLY when the backend flags them as admin-created.
+    // This used to merge the entire live + upcoming feeds and mark every
+    // row featured, so the homepage Featured rail filled with regular
+    // ESPN fixtures (earlier kickoffs first) and the admin's own games
+    // never made the cut — they were invisible on Home and, because the
+    // sports page only reads the feeds, invisible there too.
+    const feedAdmin = [livePayload, upcomingPayload]
+      .flatMap(payload => normalizeMatches(payload, 'football'))
+      .filter(match => adminIds.has(match.id) || match.isAdmin);
+    const merged = normalizeMatches([...feedAdmin, ...adminRows], 'football')
+      .filter(match => !isFinishedMatch(match));
+    const enriched = await Promise.all(merged.map(async match => {
       let odds = { homeOdds: match.homeOdds || '', drawOdds: match.drawOdds || '', awayOdds: match.awayOdds || '' };
-      if (match.isAdmin || match.featured) {
-        try {
-          odds = { ...odds, ...primaryOdds(await api('GET', `/api/public/admin-matches/${encodeURIComponent(match.id)}/odds`), match.homeTeam, match.awayTeam) };
-        } catch { /* public featured odds can be empty */ }
-      }
+      try {
+        odds = { ...odds, ...primaryOdds(await api('GET', `/api/public/admin-matches/${encodeURIComponent(match.id)}/odds`), match.homeTeam, match.awayTeam) };
+      } catch { /* public featured odds can be empty */ }
       const homeLogo = match.displayHomeLogo || match.homeLogo || fallbackCrest(match.homeTeam, 'home');
       const awayLogo = (!match.awayLogo || match.awayLogo === homeLogo) ? fallbackCrest(match.awayTeam, 'away') : (match.displayAwayLogo || match.awayLogo);
       return { ...match, isAdmin: true, featured: true, homeLogo, awayLogo, displayHomeLogo: homeLogo, displayAwayLogo: awayLogo, ...odds };
     }));
-    return enriched.filter(match => !isFinishedMatch(match)).sort((a, b) => {
+    return enriched.sort((a, b) => {
       if (isLiveStatus(a.status) !== isLiveStatus(b.status)) return isLiveStatus(a.status) ? -1 : 1;
       return new Date(a.kickoffAt || 0).getTime() - new Date(b.kickoffAt || 0).getTime();
     });

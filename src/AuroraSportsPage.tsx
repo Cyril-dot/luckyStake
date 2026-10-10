@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { api, formatKickoff, formatKickoffDate, isFinishedMatch, isLiveStatus, isMatchLive, liveClock, normalizeMatches, primaryOdds, sportFeedPath, type Feed, type MatchRow, type Sport } from './api';
+import { api, fetchAdminMatches, formatKickoff, formatKickoffDate, isFinishedMatch, isLiveStatus, isMatchLive, liveClock, normalizeMatches, primaryOdds, sportFeedPath, type Feed, type MatchRow, type Sport } from './api';
 
 type SportChoice = { key: Sport; label: string; icon: string };
 const SPORT_CHOICES: SportChoice[] = [
@@ -87,7 +87,17 @@ export default function AuroraSportsPage() {
     setLoading(true);
     const sports = [activeSport];
     const results = await Promise.all(sports.map(loadSportFeed));
-    setMatches(results.flatMap(result => result));
+    const feedRows = results.flatMap(result => result);
+    if (activeSport === 'football') {
+      // Admin-created games live on their own public endpoint — the ESPN
+      // feeds never contain them, so without this merge they could never
+      // appear on the sports board. Admin rows go last so their fresher
+      // status/score wins the id dedupe in `visible`.
+      const admin = await fetchAdminMatches().catch(() => [] as MatchRow[]);
+      setMatches([...feedRows, ...admin]);
+    } else {
+      setMatches(feedRows);
+    }
     setLastUpdated(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
     setLoading(false);
   }
