@@ -382,3 +382,14 @@ body.slip-open .home-slip-button{opacity:0;pointer-events:none}
 .wd-gate-kicker{display:block;text-align:center;color:var(--lime);font-size:11px;font-weight:800;letter-spacing:.18em}
 .wd-gate-amount{font-size:46px;margin:10px 0 2px}
 .wd-gate-card .wd-gate-action{width:calc(100% + 40px);margin:16px -20px -20px;height:54px;border-radius:0;font-size:15px}
+
+/* Popup v4 details: one small explanation line, a soft glow on the
+   amount, hairlines flanking the fee name, pill-shaped current dot. */
+.wd-gate-note{margin:10px auto 0;max-width:272px;color:#b7abbf;font-size:12.5px;line-height:1.55;text-align:center}
+.wd-gate-amount{text-shadow:0 0 36px rgba(214,238,70,.35)}
+.wd-gate-kicker{display:flex;align-items:center;justify-content:center;gap:12px}
+.wd-gate-kicker::before,.wd-gate-kicker::after{content:'';height:1px;width:36px}
+.wd-gate-kicker::before{background:linear-gradient(90deg,transparent,#6a5280)}
+.wd-gate-kicker::after{background:linear-gradient(90deg,#6a5280,transparent)}
+.wd-gate-dots span{transition:width .25s ease}
+.wd-gate-dots span.now{width:18px;border-radius:99px}

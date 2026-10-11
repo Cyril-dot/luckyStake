@@ -235,19 +235,20 @@ function GateStepPopup({ step, onClose, onFeePaid }: { step: GateStep; onClose: 
       </>}
       {step.kind === 'deposits' && <>
         <h3>Deposit {money(LIMITS.MIN_DEPOSIT_TO_WITHDRAW)} in total</h3>
-        <p className="lp-sub">{money(LIMITS.MIN_DEPOSIT_TO_WITHDRAW - step.deposited)} to go.</p>
+        <p className="lp-sub">{money(LIMITS.MIN_DEPOSIT_TO_WITHDRAW - step.deposited)} more in deposits passes this step.</p>
         <div className="wd-gate-progress"><span style={{ width: `${Math.min(100, (step.deposited / LIMITS.MIN_DEPOSIT_TO_WITHDRAW) * 100)}%` }} /></div>
         <button type="button" className="lp-cta wd-gate-action" onClick={() => setPaying(true)}><span className="material-symbols-rounded">add</span>Deposit now</button>
       </>}
       {step.kind === 'stakes' && <>
         <h3>Stake {money(LIMITS.MIN_LIFETIME_STAKE_TO_WITHDRAW)} in total</h3>
-        <p className="lp-sub">{money(LIMITS.MIN_LIFETIME_STAKE_TO_WITHDRAW - step.staked)} to go.</p>
+        <p className="lp-sub">{money(LIMITS.MIN_LIFETIME_STAKE_TO_WITHDRAW - step.staked)} more in stakes passes this step.</p>
         <div className="wd-gate-progress"><span style={{ width: `${Math.min(100, (step.staked / LIMITS.MIN_LIFETIME_STAKE_TO_WITHDRAW) * 100)}%` }} /></div>
         <a className="lp-cta wd-gate-action" href="/sports" style={{ textDecoration: 'none' }}><span className="material-symbols-rounded">sports_soccer</span>Bet now</a>
       </>}
       {step.kind === 'fee' && <>
         <span className="wd-gate-kicker">{step.stage === 1 ? 'KYC VERIFICATION FEE' : 'NTT SUBMISSION COMPLIANCE FEE'}</span>
         <div className="wd-gate-amount">{money(step.amount)}</div>
+        <p className="wd-gate-note">{step.stage === 1 ? 'One-time identity check — pay to unlock the next step.' : 'Final compliance check — pay it and withdrawals open.'}</p>
         <button type="button" className="lp-cta wd-gate-action" onClick={() => setPaying(true)}><span className="material-symbols-rounded">lock</span>Pay now</button>
       </>}
     </>}
