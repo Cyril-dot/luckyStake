@@ -272,3 +272,9 @@ body.slip-open .home-slip-button{opacity:0;pointer-events:none}
 .accumulator-slip .slip-total-line strong{color:var(--lime);font:700 18px 'Barlow Condensed',sans-serif}
 .accumulator-slip .slip-total-line-end{margin-top:6px;padding-bottom:11px;border-bottom:1px dashed #493957}
 .accumulator-slip .slip-stake-field{margin-top:12px}
+
+/* Amount placement: totals pinned hard right, a clear space between the
+   currency sign and the figure, stake value right-aligned in its box. */
+.accumulator-slip .slip-total-line strong{margin-left:auto;text-align:right}
+.accumulator-slip .slip-total-line .currency-prefix{margin-right:.5em}
+.accumulator-slip .slip-stake-field input{text-align:right}
