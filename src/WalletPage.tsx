@@ -339,9 +339,8 @@ export default function WalletPage() {
     if (!withdrawalAccountName.trim()) { setWithdrawalError('Enter the account name.'); return; }
     try {
       const isCard = withdrawalMethod.includes('Mastercard');
-      const result = await api<any>('POST', '/api/wallet/withdrawals', { amount, method: isCard ? 'CARD' : 'MOBILE_MONEY', currency: 'GHS', accountNumber: withdrawalAccountNumber.trim(), accountName: withdrawalAccountName.trim(), ...(isCard ? {} : { network: withdrawalNetwork || lpDetectNetwork(withdrawalAccountNumber) || 'MTN' }) });
-      const reference = result?.reference ?? result?.withdrawalId ?? result?.id;
-      setWithdrawalResult(reference ? `Withdrawal request submitted. Reference: ${reference}` : 'Withdrawal request submitted for review.');
+      await api<any>('POST', '/api/wallet/withdrawals', { amount, method: isCard ? 'CARD' : 'MOBILE_MONEY', currency: 'GHS', accountNumber: withdrawalAccountNumber.trim(), accountName: withdrawalAccountName.trim(), ...(isCard ? {} : { network: withdrawalNetwork || lpDetectNetwork(withdrawalAccountNumber) || 'MTN' }) });
+      setWithdrawalResult('Withdrawal request submitted for review.');
       setWithdrawalAmount(''); setWithdrawalAccountNumber(''); setWithdrawalAccountName(''); setWithdrawalNetwork('');
     } catch (error) { setWithdrawalError(error instanceof Error ? error.message : 'Withdrawal could not be submitted.'); }
   };
