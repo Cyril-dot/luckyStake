@@ -261,8 +261,14 @@ body.slip-open .home-slip-button{opacity:0;pointer-events:none}
 .accumulator-slip .slip-leg-odds{min-width:68px;padding:8px 12px;border-radius:9px;background:linear-gradient(180deg,#3d2a58,#2a1d40);border:1px solid #7757a3;font-size:19px;box-shadow:inset 0 1px 0 rgba(255,255,255,.12)}
 .accumulator-slip .slip-leg-match{font-size:15px;font-weight:700}
 .accumulator-slip .slip-summary-footer{margin-top:14px;padding:14px;border:1px solid #493957;border-radius:14px;background:#1d1628;box-shadow:0 8px 18px rgba(5,2,10,.3)}
-.accumulator-slip .slip-total-odds{margin:0 0 10px;padding:0 0 10px;background:transparent;border-bottom:1px dashed #493957;border-radius:0}
 .accumulator-slip .slip-stake-field input{height:48px;padding:0 13px;border-radius:10px;font-size:17px}
-.accumulator-slip .slip-return-row{margin-top:12px;padding:12px;border-radius:10px;background:linear-gradient(90deg,rgba(214,238,70,.18),rgba(214,238,70,.05));border:1px solid rgba(214,238,70,.35)}
 .accumulator-slip .drawer-place{margin-top:14px;padding:15px;border-radius:12px;background:linear-gradient(180deg,#eaff7a,#cdea45);color:#1c1724;font-size:15px;font-weight:900;box-shadow:0 10px 24px rgba(214,238,70,.25)}
 @media(max-width:560px){.accumulator-slip{padding:30px 16px 22px}}
+
+/* Total return sits directly under Total odds — one shared line style,
+   same font for both values. */
+.accumulator-slip .slip-total-line{display:flex;align-items:center;justify-content:space-between}
+.accumulator-slip .slip-total-line span{color:#c5b4d1;font-size:11px}
+.accumulator-slip .slip-total-line strong{color:var(--lime);font:700 18px 'Barlow Condensed',sans-serif}
+.accumulator-slip .slip-total-line-end{margin-top:6px;padding-bottom:11px;border-bottom:1px dashed #493957}
+.accumulator-slip .slip-stake-field{margin-top:12px}
