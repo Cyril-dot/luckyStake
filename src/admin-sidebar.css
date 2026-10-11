@@ -382,3 +382,25 @@ button.admin-stat:hover { transform: translateY(-2px); border-color: var(--lime)
   .rnd-form .rnd-league-field { grid-column: 1 / -1; }
   .rnd-ready-strip button { padding: 8px 9px; }
 }
+
+/* Phone UI repair (owner screenshot, 2026-10-11): iOS Safari zooms the
+   page when a focused input's font is under 16px and STAYS zoomed — both
+   screen edges clip and titles run off, the 'UI is fucked' look. Admin
+   inputs go 16px on phones, panel titles wrap their note onto its own
+   line instead of off-screen, and lone toolbar actions become proper
+   full-width tap targets. */
+@media (max-width: 560px) {
+  .admin-app { touch-action: manipulation; }
+  .admin-panel input, .admin-panel select, .admin-panel textarea { font-size: 16px !important; }
+  .admin-panel-title { flex-wrap: wrap; row-gap: 3px; }
+  .admin-panel-title .admin-panel-note { flex-basis: 100%; font-size: 11px; }
+  .admin-toolbar:has(> .admin-button:only-child) .admin-button { flex: 1; min-height: 47px; font-size: 13.5px; }
+  .rnd-card { padding: 14px; border-radius: 14px; }
+  .rnd-card-league { font-size: 11px; }
+  .rnd-card-teams { font-size: 15.5px; margin: 10px 0 12px; }
+  .rnd-card-editors { gap: 7px; }
+  .rnd-card-editors input { height: 44px; }
+  .rnd-dash { padding-bottom: 13px; }
+  .rnd-ready-strip { flex-wrap: wrap; }
+  .rnd-ready-strip button { flex: 1; justify-content: center; }
+}
