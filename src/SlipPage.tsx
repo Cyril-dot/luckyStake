@@ -87,11 +87,16 @@ function nestedOdds(raw: AnyRecord) {
 
 function normalizeSelection(raw: AnyRecord, index: number): SlipSelection {
   const match = raw.match && typeof raw.match === 'object' ? raw.match : {};
-  const homeTeam = stringValue(raw.homeTeam, raw.home_team, raw.homeName, match.homeTeam, match.home, raw.event?.homeTeam, 'Home team');
-  const awayTeam = stringValue(raw.awayTeam, raw.away_team, raw.awayName, match.awayTeam, match.away, raw.event?.awayTeam, 'Away team');
+  // Bet selections from this backend often carry ONLY a label —
+  // match: "Home vs Away" — with no homeTeam/awayTeam fields. Parse it,
+  // or the ticket renders the 'Home team vs Away team' placeholders.
+  const label = typeof raw.match === 'string' ? raw.match : stringValue(raw.matchLabel, raw.fixtureLabel, raw.eventName);
+  const labelParts = label.split(/\s+vs\s+/i).map(part => part.trim()).filter(Boolean);
+  const homeTeam = stringValue(raw.homeTeam, raw.home_team, raw.homeName, match.homeTeam, match.home, raw.event?.homeTeam, labelParts[0], 'Home team');
+  const awayTeam = stringValue(raw.awayTeam, raw.away_team, raw.awayName, match.awayTeam, match.away, raw.event?.awayTeam, labelParts[1], 'Away team');
   return {
     id: stringValue(raw.id, raw.selectionId, `${index}`),
-    matchId: stringValue(raw.matchId, raw.match_id, raw.eventId, match.id),
+    matchId: stringValue(raw.matchId, raw.match_id, raw.fixture_id, raw.fixtureId, raw.eventId, match.id),
     homeTeam,
     awayTeam,
     market: stringValue(raw.market, raw.marketName, raw.betType, 'Match result'),
