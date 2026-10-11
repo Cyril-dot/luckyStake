@@ -290,6 +290,7 @@ function NigeriaDeposit({ onDone }: { onDone: () => void }) {
   const [banks, setBanks] = useState<Array<{ name: string; code: string }>>([]);
   const [bankCode, setBankCode] = useState('');
   const [phase, setPhase] = useState<'form' | 'waiting' | 'done'>('form');
+  const [stalled, setStalled] = useState(false);
   const [copied, setCopied] = useState(false);
   const timer = useRef<number | null>(null);
   const value = Number(amount);
@@ -308,7 +309,7 @@ function NigeriaDeposit({ onDone }: { onDone: () => void }) {
         if (res?.credited || String(res?.status ?? '').toLowerCase() === 'succeeded') { stopPoll(); setPhase('done'); onDone(); return; }
         if (String(res?.status ?? '').toLowerCase() === 'failed') { stopPoll(); setError('That payment failed. Please try again.'); setPhase('form'); return; }
       } catch { /* keep waiting — the webhook/reconciler can still land it */ }
-      if (tries >= 30) stopPoll();
+      if (tries >= 30) { stopPoll(); setStalled(true); }
     }, 5000);
   }
 
@@ -323,7 +324,7 @@ function NigeriaDeposit({ onDone }: { onDone: () => void }) {
     }).catch(() => undefined);
   }, [method, banks.length]);
 
-  const reset = () => { stopPoll(); setPhase('form'); setVa(null); setUssdNote(''); setError(''); setAmount(''); setCopied(false); };
+  const reset = () => { stopPoll(); setPhase('form'); setVa(null); setUssdNote(''); setError(''); setAmount(''); setCopied(false); setStalled(false); };
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -393,7 +394,7 @@ function NigeriaDeposit({ onDone }: { onDone: () => void }) {
         <h3>Complete on your phone</h3>
         <p className="ng-ussd-note">{ussdNote}</p>
       </>}
-      <div className="lp-wait"><span className="lp-spinner" /><p>Waiting for your payment…<br />this updates automatically when it lands</p></div>
+      {stalled ? <><p className="ng-note-line">Still confirming — this is taking longer than usual. If your payment completed, your wallet credits automatically, so you can safely leave this page and check your balance shortly.</p><button className="lp-cta" type="button" onClick={reset}>Done</button></> : <div className="lp-wait"><span className="lp-spinner" /><p>Waiting for your payment…<br />this updates automatically when it lands</p></div>}
       {error && <p className="lp-error"><span className="material-symbols-rounded">error</span>{error}</p>}
       <div className="lp-alt"><button type="button" className="lp-link" onClick={reset}>Cancel deposit</button></div>
     </div>}
