@@ -289,3 +289,58 @@ body.slip-open .home-slip-button{opacity:0;pointer-events:none}
 .accumulator-slip .drawer-slip>.slip-summary-footer{margin:16px 0 0;position:static;padding:0;background:transparent;border:0;box-shadow:none}
 
 .accumulator-slip .slip-drawer-head h2 
+/* --- Scroll structure: the stake section itself never scrolls — only
+   the games section inside it does. Header, totals, stake and Place
+   bet stay pinned. */
+.slip-drawer{display:flex;flex-direction:column;overflow:hidden}
+.accumulator-slip .drawer-slip{display:flex;flex-direction:column;flex:1 1 auto;min-height:0;overflow:hidden}
+.accumulator-slip .slip-legs{flex:1 1 auto;min-height:0;max-height:none;overflow-y:auto;overscroll-behavior:contain;padding-right:2px}
+.accumulator-slip .slip-legs::-webkit-scrollbar{width:5px}
+.accumulator-slip .slip-legs::-webkit-scrollbar-thumb{background:#59456d;border-radius:99px}
+
+/* --- Bet-placed success card --- */
+.slip-success-card{max-width:340px}
+.slip-success-icon{display:grid;place-items:center;width:64px;height:64px;margin:0 auto 6px;border-radius:50%;background:radial-gradient(circle at 32% 28%,#f4ff9d,var(--lime) 62%);color:#1c1724;box-shadow:0 12px 30px rgba(214,238,70,.35)}
+.slip-success-icon .material-symbols-rounded{font-size:36px;font-weight:900}
+.slip-success-rows{display:grid;gap:7px;margin:14px 0 4px;padding:12px;border:1px solid #59456d;border-radius:10px;background:#1a1325;text-align:left}
+.slip-success-rows>div{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.slip-success-rows span{color:#a99db3;font-size:12px}
+.slip-success-rows b{color:#fff;font-size:14px}
+.slip-success-rows b.lime{color:var(--lime)}
+.slip-success-card a{display:inline-block;margin-top:12px;color:var(--lime);font-size:13px;font-weight:700}
+.slip-place-error{margin:10px 0 0;padding:10px 12px;border:1px solid rgba(255,120,140,.5);border-radius:8px;background:rgba(200,50,80,.14);color:#ffb4be;font-size:12.5px}
+
+/* --- Load-a-booking-code page --- */
+.booking-page{max-width:640px;margin:0 auto;padding:8px 0 10px}
+.booking-hero{text-align:center;padding:26px 18px 20px}
+.booking-hero-icon{display:grid;place-items:center;width:70px;height:70px;margin:0 auto 14px;border-radius:20px;background:linear-gradient(150deg,#3d2a58,#241832);border:1px solid #6a5280;color:var(--lime);box-shadow:0 14px 30px rgba(5,2,10,.4)}
+.booking-hero-icon .material-symbols-rounded{font-size:36px}
+.booking-hero>small{color:var(--lime);letter-spacing:.16em;font-weight:800}
+.booking-hero h1{margin:8px 0 8px;font-size:clamp(34px,6vw,48px)}
+.booking-hero p{margin:0 auto;max-width:460px;color:#b7abbf;font-size:14px;line-height:1.55}
+.booking-card{padding:20px;border:1px solid #59456d;border-radius:16px;background:linear-gradient(165deg,#251a35,#1b1427);box-shadow:0 16px 34px rgba(5,2,10,.35)}
+.booking-field>span{display:block;margin-bottom:8px;color:#c5bacd;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
+.booking-input-row{display:flex;gap:9px}
+.booking-input-row input{flex:1;min-width:0;height:54px;padding:0 16px;border:1px solid #6a5280;border-radius:11px;background:#17131f;color:#fff;font-size:19px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;outline:0}
+.booking-input-row input:focus{border-color:var(--lime);box-shadow:0 0 0 3px rgba(214,238,70,.18)}
+.booking-paste{display:inline-flex;align-items:center;gap:6px;padding:0 16px;border:1px solid #6a5280;border-radius:11px;background:#2c2138;color:#fff;font-size:13px;font-weight:700;cursor:pointer}
+.booking-load{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:14px;padding:15px;border:0;border-radius:12px;background:linear-gradient(180deg,#eaff7a,#cdea45);color:#1c1724;font-size:15px;font-weight:900;cursor:pointer;box-shadow:0 10px 24px rgba(214,238,70,.22)}
+.booking-load:disabled{opacity:.6;cursor:wait}
+.booking-error{display:flex;align-items:center;gap:8px;margin:13px 0 0;padding:11px 13px;border:1px solid rgba(255,120,140,.5);border-radius:9px;background:rgba(200,50,80,.13);color:#ffb4be;font-size:13px}
+.booking-note{display:flex;align-items:center;gap:10px;margin-top:13px;padding:12px 13px;border:1px solid rgba(214,238,70,.45);border-radius:9px;background:rgba(214,238,70,.07);color:#e8f5c8;font-size:13px}
+.booking-note p{flex:1;margin:0}
+.booking-note .material-symbols-rounded{color:var(--lime)}
+.booking-note button{flex:0 0 auto;padding:8px 12px;border:1px solid var(--lime);border-radius:7px;background:transparent;color:var(--lime);font-size:12px;font-weight:800;cursor:pointer}
+.booking-steps{display:grid;gap:10px;margin-top:16px}
+.booking-steps>div{display:flex;gap:13px;align-items:flex-start;padding:14px 16px;border:1px solid #493957;border-radius:13px;background:#211a2c}
+.booking-steps b{display:grid;place-items:center;flex:0 0 auto;width:28px;height:28px;border-radius:50%;background:var(--lime);color:#1c1724;font-size:14px;font-weight:900}
+.booking-steps strong{display:block;color:#fff;font-size:14px}
+.booking-steps span{display:block;margin-top:2px;color:#a99db3;font-size:12.5px;line-height:1.45}
+@media(max-width:560px){.booking-card{padding:16px}.booking-input-row input{font-size:17px}}
+
+/* Specificity-raised restatements of the scroll structure — the plain
+   versions above tie with legacy index.css rules that the bundler
+   orders later, so these (0,3,0) forms are the operative ones. */
+.slip-drawer.accumulator-slip{display:flex;flex-direction:column;overflow:hidden}
+.slip-drawer.accumulator-slip .drawer-slip{display:flex;flex-direction:column;flex:1 1 auto;min-height:0;overflow:hidden}
+.slip-drawer.accumulator-slip .slip-legs{flex:1 1 auto;min-height:0;max-height:none;overflow-y:auto;overscroll-behavior:contain}
