@@ -217,3 +217,16 @@
 .booking-total span{color:#c5b4d1;font-size:12px}
 .booking-total strong{color:var(--lime);font:700 22px 'Barlow Condensed',sans-serif}
 .booking-loaded .primary{display:inline-flex;align-items:center;gap:7px;margin-top:14px;padding:12px 18px;border:0;border-radius:8px;background:var(--lime);color:#1c1724;font-weight:800;cursor:pointer}
+
+/* Stacked-leg fix: the legacy `.drawer-slip > div { display:flex }` rule
+   was turning the legs container into a horizontal flex row, squeezing
+   every loaded game side-by-side until picks truncated and odds
+   collided. Legs stack full-width, one game per row. */
+.accumulator-slip .slip-legs{display:grid;grid-template-columns:minmax(0,1fr);gap:2px;max-height:38vh;overflow-y:auto}
+.accumulator-slip .slip-summary-footer{display:block}
+.accumulator-slip .slip-leg{min-width:0}
+.accumulator-slip .slip-leg-match{overflow-wrap:anywhere}
+.accumulator-slip .slip-pick>div{min-width:0}
+.accumulator-slip .slip-pick b{overflow-wrap:anywhere}
+.accumulator-slip .slip-pick strong{flex:0 0 auto;margin-left:auto}
+.accumulator-slip .slip-remove-button{flex:0 0 auto}
