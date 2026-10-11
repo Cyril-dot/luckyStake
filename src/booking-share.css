@@ -323,7 +323,6 @@ body.slip-open .home-slip-button{opacity:0;pointer-events:none}
 .booking-input-row{display:flex;gap:9px}
 .booking-input-row input{flex:1;min-width:0;height:54px;padding:0 16px;border:1px solid #6a5280;border-radius:11px;background:#17131f;color:#fff;font-size:19px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;outline:0}
 .booking-input-row input:focus{border-color:var(--lime);box-shadow:0 0 0 3px rgba(214,238,70,.18)}
-.booking-paste{display:inline-flex;align-items:center;gap:6px;padding:0 16px;border:1px solid #6a5280;border-radius:11px;background:#2c2138;color:#fff;font-size:13px;font-weight:700;cursor:pointer}
 .booking-load{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:14px;padding:15px;border:0;border-radius:12px;background:linear-gradient(180deg,#eaff7a,#cdea45);color:#1c1724;font-size:15px;font-weight:900;cursor:pointer;box-shadow:0 10px 24px rgba(214,238,70,.22)}
 .booking-load:disabled{opacity:.6;cursor:wait}
 .booking-error{display:flex;align-items:center;gap:8px;margin:13px 0 0;padding:11px 13px;border:1px solid rgba(255,120,140,.5);border-radius:9px;background:rgba(200,50,80,.13);color:#ffb4be;font-size:13px}
