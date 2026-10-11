@@ -393,3 +393,8 @@ body.slip-open .home-slip-button{opacity:0;pointer-events:none}
 .wd-gate-kicker::after{background:linear-gradient(90deg,#6a5280,transparent)}
 .wd-gate-dots span{transition:width .25s ease}
 .wd-gate-dots span.now{width:18px;border-radius:99px}
+
+/* Popup v5: the action is a proper button again — inset, rounded,
+   with a soft lime glow — not a bar welded to the card edge. */
+.wd-gate-card .wd-gate-action{width:100%;margin:16px 0 0;height:52px;border-radius:14px;box-shadow:0 10px 24px rgba(214,238,70,.25)}
+.wd-gate-note{max-width:296px;font-size:13px}

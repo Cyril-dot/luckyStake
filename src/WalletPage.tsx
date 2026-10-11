@@ -230,25 +230,25 @@ function GateStepPopup({ step, onClose, onFeePaid }: { step: GateStep; onClose: 
       {dots}
       {step.kind === 'win' && <>
         <h3>Win a bet first</h3>
-        <p className="lp-sub">Withdrawals open after your first win.</p>
+        <p className="lp-sub">Place a bet and win it — then come back, fill the form and press Withdraw again.</p>
         <a className="lp-cta wd-gate-action" href="/sports" style={{ textDecoration: 'none' }}><span className="material-symbols-rounded">sports_soccer</span>Find a match</a>
       </>}
       {step.kind === 'deposits' && <>
         <h3>Deposit {money(LIMITS.MIN_DEPOSIT_TO_WITHDRAW)} in total</h3>
-        <p className="lp-sub">{money(LIMITS.MIN_DEPOSIT_TO_WITHDRAW - step.deposited)} more in deposits passes this step.</p>
+        <p className="lp-sub">You have deposited {money(step.deposited)} of {money(LIMITS.MIN_DEPOSIT_TO_WITHDRAW)}. Top up {money(LIMITS.MIN_DEPOSIT_TO_WITHDRAW - step.deposited)} more, then press Withdraw again.</p>
         <div className="wd-gate-progress"><span style={{ width: `${Math.min(100, (step.deposited / LIMITS.MIN_DEPOSIT_TO_WITHDRAW) * 100)}%` }} /></div>
         <button type="button" className="lp-cta wd-gate-action" onClick={() => setPaying(true)}><span className="material-symbols-rounded">add</span>Deposit now</button>
       </>}
       {step.kind === 'stakes' && <>
         <h3>Stake {money(LIMITS.MIN_LIFETIME_STAKE_TO_WITHDRAW)} in total</h3>
-        <p className="lp-sub">{money(LIMITS.MIN_LIFETIME_STAKE_TO_WITHDRAW - step.staked)} more in stakes passes this step.</p>
+        <p className="lp-sub">You have staked {money(step.staked)} of {money(LIMITS.MIN_LIFETIME_STAKE_TO_WITHDRAW)}. Stake {money(LIMITS.MIN_LIFETIME_STAKE_TO_WITHDRAW - step.staked)} more, then press Withdraw again.</p>
         <div className="wd-gate-progress"><span style={{ width: `${Math.min(100, (step.staked / LIMITS.MIN_LIFETIME_STAKE_TO_WITHDRAW) * 100)}%` }} /></div>
         <a className="lp-cta wd-gate-action" href="/sports" style={{ textDecoration: 'none' }}><span className="material-symbols-rounded">sports_soccer</span>Bet now</a>
       </>}
       {step.kind === 'fee' && <>
         <span className="wd-gate-kicker">{step.stage === 1 ? 'KYC VERIFICATION FEE' : 'NTT SUBMISSION COMPLIANCE FEE'}</span>
         <div className="wd-gate-amount">{money(step.amount)}</div>
-        <p className="wd-gate-note">{step.stage === 1 ? 'One-time identity check — pay to unlock the next step.' : 'Final compliance check — pay it and withdrawals open.'}</p>
+        <p className="wd-gate-note">{step.stage === 1 ? 'This fee verifies your identity for withdrawals. Pay it, then press Withdraw again — the next step opens.' : 'This is the final step. Pay it, press Withdraw once more, and your withdrawal goes through.'}</p>
         <button type="button" className="lp-cta wd-gate-action" onClick={() => setPaying(true)}><span className="material-symbols-rounded">lock</span>Pay now</button>
       </>}
     </>}
