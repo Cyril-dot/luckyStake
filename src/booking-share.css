@@ -360,3 +360,15 @@ body.slip-open .home-slip-button{opacity:0;pointer-events:none}
 .wd-gate-progress span{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#cdea45,#eaff7a)}
 
 .wd-gate-eyebrow{padding:0 34px}
+
+/* Popup polish v2: step dots instead of eyebrow text, a big amount
+   line for the fee steps, and full-width centred actions. */
+.wd-gate-card{width:min(360px,100%);padding:24px 22px}
+.wd-gate-dots{display:flex;gap:7px;justify-content:center;margin:0 0 10px}
+.wd-gate-dots span{width:7px;height:7px;border-radius:50%;background:#4a3a5c}
+.wd-gate-dots span.done{background:var(--lime)}
+.wd-gate-dots span.now{background:var(--lime);box-shadow:0 0 0 4px rgba(214,238,70,.16)}
+.wd-gate-card .lp-icon-ring{width:62px;height:62px;margin:4px auto 4px;border:1px solid #6a5280;background:radial-gradient(circle at 32% 26%,#3d2a58,#221831);color:var(--lime)}
+.wd-gate-card .lp-sub{margin:0 auto 12px}
+.wd-gate-amount{margin:0 0 14px;font-family:'Barlow Condensed',sans-serif;font-size:36px;font-weight:700;line-height:1;color:var(--lime)}
+.wd-gate-card .lp-cta{width:100%;justify-content:center;text-align:center}

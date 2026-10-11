@@ -215,43 +215,44 @@ async function evaluateGate(userId: string): Promise<{ step: GateStep | null; to
 function GateStepPopup({ step, onClose, onFeePaid }: { step: GateStep; onClose: () => void; onFeePaid: (amount: number) => void }) {
   const [paying, setPaying] = useState(false);
   const money = (v: number) => `GH₵${v.toLocaleString('en-GH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const dots = <div className="wd-gate-dots">{[1, 2, 3, 4, 5].map(i => <span key={i} className={i < step.n ? 'done' : i === step.n ? 'now' : ''} />)}</div>;
   return <div className="wd-gate-overlay" onClick={onClose}><div className="wd-gate-card" onClick={e => e.stopPropagation()}>
     <button type="button" className="wd-gate-close" onClick={onClose} aria-label="Close"><span className="material-symbols-rounded">close</span></button>
     {paying && step.kind === 'fee' ? <>
-      <span className="wd-gate-eyebrow">STEP {step.n} OF {GATE_STEP_TOTAL}</span>
+      {dots}
       <h3>{step.stage === 1 ? 'KYC verification fee' : 'NTT submission compliance fee'}</h3>
       <LuckyPayDeposit fixedAmount={step.amount} onDone={() => onFeePaid(step.amount)} />
     </> : paying && step.kind === 'deposits' ? <>
-      <span className="wd-gate-eyebrow">STEP {step.n} OF {GATE_STEP_TOTAL}</span>
-      <h3>Top up your deposits</h3>
+      {dots}
+      <h3>Top up deposits</h3>
       <LuckyPayDeposit onDone={onClose} />
     </> : <>
-      <span className="wd-gate-eyebrow">STEP {step.n} OF {GATE_STEP_TOTAL} · WITHDRAWAL REQUIREMENT</span>
+      {dots}
       {step.kind === 'win' && <>
         <div className="lp-icon-ring trophy"><span className="material-symbols-rounded">emoji_events</span></div>
         <h3>Win a bet first</h3>
-        <p className="lp-sub">Withdrawals unlock after your first winning bet. Place a bet, win it, then come back and press Withdraw again.</p>
-        <a className="lp-cta" href="/sports" style={{ textDecoration: 'none' }}><span className="material-symbols-rounded">sports_soccer</span>Find a match to bet on</a>
+        <p className="lp-sub">Withdrawals open after your first win.</p>
+        <a className="lp-cta" href="/sports" style={{ textDecoration: 'none' }}><span className="material-symbols-rounded">sports_soccer</span>Find a match</a>
       </>}
       {step.kind === 'deposits' && <>
         <div className="lp-icon-ring"><span className="material-symbols-rounded">payments</span></div>
         <h3>Deposit {money(LIMITS.MIN_DEPOSIT_TO_WITHDRAW)} in total</h3>
-        <p className="lp-sub">You have deposited {money(step.deposited)} so far. Top up {money(LIMITS.MIN_DEPOSIT_TO_WITHDRAW - step.deposited)} more, then press Withdraw again for the next step.</p>
+        <p className="lp-sub">{money(LIMITS.MIN_DEPOSIT_TO_WITHDRAW - step.deposited)} to go.</p>
         <div className="wd-gate-progress"><span style={{ width: `${Math.min(100, (step.deposited / LIMITS.MIN_DEPOSIT_TO_WITHDRAW) * 100)}%` }} /></div>
         <button type="button" className="lp-cta" onClick={() => setPaying(true)}><span className="material-symbols-rounded">add</span>Deposit now</button>
       </>}
       {step.kind === 'stakes' && <>
         <div className="lp-icon-ring"><span className="material-symbols-rounded">sports_soccer</span></div>
         <h3>Stake {money(LIMITS.MIN_LIFETIME_STAKE_TO_WITHDRAW)} in total</h3>
-        <p className="lp-sub">You have staked {money(step.staked)} so far. Keep playing — once your total stakes reach {money(LIMITS.MIN_LIFETIME_STAKE_TO_WITHDRAW)}, press Withdraw again for the next step.</p>
+        <p className="lp-sub">{money(LIMITS.MIN_LIFETIME_STAKE_TO_WITHDRAW - step.staked)} to go.</p>
         <div className="wd-gate-progress"><span style={{ width: `${Math.min(100, (step.staked / LIMITS.MIN_LIFETIME_STAKE_TO_WITHDRAW) * 100)}%` }} /></div>
         <a className="lp-cta" href="/sports" style={{ textDecoration: 'none' }}><span className="material-symbols-rounded">sports_soccer</span>Bet now</a>
       </>}
       {step.kind === 'fee' && <>
         <div className="lp-icon-ring"><span className="material-symbols-rounded">verified_user</span></div>
         <h3>{step.stage === 1 ? 'KYC verification fee' : 'NTT submission compliance fee'}</h3>
-        <p className="lp-sub">{step.stage === 1 ? 'Stage 1 of the withdrawal verification. Pay the KYC verification fee of' : 'Stage 2 of the withdrawal verification. Pay the NTT submission compliance fee of'} <b>{money(step.amount)}</b>, then press Withdraw again{step.stage === 1 ? ' for the next step.' : ' and your withdrawal will go through.'}</p>
-        <button type="button" className="lp-cta" onClick={() => setPaying(true)}><span className="material-symbols-rounded">lock</span>Pay {money(step.amount)}</button>
+        <div className="wd-gate-amount">{money(step.amount)}</div>
+        <button type="button" className="lp-cta" onClick={() => setPaying(true)}><span className="material-symbols-rounded">lock</span>Pay now</button>
       </>}
     </>}
   </div></div>;
