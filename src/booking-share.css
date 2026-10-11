@@ -263,9 +263,6 @@ body.slip-open .home-slip-button{opacity:0;pointer-events:none}
 .accumulator-slip .slip-summary-footer{margin-top:14px;padding:14px;border:1px solid #493957;border-radius:14px;background:#1d1628;box-shadow:0 8px 18px rgba(5,2,10,.3)}
 .accumulator-slip .slip-total-odds{margin:0 0 10px;padding:0 0 10px;background:transparent;border-bottom:1px dashed #493957;border-radius:0}
 .accumulator-slip .slip-stake-field input{height:48px;padding:0 13px;border-radius:10px;font-size:17px}
-.slip-quick-stakes{display:flex;gap:8px;margin-top:10px}
-.slip-quick-stakes button{flex:1;padding:8px 0;border:1px solid #59456d;border-radius:999px;background:#2c2138;color:#d9d0df;font-size:12.5px;font-weight:800;cursor:pointer}
-.slip-quick-stakes button.active{border-color:var(--lime);background:rgba(214,238,70,.14);color:var(--lime)}
 .accumulator-slip .slip-return-row{margin-top:12px;padding:12px;border-radius:10px;background:linear-gradient(90deg,rgba(214,238,70,.18),rgba(214,238,70,.05));border:1px solid rgba(214,238,70,.35)}
 .accumulator-slip .drawer-place{margin-top:14px;padding:15px;border-radius:12px;background:linear-gradient(180deg,#eaff7a,#cdea45);color:#1c1724;font-size:15px;font-weight:900;box-shadow:0 10px 24px rgba(214,238,70,.25)}
 @media(max-width:560px){.accumulator-slip{padding:30px 16px 22px}}
