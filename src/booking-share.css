@@ -343,3 +343,6 @@ body.slip-open .home-slip-button{opacity:0;pointer-events:none}
 .slip-drawer.accumulator-slip{display:flex;flex-direction:column;overflow:hidden}
 .slip-drawer.accumulator-slip .drawer-slip{display:flex;flex-direction:column;flex:1 1 auto;min-height:0;overflow:hidden}
 .slip-drawer.accumulator-slip .slip-legs{flex:1 1 auto;min-height:0;max-height:none;overflow-y:auto;overscroll-behavior:contain}
+
+/* Minimum-stake hint under the slip's stake box. */
+.slip-stake-hint{display:block;margin-top:5px;color:#a99db3;font-size:10.5px;font-weight:600}

