@@ -346,3 +346,17 @@ body.slip-open .home-slip-button{opacity:0;pointer-events:none}
 
 /* Minimum-stake hint under the slip's stake box. */
 .slip-stake-hint{display:block;margin-top:5px;color:#a99db3;font-size:10.5px;font-weight:600}
+
+/* --- Withdrawal gate popup: one step at a time, over the form --- */
+.wd-gate-overlay{position:fixed;inset:0;z-index:90;display:grid;place-items:center;padding:18px;background:rgba(10,6,16,.72);backdrop-filter:blur(3px)}
+.wd-gate-card{position:relative;width:min(400px,100%);max-height:88vh;overflow-y:auto;padding:26px 22px 22px;border:1px solid #59456d;border-radius:18px;background:linear-gradient(170deg,#2b2038,#1d1628);box-shadow:0 30px 60px rgba(0,0,0,.5);text-align:center}
+.wd-gate-card h3{margin:10px 0 8px;color:#fff;font-size:21px}
+.wd-gate-card .lp-sub{margin:0 auto 14px;max-width:320px}
+.wd-gate-card .lp-icon-ring{margin:8px auto 2px}
+.wd-gate-card .lp-cta{margin-top:4px}
+.wd-gate-close{position:absolute;top:10px;right:10px;display:grid;place-items:center;width:34px;height:34px;border:1px solid #59456d;border-radius:9px;background:#241a31;color:#fff;cursor:pointer}
+.wd-gate-eyebrow{display:block;color:var(--lime);font-size:10.5px;font-weight:800;letter-spacing:.14em}
+.wd-gate-progress{height:8px;margin:2px 0 14px;border-radius:99px;background:#171022;overflow:hidden}
+.wd-gate-progress span{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#cdea45,#eaff7a)}
+
+.wd-gate-eyebrow{padding:0 34px}
