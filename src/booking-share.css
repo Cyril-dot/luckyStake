@@ -255,7 +255,6 @@ body.slip-open .home-slip-button{opacity:0;pointer-events:none}
 .accumulator-slip{padding:26px 20px 24px}
 .accumulator-slip .slip-drawer-head{padding-bottom:15px;margin-bottom:4px}
 .accumulator-slip .slip-drawer-head h2{gap:10px}
-.slip-count-badge{display:inline-grid;place-items:center;min-width:24px;height:24px;padding:0 7px;border-radius:999px;background:var(--lime);color:#1c1724;font-size:13px;font-weight:900}
 .accumulator-slip .drawer-slip{background:transparent;border:0;padding:0;margin-top:12px}
 .accumulator-slip .slip-leg{background:linear-gradient(165deg,#251a35,#1b1427);border:1px solid #52406a;border-radius:14px;padding:13px 14px;box-shadow:0 8px 18px rgba(5,2,10,.35)}
 .accumulator-slip .slip-leg-odds{min-width:68px;padding:8px 12px;border-radius:9px;background:linear-gradient(180deg,#3d2a58,#2a1d40);border:1px solid #7757a3;font-size:19px;box-shadow:inset 0 1px 0 rgba(255,255,255,.12)}
@@ -289,7 +288,4 @@ body.slip-open .home-slip-button{opacity:0;pointer-events:none}
    legacy geometry so the under section aligns with the games above. */
 .accumulator-slip .drawer-slip>.slip-summary-footer{margin:16px 0 0;position:static;padding:0;background:transparent;border:0;box-shadow:none}
 
-/* The count badge is a span inside the slip title, so the legacy title
-   span rule (lime, 30px) was painting its number lime-on-lime and
-   oversizing it — pin its real size and ink. */
-.accumulator-slip .slip-drawer-head h2 .slip-count-badge{color:#1c1724;font-size:13px;line-height:1}
+.accumulator-slip .slip-drawer-head h2 
