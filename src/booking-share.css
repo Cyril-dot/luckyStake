@@ -230,3 +230,21 @@
 .accumulator-slip .slip-pick b{overflow-wrap:anywhere}
 .accumulator-slip .slip-pick strong{flex:0 0 auto;margin-left:auto}
 .accumulator-slip .slip-remove-button{flex:0 0 auto}
+
+/* Slip redesign (top-bookmaker layout): one section per game — game and
+   odds on the same line, the market TYPE under the game. The loaded-code
+   chip is gone from the top. */
+.accumulator-slip .slip-legs{max-height:34vh;gap:10px;padding:2px}
+.accumulator-slip .slip-leg{background:#1d1628;border:1px solid #493957;border-radius:12px;padding:11px 12px}
+.accumulator-slip .slip-leg-top{display:flex;align-items:flex-start;gap:10px}
+.accumulator-slip .slip-leg-match{flex:1 1 auto;min-width:0;font-size:14.5px;line-height:1.3;margin-top:0}
+.accumulator-slip .slip-leg-odds{flex:0 0 auto;min-width:62px;padding:7px 10px;border-radius:8px;background:#33244a;border:1px solid #6a5280;color:var(--lime);font:700 17px 'Barlow Condensed',sans-serif;text-align:center}
+.accumulator-slip .slip-remove-button{flex:0 0 auto;width:26px;height:26px;display:grid;place-items:center;padding:0;border:1px solid #59456d;border-radius:50%;background:#2c2138;color:#c5bacd;cursor:pointer}
+.accumulator-slip .slip-remove-button .material-symbols-rounded{font-size:15px}
+.accumulator-slip .slip-leg-type{display:flex;align-items:center;gap:8px;margin-top:9px;padding-top:8px;border-top:1px solid rgba(255,255,255,.08);color:#a99db3;font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+.accumulator-slip .slip-leg-type b{color:#fff;font-size:12.5px;letter-spacing:.02em;text-transform:none}
+/* Nothing floats over the stake section: the sheet scrolls as one, and
+   the homepage floating button hides while the slip is open. */
+.slip-drawer{overflow-y:auto}
+body.slip-open .home-slip-button{opacity:0;pointer-events:none}
+@media(max-width:560px){.accumulator-slip{height:min(92vh,720px)}}
