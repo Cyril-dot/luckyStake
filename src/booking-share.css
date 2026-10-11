@@ -278,3 +278,7 @@ body.slip-open .home-slip-button{opacity:0;pointer-events:none}
 .accumulator-slip .slip-total-line strong{margin-left:auto;text-align:right}
 .accumulator-slip .slip-total-line .currency-prefix{margin-right:.5em}
 .accumulator-slip .slip-stake-field input{text-align:right}
+
+/* Under section: the dark panel behind the totals/stake is removed —
+   that whole section now sits directly on the sheet (owner's call). */
+.accumulator-slip .slip-summary-footer{background:transparent;border:0;box-shadow:none;padding:0;margin-top:16px}
