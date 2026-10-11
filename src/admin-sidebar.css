@@ -363,3 +363,22 @@ button.admin-stat:hover { transform: translateY(-2px); border-color: var(--lime)
 .code-draft-row small{display:block;margin-top:2px;font-size:12px;color:var(--adm-dim,#a794c4)}
 .code-cs-edit{display:flex;align-items:center;gap:8px}
 .code-cs-edit input{width:70px}
+
+/* Random games: point-of-action feedback + compact phone form */
+.rnd-anchor { scroll-margin-top: 70px; }
+.rnd-quick-slots { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin: 2px 0 10px; }
+.rnd-quick-slots span { color: #a99bb3; font-size: 11px; font-weight: 700; }
+.rnd-quick-slots button { padding: 7px 11px; border: 1px solid #59446d; border-radius: 999px; background: #241a31; color: #e8e2ee; font: 700 11.5px 'Rajdhani'; cursor: pointer; }
+.rnd-quick-slots button:active { border-color: var(--lime); color: var(--lime); }
+.rnd-ready-strip { display: flex; align-items: center; gap: 11px; margin-top: 12px; padding: 12px; border: 1px solid #5b7132; border-radius: 10px; background: rgba(155, 205, 50, .1); }
+.rnd-ready-strip > .material-symbols-rounded { color: #c8ef54; font-size: 22px; flex-shrink: 0; }
+.rnd-ready-strip div { flex: 1; min-width: 0; }
+.rnd-ready-strip b { display: block; font-size: 13px; color: #eef7c8; }
+.rnd-ready-strip small { display: block; color: #b9c69a; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rnd-ready-strip button { display: inline-flex; align-items: center; gap: 5px; padding: 9px 12px; border: 0; border-radius: 8px; background: var(--lime); color: #18121e; font: 800 12px 'Rajdhani'; cursor: pointer; white-space: nowrap; }
+.rnd-ready-strip button .material-symbols-rounded { font-size: 16px; }
+@media (max-width: 560px) {
+  .admin-form-grid.rnd-form { grid-template-columns: 1fr 1fr; }
+  .rnd-form .rnd-league-field { grid-column: 1 / -1; }
+  .rnd-ready-strip button { padding: 8px 9px; }
+}

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { api, roleFromToken } from './api';
 
 export { roleFromToken };
@@ -395,6 +395,9 @@ function AdminRandomGames() {
   };
   const [createdCode, setCreatedCode] = useState('');
   const [individualCodes, setIndividualCodes] = useState<Record<string, string>>({});
+  const reviewRef = useRef<HTMLDivElement>(null);
+  const codesRef = useRef<HTMLDivElement>(null);
+  const scrollTo = (ref: { current: HTMLDivElement | null }) => window.setTimeout(() => ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 90);
   const [copied, setCopied] = useState('');
   useEffect(() => {
     if (!date) {
@@ -402,10 +405,17 @@ function AdminRandomGames() {
       setDate(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`);
     }
   }, [date]);
+  const quickSlot = (target: Date) => {
+    const p2 = (n: number) => String(n).padStart(2, '0');
+    setDate(`${target.getFullYear()}-${p2(target.getMonth() + 1)}-${p2(target.getDate())}`);
+    setTime(`${p2(target.getHours())}:${p2(target.getMinutes())}`);
+    setError('');
+  };
   const generate = () => {
     const count = Math.max(1, Math.min(30, Number(quantity) || 1));
     const kickoff = new Date(`${date}T${time}:00`);
-    if (Number.isNaN(kickoff.getTime()) || kickoff.getTime() <= Date.now()) { setError('Choose a future start date and time.'); return; }
+    if (Number.isNaN(kickoff.getTime())) { setError('Pick a valid date and time.'); return; }
+    if (kickoff.getTime() <= Date.now()) { setError('That start time has already passed — pick a later time, or use a quick slot below.'); return; }
     const usedPairs = new Set<string>();
     const fresh: RndGame[] = [];
     const mixedPool = shuffle(LOWER_LEAGUES);
@@ -428,6 +438,7 @@ function AdminRandomGames() {
     }
     setGames(fresh); setCreatedCode(''); setIndividualCodes({}); setError('');
     setMessage(`${fresh.length} fixtures prepared across ${new Set(fresh.map(g => g.league)).size} league${new Set(fresh.map(g => g.league)).size === 1 ? '' : 's'}. Review scores, then create the games.`);
+    scrollTo(reviewRef);
   };
   const upd = (index: number, patch: Partial<RndGame>) =>
     setGames(rs => rs.map((r, i) => (i === index ? { ...r, ...patch } : r)));
@@ -453,6 +464,7 @@ function AdminRandomGames() {
       }
       setGames(created);
       setMessage(`${created.length} games created and featured. Now mint booking codes below.`);
+      scrollTo(codesRef);
     } catch (e) { setError(e instanceof Error ? e.message : 'Could not create games'); }
     finally { setSaving(false); }
   };
@@ -521,9 +533,16 @@ function AdminRandomGames() {
         <label>Away score<input type="number" min={0} value={dAway} onChange={e => setDAway(e.target.value)} aria-label="Default away score" /></label>
       </div>
       {activeDef && <p className="rnd-league-note"><span className="material-symbols-rounded">stadium</span>{activeDef.name} — {activeDef.tier} · {activeDef.region} · {activeDef.teams.length} clubs in the pool</p>}
+      <div className="rnd-quick-slots">
+        <span>Quick start:</span>
+        <button type="button" onClick={() => quickSlot(new Date(Date.now() + 30 * 60000))}>In 30 min</button>
+        <button type="button" onClick={() => quickSlot(new Date(Date.now() + 60 * 60000))}>In 1 hour</button>
+        <button type="button" onClick={() => { const t = new Date(Date.now() + 86400000); t.setHours(18, 0, 0, 0); quickSlot(t); }}>Tomorrow 18:00</button>
+      </div>
       <div className="admin-toolbar"><Button tone="primary" onClick={generate}><span className="material-symbols-rounded">casino</span>Generate fixtures</Button></div>
+      {games.length > 0 && <div className="rnd-ready-strip"><span className="material-symbols-rounded">check_circle</span><div><b>{games.length} fixture{games.length === 1 ? '' : 's'} ready</b><small>{games[0].homeTeam} vs {games[0].awayTeam} · {new Date(games[0].kickoffAt).toLocaleString('en-GH', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}{games.length > 1 ? ` · +${games.length - 1} more` : ''}</small></div><button type="button" onClick={() => scrollTo(reviewRef)}>Review & create<span className="material-symbols-rounded">arrow_downward</span></button></div>}
     </Panel>
-    {games.length > 0 && <Panel title={`Review & create — ${games.length} fixtures`} action={<span className="admin-panel-note">Kickoffs staggered by 5 min</span>}>
+    {games.length > 0 && <div ref={reviewRef} className="rnd-anchor"><Panel title={`Review & create — ${games.length} fixtures`} action={<span className="admin-panel-note">Kickoffs staggered by 5 min</span>}>
       <div className="rnd-list">
         {games.map((g, i) => <article className="rnd-card" key={`${g.homeTeam}-${g.awayTeam}-${i}`}>
           <header className="rnd-card-head">
@@ -551,8 +570,8 @@ function AdminRandomGames() {
       <div className="admin-toolbar" style={{ marginTop: 12 }}>
         <Button tone="primary" onClick={createGames} disabled={saving || created.length === games.length}>{saving ? 'Creating…' : 'Create & feature games'}</Button>
       </div>
-    </Panel>}
-    {created.length > 0 && <Panel title="Booking codes">
+    </Panel></div>}
+    {created.length > 0 && <div ref={codesRef} className="rnd-anchor"><Panel title="Booking codes">
       <div className="admin-form-grid" style={{ marginBottom: 10 }}>
         <label>Market
           <select value={market} onChange={e => chooseMarket(e.target.value)} aria-label="Booking code market">
@@ -573,7 +592,7 @@ function AdminRandomGames() {
         <Button onClick={() => mintCode(created, true)} disabled={loading}>Mint individual codes</Button>
       </div>
       {createdCode && <div className="ref-link-card"><div className="ref-link-info"><span className="material-symbols-rounded">confirmation_number</span><div><b>Combined booking code</b><code>{createdCode}</code></div></div><button className={`ref-copy-btn${copied === createdCode ? ' ok' : ''}`} onClick={() => copyCode(createdCode)}><span className="material-symbols-rounded">content_copy</span>{copied === createdCode ? 'Copied' : 'Copy'}</button></div>}
-    </Panel>}
+    </Panel></div>}
   </div>;
 }
 
