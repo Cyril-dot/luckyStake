@@ -404,3 +404,12 @@ button.admin-stat:hover { transform: translateY(-2px); border-color: var(--lime)
   .rnd-ready-strip { flex-wrap: wrap; }
   .rnd-ready-strip button { flex: 1; justify-content: center; }
 }
+
+/* Correct-score code editor: per-game score + odds, inside the codes panel */
+.rnd-cs-list { display: grid; gap: 8px; margin: 0 0 12px; }
+.rnd-cs-row { padding: 11px 12px; border: 1px solid #4a3859; border-radius: 11px; background: #1d1528; }
+.rnd-cs-teams { display: flex; align-items: baseline; gap: 7px; flex-wrap: wrap; font-size: 13.5px; margin-bottom: 9px; }
+.rnd-cs-teams span { color: #756484; font: 700 9.5px 'Rajdhani'; text-transform: uppercase; letter-spacing: .1em; }
+.rnd-cs-fields { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) minmax(0, 1.3fr); gap: 8px; align-items: end; }
+.rnd-cs-fields label { display: flex; flex-direction: column; gap: 6px; font: 800 9px 'Rajdhani'; letter-spacing: .13em; text-transform: uppercase; color: #8f7fa0; min-width: 0; }
+.rnd-cs-fields input { height: 42px; text-align: center; }

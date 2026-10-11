@@ -335,8 +335,14 @@ const pricedOdds = (home: string, away: string) => {
   const raw = 2.45 - diff * 2.1 + (Math.random() - 0.5) * 0.3;
   return Number(Math.min(4.6, Math.max(1.45, raw)).toFixed(2));
 };
+/** Plausible correct-score odds for a scoreline — a starting value the
+ * admin can overwrite per game in the booking-codes panel. */
+const suggestedCsOdds = (h: number, a: number) => {
+  const table: Record<string, number> = { '0-0': 9.0, '1-0': 7.0, '0-1': 7.5, '1-1': 6.5, '2-0': 8.0, '0-2': 9.5, '2-1': 8.5, '1-2': 9.0, '2-2': 13.0, '3-0': 11.0, '0-3': 13.0, '3-1': 11.5, '1-3': 13.5, '3-2': 21.0, '2-3': 23.0 };
+  return table[`${h}-${a}`] ?? 15.0;
+};
 
-type RndGame = { homeTeam: string; awayTeam: string; league: string; kickoffAt: string; scoreHome: number; scoreAway: number; odds: number; cgHome: number; cgAway: number; id?: string };
+type RndGame = { homeTeam: string; awayTeam: string; league: string; kickoffAt: string; scoreHome: number; scoreAway: number; odds: number; cgHome: number; cgAway: number; csOdds: number; id?: string };
 
 /* Booking-code markets + picks, mirroring the PowerBet admin's
  * random-games code creation: the admin chooses WHAT each code
@@ -432,7 +438,7 @@ function AdminRandomGames() {
         homeTeam: home, awayTeam: away, league: def.name,
         kickoffAt: new Date(kickoff.getTime() + i * 5 * 60000).toISOString(),
         scoreHome: Number(dHome) || 0, scoreAway: Number(dAway) || 0,
-        cgHome: Number(dHome) || 0, cgAway: Number(dAway) || 0,
+        cgHome: Number(dHome) || 0, cgAway: Number(dAway) || 0, csOdds: suggestedCsOdds(Number(dHome) || 0, Number(dAway) || 0),
         odds: pricedOdds(home, away),
       });
     }
@@ -470,14 +476,14 @@ function AdminRandomGames() {
   };
   const selectionFor = (row: RndGame) => ({
     fixture_id: row.id, match: `${row.homeTeam} vs ${row.awayTeam}`,
-    market, odds: row.odds, result: null,
+    market, odds: market === 'CORRECT_SCORE' ? row.csOdds : row.odds, result: null,
     pick: market === 'CORRECT_SCORE' ? `${row.cgHome}-${row.cgAway}` : pick,
     ...(market === 'CORRECT_SCORE' ? { home_goals: row.cgHome, away_goals: row.cgAway } : {}),
   });
   const mintCode = async (targets: RndGame[], individual: boolean) => {
     const selected = targets.filter(r => r.id);
     if (!selected.length) { setError('Create the games first.'); return; }
-    if (selected.some(r => !Number.isFinite(r.odds) || r.odds < 1.1)) { setError('Odds must be at least 1.10 for every game.'); return; }
+    if (selected.some(r => { const o = market === 'CORRECT_SCORE' ? r.csOdds : r.odds; return !Number.isFinite(o) || o < 1.1; })) { setError(market === 'CORRECT_SCORE' ? 'Correct-score odds must be at least 1.10 for every game — set them in the list above.' : 'Odds must be at least 1.10 for every game.'); return; }
     if (market === 'CORRECT_SCORE' && selected.some(r => !Number.isInteger(r.cgHome) || !Number.isInteger(r.cgAway) || r.cgHome < 0 || r.cgAway < 0)) { setError('Enter a whole-number correct score (0 or more) for every game.'); return; }
     setLoading(true); setError('');
     try {
@@ -558,12 +564,6 @@ function AdminRandomGames() {
             <label className="rnd-away-score">Away<input type="number" min={0} value={g.scoreAway} onChange={e => upd(i, { scoreAway: Math.max(0, Number(e.target.value) || 0) })} aria-label="Away score" /></label>
             <label>Odds<input type="number" min={1.1} step={0.01} value={g.odds} onChange={e => upd(i, { odds: Number(e.target.value) || 1.1 })} aria-label="Odds" /></label>
           </div>
-          {market === 'CORRECT_SCORE' && <div className="rnd-card-editors" style={{ marginTop: 8 }}>
-            <label>Correct score<input type="number" min={0} value={g.cgHome} onChange={e => upd(i, { cgHome: Math.max(0, Number(e.target.value) || 0) })} aria-label="Correct score home goals" /></label>
-            <span className="rnd-dash">–</span>
-            <label className="rnd-away-score">Away<input type="number" min={0} value={g.cgAway} onChange={e => upd(i, { cgAway: Math.max(0, Number(e.target.value) || 0) })} aria-label="Correct score away goals" /></label>
-            <span className="admin-panel-note">For the booking code only — the game&apos;s final score is set above</span>
-          </div>}
           {g.id && individualCodes[g.id] && <div className="rnd-card-code"><code>{individualCodes[g.id as string]}</code><Button onClick={() => copyCode(individualCodes[g.id as string])}>{copied === individualCodes[g.id as string] ? 'Copied' : 'Copy'}</Button></div>}
         </article>)}
       </div>
@@ -579,13 +579,24 @@ function AdminRandomGames() {
           </select>
         </label>
         {market === 'CORRECT_SCORE'
-          ? <p className="admin-panel-note" style={{ alignSelf: 'end' }}>Each game is booked at its own correct score — set the goals on each fixture card above.</p>
+          ? <p className="admin-panel-note" style={{ alignSelf: 'end' }}>Set each game&apos;s correct score and its odds in the list below — the code backs exactly those scores.</p>
           : <label>Pick
               <select value={pick} onChange={e => setPick(e.target.value)} aria-label="Booking code pick">
                 {(MARKET_PICKS[market] ?? []).map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
             </label>}
       </div>
+      {market === 'CORRECT_SCORE' && <div className="rnd-cs-list">
+        {games.filter(g => g.id).map(g => { const gi = games.indexOf(g); return <div className="rnd-cs-row" key={g.id}>
+          <div className="rnd-cs-teams"><b>{g.homeTeam}</b><span>vs</span><b>{g.awayTeam}</b></div>
+          <div className="rnd-cs-fields">
+            <label>Score<input type="number" min={0} max={20} value={g.cgHome} onChange={e => upd(gi, { cgHome: Math.max(0, Math.min(20, Number(e.target.value) || 0)) })} aria-label={`Correct score home goals — ${g.homeTeam} vs ${g.awayTeam}`} /></label>
+            <span className="rnd-dash">–</span>
+            <label>Away<input type="number" min={0} max={20} value={g.cgAway} onChange={e => upd(gi, { cgAway: Math.max(0, Math.min(20, Number(e.target.value) || 0)) })} aria-label={`Correct score away goals — ${g.homeTeam} vs ${g.awayTeam}`} /></label>
+            <label>CS odds<input type="number" min={1.1} step={0.01} value={g.csOdds} onChange={e => upd(gi, { csOdds: Number(e.target.value) || 0 })} aria-label={`Correct score odds — ${g.homeTeam} vs ${g.awayTeam}`} /></label>
+          </div>
+        </div>; })}
+      </div>}
       <div className="admin-toolbar">
         <input value={codeLabel} onChange={e => setCodeLabel(e.target.value)} placeholder="Code label" aria-label="Code label" />
         <Button tone="primary" onClick={() => mintCode(created, false)} disabled={loading}><span className="material-symbols-rounded">confirmation_number</span>{loading ? 'Minting…' : 'Mint combined code'}</Button>
