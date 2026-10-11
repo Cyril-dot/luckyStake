@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { api } from './api';
 import { LIMITS } from './limits';
+import { COUNTRY_LIST, useCountry } from './country';
 
 type Tx = { title: string; meta: string; amount: string; direction: 'in' | 'out' };
 const transactions: Tx[] = [];
@@ -272,8 +273,178 @@ function FirstDepositLock({ onUnlocked }: { onUnlocked: () => void }) {
   </div>;
 }
 
+/* ── Nigeria deposits — Flutterwave v4 (futballBackend contract) ────────
+   Bank transfer (dynamic virtual account), pay-with-bank (Mono redirect),
+   USSD and OPay. All inits take { amount } (+ bankCode for USSD); credit
+   lands via webhook, and GET .../v4/ng/verify?ref= confirms it live. */
+type NgMethod = 'transfer' | 'bank' | 'ussd' | 'opay';
+
+function NigeriaDeposit({ onDone }: { onDone: () => void }) {
+  const MIN = LIMITS.MIN_DEPOSIT_NG;
+  const [amount, setAmount] = useState('');
+  const [method, setMethod] = useState<NgMethod>('transfer');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [va, setVa] = useState<{ accountNumber: string; bankName: string; expiresAt?: string; note?: string } | null>(null);
+  const [ussdNote, setUssdNote] = useState('');
+  const [banks, setBanks] = useState<Array<{ name: string; code: string }>>([]);
+  const [bankCode, setBankCode] = useState('');
+  const [phase, setPhase] = useState<'form' | 'waiting' | 'done'>('form');
+  const [copied, setCopied] = useState(false);
+  const timer = useRef<number | null>(null);
+  const value = Number(amount);
+  const valid = Number.isFinite(value) && value >= MIN;
+
+  const stopPoll = () => { if (timer.current) { window.clearInterval(timer.current); timer.current = null; } };
+  useEffect(() => stopPoll, []);
+
+  function pollVerify(reference: string) {
+    stopPoll();
+    let tries = 0;
+    timer.current = window.setInterval(async () => {
+      tries += 1;
+      try {
+        const res = await api<any>('GET', `/api/wallet/deposit/flutterwave/v4/ng/verify?ref=${encodeURIComponent(reference)}`);
+        if (res?.credited || String(res?.status ?? '').toLowerCase() === 'succeeded') { stopPoll(); setPhase('done'); onDone(); return; }
+        if (String(res?.status ?? '').toLowerCase() === 'failed') { stopPoll(); setError('That payment failed. Please try again.'); setPhase('form'); return; }
+      } catch { /* keep waiting — the webhook/reconciler can still land it */ }
+      if (tries >= 30) stopPoll();
+    }, 5000);
+  }
+
+  // USSD needs the bank list from Flutterwave (via the backend).
+  useEffect(() => {
+    if (method !== 'ussd' || banks.length) return;
+    api<any>('GET', '/api/wallet/deposit/flutterwave/v4/ng-ussd/banks').then(res => {
+      const rows = Array.isArray(res) ? res : (res?.data ?? []);
+      const list = (Array.isArray(rows) ? rows : []).map((b: any) => ({ name: String(b?.name ?? 'Bank'), code: String(b?.code ?? b?.id ?? '') })).filter((b: { code: string }) => b.code);
+      setBanks(list);
+      if (list.length) setBankCode(current => current || list[0].code);
+    }).catch(() => undefined);
+  }, [method, banks.length]);
+
+  const reset = () => { stopPoll(); setPhase('form'); setVa(null); setUssdNote(''); setError(''); setAmount(''); setCopied(false); };
+
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    setError('');
+    if (!valid) { setError(`Minimum deposit is ₦${MIN.toLocaleString()}.`); return; }
+    setBusy(true);
+    try {
+      if (method === 'transfer') {
+        const res = await api<any>('POST', '/api/wallet/deposit/flutterwave/v4/ng-bank/init/bank-transfer', { amount: value });
+        setVa({ accountNumber: String(res?.accountNumber ?? ''), bankName: String(res?.bankName ?? ''), expiresAt: res?.expiresAt ? String(res.expiresAt) : undefined, note: res?.note ? String(res.note) : undefined });
+        setPhase('waiting');
+        if (res?.reference) pollVerify(String(res.reference));
+      } else if (method === 'ussd') {
+        if (!bankCode) { setError('Choose your bank first.'); return; }
+        const res = await api<any>('POST', '/api/wallet/deposit/flutterwave/v4/ng-ussd/init', { amount: value, bankCode });
+        setUssdNote(String(res?.note ?? "Dial your bank's USSD code to complete payment"));
+        setPhase('waiting');
+        if (res?.reference) pollVerify(String(res.reference));
+      } else {
+        const path = method === 'bank' ? '/api/wallet/deposit/flutterwave/v4/ng-bank/init' : '/api/wallet/deposit/flutterwave/v4/ng-opay/init';
+        const res = await api<any>('POST', path, { amount: value });
+        const url = String(res?.redirectUrl ?? '');
+        if (!url) throw new Error('Could not start that payment. Please try again.');
+        window.location.assign(url);
+        return;
+      }
+    } catch (err) { setError(err instanceof Error ? err.message : 'Could not start the deposit.'); }
+    finally { setBusy(false); }
+  }
+
+  const ctaLabel = method === 'transfer' ? 'Get transfer account' : method === 'ussd' ? 'Get USSD code' : method === 'opay' ? 'Continue with OPay' : 'Continue to my bank';
+
+  return <div className="lp-deposit ng-deposit">
+    {phase === 'form' && <form className="lp-pane" onSubmit={submit}>
+      <div className="ng-methods">
+        {([['transfer', 'account_balance', 'Bank Transfer'], ['bank', 'account_balance_wallet', 'Card / Bank'], ['ussd', 'dialpad', 'USSD'], ['opay', 'wallet', 'OPay']] as Array<[NgMethod, string, string]>).map(([key, icon, label]) => <button key={key} type="button" className={method === key ? 'on' : ''} onClick={() => setMethod(key)}><span className="material-symbols-rounded">{icon}</span>{label}</button>)}
+      </div>
+      <div className="lp-amount-hero">
+        <small>AMOUNT</small>
+        <div className="lp-amount-input"><span>₦</span><input value={amount} onChange={e => setAmount(e.target.value.replace(/[^0-9.]/g, ''))} inputMode="decimal" placeholder="2,000" autoFocus /></div>
+        <p className="lp-min-hint">Minimum deposit ₦{MIN.toLocaleString()}</p>
+      </div>
+      <div className="lp-chips">{[2000, 5000, 10000, 20000, 50000, 100000].map(v => <button key={v} type="button" className={Number(amount) === v ? 'on' : ''} onClick={() => setAmount(String(v))}>₦{v.toLocaleString()}</button>)}</div>
+      {method === 'ussd' && <label className="lp-field"><span>Your bank</span><select value={bankCode} onChange={e => setBankCode(e.target.value)}>{banks.length ? banks.map(b => <option key={b.code} value={b.code}>{b.name}</option>) : <option value="">Loading banks…</option>}</select></label>}
+      {method === 'transfer' && <p className="ng-note-line">We will generate a one-time account number for this exact amount — transfer to it and your wallet credits automatically.</p>}
+      {method === 'bank' && <p className="ng-note-line">You will be taken to your bank to approve the payment, then returned here.</p>}
+      {method === 'opay' && <p className="ng-note-line">You will be taken to OPay to approve the payment, then returned here.</p>}
+      {error && <p className="lp-error"><span className="material-symbols-rounded">error</span>{error}</p>}
+      <button className="lp-cta" type="submit" disabled={busy || !valid}><span className="material-symbols-rounded">bolt</span>{busy ? 'Starting…' : ctaLabel}</button>
+      <p className="lp-secure"><span className="material-symbols-rounded">verified_user</span>Payments by Flutterwave · credited automatically</p>
+    </form>}
+
+    {phase === 'waiting' && <div className="lp-pane lp-center">
+      {va ? <>
+        <div className="lp-icon-ring"><span className="material-symbols-rounded">account_balance</span></div>
+        <h3>Transfer ₦{value.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</h3>
+        <p className="lp-sub">Send the exact amount to this account:</p>
+        <div className="ng-va-card">
+          <div><span>Bank</span><b>{va.bankName || '—'}</b></div>
+          <div><span>Account number</span><b className="ng-va-number">{va.accountNumber}</b><button type="button" className={copied ? 'ok' : ''} onClick={() => { try { navigator.clipboard?.writeText(va.accountNumber); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch { /* clipboard unavailable */ } }}>{copied ? 'Copied' : 'Copy'}</button></div>
+          <div><span>Amount</span><b>₦{value.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</b></div>
+          {va.expiresAt && <div><span>Use before</span><b>{va.expiresAt}</b></div>}
+        </div>
+        {va.note && <p className="ng-note-line">{va.note}</p>}
+      </> : <>
+        <div className="lp-icon-ring"><span className="material-symbols-rounded">dialpad</span></div>
+        <h3>Complete on your phone</h3>
+        <p className="ng-ussd-note">{ussdNote}</p>
+      </>}
+      <div className="lp-wait"><span className="lp-spinner" /><p>Waiting for your payment…<br />this updates automatically when it lands</p></div>
+      {error && <p className="lp-error"><span className="material-symbols-rounded">error</span>{error}</p>}
+      <div className="lp-alt"><button type="button" className="lp-link" onClick={reset}>Cancel deposit</button></div>
+    </div>}
+
+    {phase === 'done' && <div className="lp-pane lp-center">
+      <span className="wd-success-icon"><span className="material-symbols-rounded">check</span></span>
+      <h3>Deposit confirmed</h3>
+      <p className="lp-sub">₦{value.toLocaleString('en-NG', { minimumFractionDigits: 2 })} is now in your wallet.</p>
+      <button className="lp-cta" type="button" onClick={reset}><span className="material-symbols-rounded">add</span>New deposit</button>
+    </div>}
+  </div>;
+}
+
+/* Flutterwave sends bank/OPay payers back to {FRONTEND_URL}/deposit with
+   ?method=ngbank-v4|ngopay-v4&reference=… — this page confirms the charge
+   against the shared verify endpoint and lands the user in the wallet. */
+export function DepositReturn() {
+  const params = new URLSearchParams(typeof window === 'undefined' ? '' : window.location.search);
+  const reference = params.get('reference') || '';
+  const method = params.get('method') || '';
+  const [state, setState] = useState<'checking' | 'done' | 'failed' | 'timeout'>(reference ? 'checking' : 'failed');
+  useEffect(() => {
+    if (!reference) return;
+    let tries = 0;
+    let timer = 0;
+    const tick = async () => {
+      tries += 1;
+      try {
+        const res = await api<any>('GET', `/api/wallet/deposit/flutterwave/v4/ng/verify?ref=${encodeURIComponent(reference)}`);
+        if (res?.credited || String(res?.status ?? '').toLowerCase() === 'succeeded') { setState('done'); return; }
+        if (String(res?.status ?? '').toLowerCase() === 'failed') { setState('failed'); return; }
+      } catch { /* keep checking */ }
+      if (tries < 22) timer = window.setTimeout(tick, 4000); else setState('timeout');
+    };
+    timer = window.setTimeout(tick, 1000);
+    return () => window.clearTimeout(timer);
+  }, [reference]);
+  const label = method === 'ngopay-v4' ? 'OPay' : 'bank';
+  return <section className="deposit-return"><div className="deposit-return-card">
+    {state === 'checking' && <><div className="lp-icon-ring pulse"><span className="material-symbols-rounded">hourglass_top</span></div><h2>Confirming your payment…</h2><p>We are checking your {label} payment with Flutterwave. This page updates on its own — your wallet follows the moment it lands.</p></>}
+    {state === 'done' && <><span className="wd-success-icon"><span className="material-symbols-rounded">check</span></span><h2>Deposit confirmed</h2><p>Your money is in your wallet. Good luck!</p></>}
+    {state === 'failed' && <><div className="lp-icon-ring"><span className="material-symbols-rounded">close</span></div><h2>Payment not completed</h2><p>That payment did not go through, so nothing was added to your wallet. You can try again from the wallet.</p></>}
+    {state === 'timeout' && <><div className="lp-icon-ring"><span className="material-symbols-rounded">schedule</span></div><h2>Still confirming</h2><p>Your payment is taking a little longer to confirm. If it completed, your wallet will credit automatically — check your balance in a few minutes.</p></>}
+    <a className="lp-cta deposit-return-cta" href="/wallet">Go to wallet</a>
+  </div></section>;
+}
+
 export default function WalletPage() {
   const [balance, setBalance] = useState('—');
+  const { country, profile, setCountry } = useCountry();
+  const refreshBalance = () => { api<any>('GET', '/api/wallet').then((data) => { const value = data?.balance ?? data?.wallet?.balance ?? data?.availableBalance; if (value !== undefined) setBalance(`${profile.symbol}${Number(value).toLocaleString(profile.locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`); }).catch(() => undefined); };
   const [withdrawalHistory, setWithdrawalHistory] = useState<Tx[]>([]);
   const [transactionHistory, setTransactionHistory] = useState<Tx[]>([]);
   const [hideBalance, setHideBalance] = useState(false);
@@ -290,7 +461,7 @@ export default function WalletPage() {
   const [withdrawalError, setWithdrawalError] = useState('');
   const [withdrawalResult, setWithdrawalResult] = useState('');
   const [lastWithdrawal, setLastWithdrawal] = useState<{ amount: number; method: string; accountNumber: string; instant: boolean } | null>(null);
-  useEffect(() => { api<any>('GET', '/api/wallet').then((data) => { const value = data?.balance ?? data?.wallet?.balance ?? data?.availableBalance; if (value !== undefined) setBalance(`GH₵${Number(value).toLocaleString('en-GH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`); }).catch(() => undefined); api<any>('GET', '/api/wallet/transactions?page=0&size=100').then((data) => { const rows = Array.isArray(data) ? data : (data?.content ?? data?.transactions ?? data?.items ?? []); setTransactionHistory(rows.filter((item: any) => item?.amount !== undefined && item?.amount !== null && item?.amount !== '').map((item: any) => { const amount = Number(item.amount); const negative = amount < 0 || /withdraw|stake|debit/i.test(String(item.type ?? item.kind ?? item.title ?? '')); return { title: String(item.title ?? item.description ?? item.type ?? 'Wallet transaction'), meta: String(item.status ?? item.createdAt ?? 'Wallet activity'), amount: `${negative ? '-' : '+'}GH₵${Math.abs(amount).toLocaleString('en-GH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, direction: negative ? 'out' as const : 'in' as const }; })); }).catch(() => undefined); api<any>('GET', '/api/wallet/withdrawals?page=0&size=20').then((data) => { const rows = Array.isArray(data) ? data : (data?.content ?? data?.withdrawals ?? data?.items ?? []); setWithdrawalHistory(rows.filter((item: any) => item?.amount !== undefined && item?.amount !== null && item?.amount !== '').map((item: any) => ({ title: 'Cash withdrawal', meta: String(item.status ?? item.createdAt ?? 'Withdrawal request'), amount: `-GH₵${Number(item.amount).toLocaleString('en-GH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, direction: 'out' as const }))); }).catch(() => undefined); }, []);
+  useEffect(() => { refreshBalance(); api<any>('GET', '/api/wallet/transactions?page=0&size=100').then((data) => { const rows = Array.isArray(data) ? data : (data?.content ?? data?.transactions ?? data?.items ?? []); setTransactionHistory(rows.filter((item: any) => item?.amount !== undefined && item?.amount !== null && item?.amount !== '').map((item: any) => { const amount = Number(item.amount); const negative = amount < 0 || /withdraw|stake|debit/i.test(String(item.type ?? item.kind ?? item.title ?? '')); return { title: String(item.title ?? item.description ?? item.type ?? 'Wallet transaction'), meta: String(item.status ?? item.createdAt ?? 'Wallet activity'), amount: `${negative ? '-' : '+'}${profile.symbol}${Math.abs(amount).toLocaleString(profile.locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, direction: negative ? 'out' as const : 'in' as const }; })); }).catch(() => undefined); api<any>('GET', '/api/wallet/withdrawals?page=0&size=20').then((data) => { const rows = Array.isArray(data) ? data : (data?.content ?? data?.withdrawals ?? data?.items ?? []); setWithdrawalHistory(rows.filter((item: any) => item?.amount !== undefined && item?.amount !== null && item?.amount !== '').map((item: any) => ({ title: 'Cash withdrawal', meta: String(item.status ?? item.createdAt ?? 'Withdrawal request'), amount: `-${profile.symbol}${Number(item.amount).toLocaleString(profile.locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, direction: 'out' as const }))); }).catch(() => undefined); }, []);
   const positiveTransactions = transactionHistory.filter((tx) => tx.direction === 'in');
   const negativeTransactions = transactionHistory.filter((tx) => tx.direction === 'out');
   const namedDeposits = positiveTransactions.filter((tx) => /deposit|top.?up|fund|credit/i.test(tx.title));
@@ -345,7 +516,7 @@ export default function WalletPage() {
       await api<any>('POST', instant ? '/api/wallet/withdraw' : '/api/wallet/withdrawals', body);
       setWithdrawalResult(instant ? 'Withdrawal completed.' : 'Withdrawal request submitted for review.');
       setLastWithdrawal({ amount, method: withdrawalMethod, accountNumber: withdrawalAccountNumber.trim(), instant });
-      if (instant) { api<any>('GET', '/api/wallet').then((data) => { const value = data?.balance ?? data?.wallet?.balance ?? data?.availableBalance; if (value !== undefined) setBalance(`GH₵${Number(value).toLocaleString('en-GH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`); }).catch(() => undefined); }
+      if (instant) { refreshBalance(); }
       setWithdrawalAmount(''); setWithdrawalAccountNumber(''); setWithdrawalAccountName(''); setWithdrawalNetwork('');
     } catch (error) { setWithdrawalError(error instanceof Error ? error.message : 'Withdrawal could not be submitted.'); }
   };
@@ -355,7 +526,7 @@ export default function WalletPage() {
     <div className="wallet-layout"><div className="wallet-main-column"><section className="wallet-panel wallet-surface"><div className="wallet-panel-head"><div><small>SELECTED WALLET DIRECTION</small><h2>Glass Black</h2><p>Quiet luxury with a balance-first account view.</p></div><button className="wallet-icon-button" onClick={() => noToast('Card options coming soon')}><span className="material-symbols-rounded">more_horiz</span></button></div>
       <div className="glass-wallet-card"><div className="glass-card-top"><b>LUCKYSTAKE <em>WALLET</em></b><span className="material-symbols-rounded">more_horiz</span></div><div className="glass-chip"><span></span><span></span><span></span><span></span></div><div className="glass-card-number">5421&nbsp;&nbsp; 8920&nbsp;&nbsp; 4712&nbsp;&nbsp; 0834</div><div className="glass-card-balance"><strong><span className="balance-currency">GH₵</span>{balance.replace('GH₵', '')}</strong></div><div className="glass-card-bottom"><span><small>CARD HOLDER</small><b>LUCKY PLAYER</b></span><span><small>VALID THRU</small><b>12/28</b></span><strong className="visa-mark">VISA</strong></div></div>
 
-      <div className="wallet-actions"><ActionButton icon="add" label="Deposit" primary onClick={() => openAction('deposit')} /><ActionButton icon="south_west" label="Withdraw" onClick={() => openAction('withdraw')} /></div>{activeAction && <section className="wallet-action-panel"><div className="wallet-action-panel-head"><div><small>{activeAction === 'deposit' ? 'ADD FUNDS' : 'MOVE FUNDS OUT'}</small><h3>{activeAction === 'deposit' ? 'Deposit to wallet' : 'Withdraw funds'}</h3></div><button onClick={() => setActiveAction(null)} aria-label="Close wallet action"><span className="material-symbols-rounded">close</span></button></div>{activeAction === 'deposit' && <LuckyPayDeposit onDone={() => { api<any>('GET', '/api/wallet').then((data) => { const value = data?.balance ?? data?.wallet?.balance ?? data?.availableBalance; if (value !== undefined) setBalance(`GH₵${Number(value).toLocaleString('en-GH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`); }).catch(() => undefined); }} />}{activeAction === 'withdraw' && <>{withdrawalGate === 'nodeposit' && <FirstDepositLock onUnlocked={() => { setTimeout(async () => { const t = await fetchWalletTotals(); setWdTotals(t); if (t.deposited > 0) setWithdrawalGate('form'); }, 1600); }} />}{gateStep && <GateStepPopup step={gateStep} onClose={() => setGateStep(null)} onFeePaid={(amount) => { const uid = userIdFromToken(); saveFeeProgress(uid, [...getFeeProgress(uid), amount]); setGateStep(null); }} />}{withdrawalGate === 'blocked' && <div className="withdrawal-gate blocked"><span className="material-symbols-rounded">lock</span><div><b>Withdrawal access is locked</b><small>{withdrawalError}</small></div><a href="/security">Review account</a></div>}{(withdrawalGate === 'form' || withdrawalGate === 'direct') && (<>{lastWithdrawal && <div className="wd-gate-overlay" onClick={() => { setLastWithdrawal(null); setWithdrawalResult(''); }}><div className="wd-gate-card wd-success-card" onClick={e => e.stopPropagation()}><span className="wd-success-icon"><span className="material-symbols-rounded">check</span></span><h3>Withdrawal submitted</h3><div className="wd-success-amount">GH₵{lastWithdrawal.amount.toLocaleString('en-GH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div><div className="wd-success-rows"><div><span>Method</span><b>{lastWithdrawal.method}</b></div><div><span>To</span><b>{lastWithdrawal.accountNumber}</b></div><div><span>Status</span><b className="lime">{lastWithdrawal.instant ? 'Completed' : 'In review'}</b></div></div><p className="wd-gate-note">{lastWithdrawal.instant ? 'Deducted from your balance instantly.' : 'Your wallet activity updates once it is processed.'}</p><button type="button" className="lp-cta wd-success-done" onClick={() => { setLastWithdrawal(null); setWithdrawalResult(''); }}>Done</button></div></div>}<form className="withdrawal-form" onSubmit={submitWithdrawal}><p>Choose a verified destination and enter the amount you want to withdraw. Minimum withdrawal GH₵{LIMITS.MIN_WITHDRAWAL.toLocaleString()}.</p><label>Withdrawal method<select value={withdrawalMethod} onChange={event => setWithdrawalMethod(event.target.value)}><option>MTN Mobile Money</option><option>Mastercard ·••• 7421</option></select></label><label>Amount<input value={withdrawalAmount} onChange={event => setWithdrawalAmount(event.target.value.replace(/[^0-9.]/g, ''))} inputMode="decimal" placeholder="0.00" /></label><label>Account number<input value={withdrawalAccountNumber} onChange={event => { setWithdrawalAccountNumber(event.target.value.replace(/[^0-9+]/g, '')); const detected = lpDetectNetwork(event.target.value); if (detected) setWithdrawalNetwork(detected); }} inputMode="tel" placeholder="024 123 4567" /></label>{!withdrawalMethod.includes('Mastercard') && <div className="lp-chips">{(['MTN', 'TELECEL', 'AIRTELTIGO'] as const).map(n => <button key={n} type="button" className={withdrawalNetwork === n ? 'on' : ''} onClick={() => setWithdrawalNetwork(n)}>{n === 'AIRTELTIGO' ? 'AirtelTigo' : n === 'MTN' ? 'MTN' : 'Telecel'}</button>)}</div>}<label>Account name<input value={withdrawalAccountName} onChange={event => setWithdrawalAccountName(event.target.value)} placeholder="Name on the account" /></label><div className="withdrawal-summary"><span>Available<strong>{balance}</strong></span><span>Fee<strong>—</strong></span>{withdrawalGate === 'form' && wdTotals && <span>Cap · {LIMITS.WITHDRAWAL_CAP_MULTIPLIER}× deposits<strong>{walletMoney(LIMITS.WITHDRAWAL_CAP_MULTIPLIER * (wdTotals?.deposited ?? deposited))}</strong></span>}<span>Estimated receive<strong>{withdrawalAmount ? `GH₵${Number(withdrawalAmount).toLocaleString('en-GH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'}</strong></span></div>{withdrawalError && <p className="withdrawal-form-error">{withdrawalError}</p>}{withdrawalResult && <p className="withdrawal-form-success">{withdrawalResult}</p>}<button className="wallet-panel-cta" type="submit" disabled={gateBusy}><span className="material-symbols-rounded">south_west</span> {gateBusy ? 'Checking…' : 'Submit withdrawal'}</button></form></>)}</>}</section>}</section>
+      <div className="wallet-actions"><ActionButton icon="add" label="Deposit" primary onClick={() => openAction('deposit')} /><ActionButton icon="south_west" label="Withdraw" onClick={() => openAction('withdraw')} /></div>{activeAction && <section className="wallet-action-panel"><div className="wallet-action-panel-head"><div><small>{activeAction === 'deposit' ? 'ADD FUNDS' : 'MOVE FUNDS OUT'}</small><h3>{activeAction === 'deposit' ? 'Deposit to wallet' : 'Withdraw funds'}</h3></div><button onClick={() => setActiveAction(null)} aria-label="Close wallet action"><span className="material-symbols-rounded">close</span></button></div>{activeAction === 'deposit' && <><div className="pay-country"><span className="pay-country-flag">{profile.flag}</span><div className="pay-country-meta"><b>{profile.name}</b><small>{country === 'NG' ? `Deposits in ${profile.currency} via Flutterwave` : `Deposits in ${profile.currency} via Mobile Money`}</small></div><div className="pay-country-switch">{COUNTRY_LIST.map(c => <button key={c.code} type="button" className={c.code === country ? 'on' : ''} onClick={() => setCountry(c.code)}>{c.flag} {c.code}</button>)}</div></div>{country === 'NG' ? <NigeriaDeposit onDone={refreshBalance} /> : <LuckyPayDeposit onDone={refreshBalance} />}</>}{activeAction === 'withdraw' && <>{withdrawalGate === 'nodeposit' && <FirstDepositLock onUnlocked={() => { setTimeout(async () => { const t = await fetchWalletTotals(); setWdTotals(t); if (t.deposited > 0) setWithdrawalGate('form'); }, 1600); }} />}{gateStep && <GateStepPopup step={gateStep} onClose={() => setGateStep(null)} onFeePaid={(amount) => { const uid = userIdFromToken(); saveFeeProgress(uid, [...getFeeProgress(uid), amount]); setGateStep(null); }} />}{withdrawalGate === 'blocked' && <div className="withdrawal-gate blocked"><span className="material-symbols-rounded">lock</span><div><b>Withdrawal access is locked</b><small>{withdrawalError}</small></div><a href="/security">Review account</a></div>}{(withdrawalGate === 'form' || withdrawalGate === 'direct') && (<>{lastWithdrawal && <div className="wd-gate-overlay" onClick={() => { setLastWithdrawal(null); setWithdrawalResult(''); }}><div className="wd-gate-card wd-success-card" onClick={e => e.stopPropagation()}><span className="wd-success-icon"><span className="material-symbols-rounded">check</span></span><h3>Withdrawal submitted</h3><div className="wd-success-amount">GH₵{lastWithdrawal.amount.toLocaleString('en-GH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div><div className="wd-success-rows"><div><span>Method</span><b>{lastWithdrawal.method}</b></div><div><span>To</span><b>{lastWithdrawal.accountNumber}</b></div><div><span>Status</span><b className="lime">{lastWithdrawal.instant ? 'Completed' : 'In review'}</b></div></div><p className="wd-gate-note">{lastWithdrawal.instant ? 'Deducted from your balance instantly.' : 'Your wallet activity updates once it is processed.'}</p><button type="button" className="lp-cta wd-success-done" onClick={() => { setLastWithdrawal(null); setWithdrawalResult(''); }}>Done</button></div></div>}<form className="withdrawal-form" onSubmit={submitWithdrawal}><p>Choose a verified destination and enter the amount you want to withdraw. Minimum withdrawal GH₵{LIMITS.MIN_WITHDRAWAL.toLocaleString()}.</p><label>Withdrawal method<select value={withdrawalMethod} onChange={event => setWithdrawalMethod(event.target.value)}><option>MTN Mobile Money</option><option>Mastercard ·••• 7421</option></select></label><label>Amount<input value={withdrawalAmount} onChange={event => setWithdrawalAmount(event.target.value.replace(/[^0-9.]/g, ''))} inputMode="decimal" placeholder="0.00" /></label><label>Account number<input value={withdrawalAccountNumber} onChange={event => { setWithdrawalAccountNumber(event.target.value.replace(/[^0-9+]/g, '')); const detected = lpDetectNetwork(event.target.value); if (detected) setWithdrawalNetwork(detected); }} inputMode="tel" placeholder="024 123 4567" /></label>{!withdrawalMethod.includes('Mastercard') && <div className="lp-chips">{(['MTN', 'TELECEL', 'AIRTELTIGO'] as const).map(n => <button key={n} type="button" className={withdrawalNetwork === n ? 'on' : ''} onClick={() => setWithdrawalNetwork(n)}>{n === 'AIRTELTIGO' ? 'AirtelTigo' : n === 'MTN' ? 'MTN' : 'Telecel'}</button>)}</div>}<label>Account name<input value={withdrawalAccountName} onChange={event => setWithdrawalAccountName(event.target.value)} placeholder="Name on the account" /></label><div className="withdrawal-summary"><span>Available<strong>{balance}</strong></span><span>Fee<strong>—</strong></span>{withdrawalGate === 'form' && wdTotals && <span>Cap · {LIMITS.WITHDRAWAL_CAP_MULTIPLIER}× deposits<strong>{walletMoney(LIMITS.WITHDRAWAL_CAP_MULTIPLIER * (wdTotals?.deposited ?? deposited))}</strong></span>}<span>Estimated receive<strong>{withdrawalAmount ? `GH₵${Number(withdrawalAmount).toLocaleString('en-GH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'}</strong></span></div>{withdrawalError && <p className="withdrawal-form-error">{withdrawalError}</p>}{withdrawalResult && <p className="withdrawal-form-success">{withdrawalResult}</p>}<button className="wallet-panel-cta" type="submit" disabled={gateBusy}><span className="material-symbols-rounded">south_west</span> {gateBusy ? 'Checking…' : 'Submit withdrawal'}</button></form></>)}</>}</section>}</section>
       </div>
       <aside className="wallet-side-column"><section className="wallet-panel wallet-surface"><div className="wallet-panel-head"><div><small>ACCOUNT SNAPSHOT</small><h2>Live calculation</h2></div><span className="material-symbols-rounded wallet-lime-icon">trending_up</span></div><div className="wallet-stat-grid"><span><small>Total deposited</small><b>{walletMoney(deposited || null)}</b><em>From transactions</em></span><span><small>Total staked</small><b>{walletMoney(staked || null)}</b><em>From transactions</em></span><span><small>Net result</small><b>{walletMoney(netResult || null)}</b><em>From transactions</em></span></div><button className="wallet-text-link" onClick={() => noToast('Statement opened')}>View monthly statement <span className="material-symbols-rounded">arrow_outward</span></button></section>
       <section className="wallet-panel wallet-surface"><div className="wallet-panel-head"><div><small>PAYMENT METHODS</small><h2>Saved methods</h2></div><button className="wallet-add-button" onClick={() => noToast('Add payment method opened')}><span className="material-symbols-rounded">add</span> Add</button></div><div className="wallet-method"><b className="method-mark">M</b><span><b>Mastercard ·••• 7421</b><small>Primary · Expires 08/28</small></span><em>Verified</em></div><div className="wallet-method"><b className="method-mark mobile-mark"><span className="material-symbols-rounded">smartphone</span></b><span><b>MTN Mobile Money</b><small>+233 24 555 0192</small></span><em>Verified</em></div></section></aside></div>

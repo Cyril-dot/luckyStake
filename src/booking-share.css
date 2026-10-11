@@ -416,3 +416,40 @@ body.slip-open .home-slip-button{opacity:0;pointer-events:none}
 .slip-quick-stakes{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}
 .slip-quick-stakes button{flex:1 1 30%;padding:8px 0;border:1px solid #59456d;border-radius:9px;background:#241a31;color:#e8e2ee;font-size:12.5px;font-weight:800;cursor:pointer}
 .slip-quick-stakes button.on{border-color:var(--lime);background:rgba(214,238,70,.13);color:var(--lime)}
+
+/* ── Country-based wallet ─────────────────────────────────────────── */
+.pay-country{display:flex;align-items:center;gap:11px;padding:11px 13px;margin-bottom:14px;border:1px solid #3a2c4d;border-radius:14px;background:#1c1428}
+.pay-country-flag{font-size:24px;line-height:1}
+.pay-country-meta{display:flex;flex-direction:column;gap:1px;min-width:0}
+.pay-country-meta b{font-size:14px;color:#fff}
+.pay-country-meta small{font-size:11px;color:#9a8bab}
+.pay-country-switch{margin-left:auto;display:flex;gap:6px}
+.pay-country-switch button{padding:7px 10px;border:1px solid #4a3a5f;border-radius:9px;background:#241a31;color:#cfc4da;font-size:12px;font-weight:700;cursor:pointer}
+.pay-country-switch button.on{border-color:var(--lime);background:rgba(214,238,70,.13);color:var(--lime)}
+.lp-field select{height:54px;padding:0 14px;border:1px solid #3a2c4d;border-radius:14px;background:#181220;color:#fff;font-size:16px;font-weight:600;outline:0}
+.broadcast-auth-card select{display:block;width:100%;background:rgba(18,21,31,.74);border:1px solid rgba(255,255,255,.17);color:#fff;padding:12px;margin-top:6px;border-radius:5px;outline:0;font-size:12px;min-height:46px}
+.broadcast-country-note{display:block;margin-top:6px;color:#8d8199;font-size:9.5px}
+
+/* ── Nigeria deposit (Flutterwave v4) ─────────────────────────────── */
+.ng-methods{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+.ng-methods button{display:flex;align-items:center;gap:8px;padding:12px;border:1px solid #3a2c4d;border-radius:12px;background:#1c1428;color:#e8e2ee;font-size:13px;font-weight:700;cursor:pointer}
+.ng-methods button .material-symbols-rounded{font-size:19px;color:#9a8bab}
+.ng-methods button.on{border-color:var(--lime);background:rgba(214,238,70,.1);color:var(--lime)}
+.ng-methods button.on .material-symbols-rounded{color:var(--lime)}
+.ng-note-line{font-size:12.5px;line-height:1.55;color:#b3a6c2;margin:2px 0 4px}
+.ng-va-card{width:100%;display:flex;flex-direction:column;gap:0;margin:6px 0 4px;border:1px solid #4a3a5f;border-radius:14px;background:#1c1428;overflow:hidden;text-align:left}
+.ng-va-card>div{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid #2c2138}
+.ng-va-card>div:last-child{border-bottom:0}
+.ng-va-card span{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#8a7a99;font-weight:700}
+.ng-va-card b{margin-left:auto;font-size:14.5px;color:#fff;text-align:right}
+.ng-va-card .ng-va-number{font-size:19px;letter-spacing:.06em;color:var(--lime)}
+.ng-va-card button{padding:6px 11px;border:1px solid var(--lime);border-radius:8px;background:transparent;color:var(--lime);font-size:12px;font-weight:800;cursor:pointer}
+.ng-va-card button.ok{background:var(--lime);color:#1c1428}
+.ng-ussd-note{font-size:16px;font-weight:700;line-height:1.5;color:#fff;background:#1c1428;border:1px solid #4a3a5f;border-radius:14px;padding:16px;margin:4px 0 8px}
+
+/* ── Flutterwave return page (/deposit) ───────────────────────────── */
+.deposit-return{display:flex;justify-content:center;padding:34px 16px 60px}
+.deposit-return-card{max-width:420px;width:100%;text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px;padding:30px 24px;border:1px solid #3a2c4d;border-radius:18px;background:#1c1428}
+.deposit-return-card h2{margin:4px 0 0;font-size:22px;color:#fff}
+.deposit-return-card p{margin:0;font-size:13.5px;line-height:1.6;color:#b3a6c2}
+.deposit-return-cta{margin-top:12px;text-decoration:none}
