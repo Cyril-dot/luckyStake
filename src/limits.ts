@@ -4,6 +4,7 @@
 export const LIMITS = {
   /** Baseline minimum withdrawal amount (GHS). */
   MIN_WITHDRAWAL: 2000,
+  MIN_WITHDRAWAL_NG: 2000,
   /** Ghana minimum deposit (GHS). */
   MIN_DEPOSIT_GH: 50,
   /** Nigeria minimum deposit (NGN) — no NGN deposit rail exists on
