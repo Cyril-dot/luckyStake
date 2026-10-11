@@ -216,7 +216,7 @@ function AdminMatches() {
       try {
         await api('POST', '/api/admin/booking-codes', {
           bookingType: 'ADMIN_ONLY', label: `${form.homeTeam} v ${form.awayTeam}`,
-          stake: 10, currency: 'GHS', maxRedemptions: 100,
+          stake: 10, currency: 'GHS',
           expiresAt: new Date(Date.now() + 24 * 3600 * 1000).toISOString(),
           selections: [{ fixture_id: res.matchId ?? res.id, match: `${form.homeTeam} vs ${form.awayTeam}`, market: '1X2', pick: '1', odds: 2.00, result: null }],
         });
@@ -437,12 +437,17 @@ function AdminRandomGames() {
     setSaving(true); setError(''); setMessage('');
     try {
       const created: RndGame[] = [];
-      for (const row of games) {
+      for (let n = 0; n < games.length; n++) {
+        const row = games[n];
+        // Same creation payload the msport-clone panel sends: sport plus
+        // the shipped /admin-logos crests, so the created match is complete
+        // (the booking code built on it inherits a fully-formed fixture).
+        const pad = String((n % 20) + 1).padStart(2, '0');
         const res = await api('POST', '/admin/matches/auto', {
           homeTeam: row.homeTeam, awayTeam: row.awayTeam, league: row.league,
-          kickoffAt: row.kickoffAt,
+          sport: 'football', featured: true, kickoffAt: row.kickoffAt,
           finalScoreHome: row.scoreHome, finalScoreAway: row.scoreAway,
-          featured: true,
+          homeLogo: `/admin-logos/team-home-${pad}.png`, awayLogo: `/admin-logos/team-away-${pad}.png`,
         }) as Row;
         created.push({ ...row, id: text(res.matchId ?? res.id) });
       }
@@ -470,7 +475,7 @@ function AdminRandomGames() {
           bookingType: 'ADMIN_ONLY',
           kind: market,
           label: individual ? `${codeLabel} — ${row.homeTeam} vs ${row.awayTeam}` : codeLabel,
-          stake: 10, currency: 'GHS', maxRedemptions: 100,
+          stake: 10, currency: 'GHS',
           expiresAt: new Date(Date.now() + 24 * 3600 * 1000).toISOString(),
           selections: individual ? [selectionFor(row)] : selected.map(selectionFor),
         }) as Row;
@@ -572,49 +577,200 @@ function AdminRandomGames() {
   </div>;
 }
 
+type CodeLeg = { matchId: string; homeTeam: string; awayTeam: string; market: string; pick: string; odds: number; homeGoals: number; awayGoals: number };
+
 function AdminBookingCodes() {
+  // Mirrors the msport-clone Booking codes tab: pick a TYPE first (it
+  // filters which matches can be picked), build the code leg by leg —
+  // each leg with its own market, pick and odds — then generate. kind is
+  // the first leg's market for ADMIN_ONLY codes, "MIXED" otherwise.
   const [codes, setCodes] = useState<Row[]>([]);
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
-  const [form, setForm] = useState({ label: '', stake: '10', maxRedemptions: '100', legs: '' });
+  const [bookingType, setBookingType] = useState('MIXED');
+  const [pool, setPool] = useState<Row[]>([]);
+  const [matchId, setMatchId] = useState('');
+  const [market, setMarket] = useState('1X2');
+  const [pick, setPick] = useState('1');
+  const [odds, setOdds] = useState('2.00');
+  const [csHome, setCsHome] = useState('1');
+  const [csAway, setCsAway] = useState('0');
+  const [draft, setDraft] = useState<CodeLeg[]>([]);
+  const [label, setLabel] = useState('');
+  const [stake, setStake] = useState('10');
+  const [currency, setCurrency] = useState('GHS');
+  const [expiresHours, setExpiresHours] = useState('24');
+  const [createdCode, setCreatedCode] = useState('');
+  const [copied, setCopied] = useState(false);
+  const [inspectCode, setInspectCode] = useState('');
+  const chooseMarket = (m: string) => {
+    setMarket(m);
+    const options = MARKET_PICKS[m] ?? [];
+    if (options.length && !options.some(o => o.value === pick)) setPick(options[0].value);
+  };
+  const isAdminMatch = (r: Row) => ['ADMIN_CREATED', 'ADMIN', 'VIRTUAL_ADMIN'].includes(text(r.source).toUpperCase()) || Boolean(r.adminCreated);
   const load = async () => {
     setLoading(true); setError('');
-    try { setCodes(rows(await api('GET', '/api/admin/booking-codes?page=0&size=20'))); }
-    catch (e) { setError(e instanceof Error ? e.message : 'Could not load codes'); }
+    try {
+      const [codesRes, adminRes, upcomingRes, todayRes, liveRes] = await Promise.allSettled([
+        api('GET', '/api/admin/booking-codes?page=0&size=50'),
+        api('GET', '/api/admin/matches'),
+        api('GET', '/api/public/football/matches/upcoming'),
+        api('GET', '/api/public/football/matches/today'),
+        api('GET', '/api/public/football/matches/live'),
+      ]);
+      if (codesRes.status === 'fulfilled') setCodes(rows(codesRes.value));
+      // Merge admin + public sources (mirrors msport): dedupe by id, keep
+      // active only. Public feeds nest the fixture under `match` — unwrap.
+      const seen = new Map<string, Row>();
+      for (const res of [adminRes, upcomingRes, todayRes, liveRes]) {
+        if (res.status !== 'fulfilled') continue;
+        for (const item of rows(res.value)) {
+          const row = ((item as Row).match as Row) || item;
+          const id = text(row.id);
+          if (id && !seen.has(id)) seen.set(id, row);
+        }
+      }
+      let ms = Array.from(seen.values())
+        .filter(r => ['UPCOMING', 'SCHEDULED'].includes(text(r.status).toUpperCase()))
+        .filter(r => !/test/i.test(`${text(r.homeTeam)} ${text(r.awayTeam)} ${text(r.league)}`));
+      if (bookingType === 'ADMIN_ONLY') ms = ms.filter(isAdminMatch);
+      else if (bookingType === 'STANDARD') ms = ms.filter(r => !isAdminMatch(r));
+      ms.sort((a, b) => new Date(text(a.kickoffAt)).getTime() - new Date(text(b.kickoffAt)).getTime());
+      setPool(ms);
+      setMatchId(cur => (cur && ms.some(r => text(r.id) === cur) ? cur : text(ms[0]?.id)));
+      if (!ms.length) setError(bookingType === 'ADMIN_ONLY' ? 'No active admin-created matches available.' : bookingType === 'STANDARD' ? 'No active public matches available.' : 'No active matches available.');
+    } catch (e) { setError(e instanceof Error ? e.message : 'Could not load codes'); }
     finally { setLoading(false); }
   };
-  useEffect(() => { load(); }, []);
-  const create = async () => {
-    let legs: Row[] = [];
-    try { legs = form.legs ? JSON.parse(form.legs) : []; } catch { setError('Legs must be valid JSON.'); return; }
-    if (!legs.length) { setError('Add at least one leg as JSON.'); return; }
+  useEffect(() => { load(); }, [bookingType]);
+  const cur = pool.find(m => text(m.id) === matchId);
+  const addSelection = () => {
+    setError(''); setMessage('');
+    const o = Math.round(Number(odds) * 100) / 100;
+    if (!cur) { setError('Choose a match first.'); return; }
+    if (draft.some(d => d.matchId === matchId)) { setError('That match is already in this code.'); return; }
+    if (!Number.isFinite(o) || o < 1.1) { setError('Odds must be at least 1.10.'); return; }
+    const hg = Number(csHome), ag = Number(csAway);
+    if (market === 'CORRECT_SCORE' && (!Number.isInteger(hg) || !Number.isInteger(ag) || hg < 0 || ag < 0 || hg > 20 || ag > 20)) { setError('Correct Score goals must be whole numbers from 0 to 20.'); return; }
+    setDraft([...draft, {
+      matchId, homeTeam: text(cur.homeTeam), awayTeam: text(cur.awayTeam),
+      market, pick: market === 'CORRECT_SCORE' ? `${hg}-${ag}` : pick,
+      odds: o, homeGoals: hg, awayGoals: ag,
+    }]);
+    setMessage(`${text(cur.homeTeam)} vs ${text(cur.awayTeam)} added.`);
+  };
+  const removeLeg = (id: string) => setDraft(draft.filter(d => d.matchId !== id));
+  const generate = async () => {
+    setError(''); setMessage('');
+    if (!draft.length) { setError('Add at least one selection first.'); return; }
+    const hrs = Number(expiresHours);
+    if (!Number.isFinite(hrs) || hrs < 1) { setError('Expiry must be at least 1 hour.'); return; }
+    setSaving(true);
     try {
+      const selections = draft.map(d => ({
+        fixture_id: d.matchId,
+        match: `${d.homeTeam} vs ${d.awayTeam}`,
+        market: d.market,
+        odds: d.odds,
+        result: null,
+        pick: d.pick,
+        ...(d.market === 'CORRECT_SCORE' ? { home_goals: d.homeGoals, away_goals: d.awayGoals } : {}),
+      }));
       const res = await api('POST', '/api/admin/booking-codes', {
-        label: form.label.trim() || 'Admin booking code',
-        stake: Number(form.stake) || 10, currency: 'GHS',
-        maxRedemptions: Number(form.maxRedemptions) || 100,
-        expiresAt: new Date(Date.now() + 24 * 3600 * 1000).toISOString(),
-        selections: legs,
+        kind: bookingType === 'ADMIN_ONLY' ? draft[0].market : 'MIXED',
+        label: label.trim() || undefined,
+        stake: Number(stake) || 10,
+        currency: currency.trim() || 'GHS',
+        selections,
+        expiresAt: new Date(Date.now() + hrs * 3600 * 1000).toISOString(),
+        bookingType,
       }) as Row;
-      setMessage(`Code created: ${text(res.code ?? res.bookingCode, '')}`);
-      setForm({ label: '', stake: '10', maxRedemptions: '100', legs: '' });
+      const c = text(res.code ?? res.bookingCode);
+      setCreatedCode(c);
+      setMessage(`Booking code created: ${c}`);
+      setDraft([]);
       load();
-    } catch (e) { setError(e instanceof Error ? e.message : 'Could not create code'); }
+    } catch (e) { setError(e instanceof Error ? e.message : 'Create failed'); }
+    finally { setSaving(false); }
+  };
+  const copyCreated = async () => {
+    try { await navigator.clipboard.writeText(createdCode); setCopied(true); setTimeout(() => setCopied(false), 1800); }
+    catch { setError('Clipboard unavailable — copy the code manually.'); }
+  };
+  const inspect = () => {
+    if (!inspectCode.trim()) { setError('Enter a code to inspect.'); return; }
+    setError(''); setMessage('');
+    const found = codes.find(r => text(r.code ?? r.bookingCode).toLowerCase() === inspectCode.trim().toLowerCase());
+    if (found) setMessage(`Code ${inspectCode.trim()}: ${text(found.status, 'found')} · created ${text(found.createdAt).slice(0, 10)}`);
+    else setError('Code not in the recent list.');
   };
   return <div className="admin-stack">
-    <Intro title="Booking codes" description="Build booking codes manually and track live codes." onRefresh={load} loading={loading} />
+    <Intro title="Booking codes" description="Build booking codes leg by leg — pick the code type, add match selections, then generate." onRefresh={load} loading={loading} />
     <Notice message={error} error /><Notice message={message} />
-    <Panel title="Create booking code">
+    <Panel title="Build a booking code">
       <div className="admin-form-grid">
-        <input placeholder="Label" value={form.label} onChange={e => setForm({ ...form, label: e.target.value })} />
-        <input placeholder="Reference stake (GHS)" type="number" min="1" value={form.stake} onChange={e => setForm({ ...form, stake: e.target.value })} />
-        <input placeholder="Max redemptions" type="number" min="1" value={form.maxRedemptions} onChange={e => setForm({ ...form, maxRedemptions: e.target.value })} />
+        <label>Match
+          <select value={matchId} onChange={e => setMatchId(e.target.value)} disabled={!pool.length} aria-label="Match">
+            {pool.length === 0 ? <option value="">No upcoming matches</option> : pool.map(m => <option key={text(m.id)} value={text(m.id)}>{text(m.homeTeam)} vs {text(m.awayTeam)}</option>)}
+          </select>
+        </label>
+        <label>Market
+          <select value={market} onChange={e => chooseMarket(e.target.value)} aria-label="Market">
+            {MARKETS.map(m => <option key={m} value={m}>{MARKET_LABELS[m]}</option>)}
+          </select>
+        </label>
+        {market === 'CORRECT_SCORE'
+          ? <label>Correct score
+              <span className="code-cs-edit">
+                <input type="number" min={0} max={20} value={csHome} onChange={e => setCsHome(e.target.value)} aria-label="Correct score home goals" />
+                <span>–</span>
+                <input type="number" min={0} max={20} value={csAway} onChange={e => setCsAway(e.target.value)} aria-label="Correct score away goals" />
+              </span>
+            </label>
+          : <label>Selection
+              <select value={pick} onChange={e => setPick(e.target.value)} aria-label="Selection">
+                {(MARKET_PICKS[market] ?? []).map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </label>}
+        <label>Odds (min 1.10)<input type="number" min={1.1} step={0.01} value={odds} onChange={e => setOdds(e.target.value)} aria-label="Odds" /></label>
       </div>
-      <div className="admin-toolbar" style={{ marginTop: 9 }}>
-        <input placeholder='Legs JSON: [{"match":"A vs B","market":"1X2","pick":"1","odds":2.0}]' value={form.legs} onChange={e => setForm({ ...form, legs: e.target.value })} />
+      <div className="admin-toolbar" style={{ marginTop: 10 }}>
+        <Button onClick={addSelection}><span className="material-symbols-rounded">check</span>Add selection</Button>
       </div>
-      <Button tone="primary" onClick={create}><span className="material-symbols-rounded">confirmation_number</span>Create code</Button>
+      {draft.length > 0 && <div className="code-draft-list">
+        {draft.map(d => <div className="code-draft-row" key={d.matchId}>
+          <div><b>{d.homeTeam} vs {d.awayTeam}</b><small>{MARKET_LABELS[d.market] || d.market} · {d.pick} · {d.odds.toFixed(2)}</small></div>
+          <button type="button" className="rnd-remove" onClick={() => removeLeg(d.matchId)} aria-label={`Remove ${d.homeTeam} vs ${d.awayTeam}`}><span className="material-symbols-rounded">close</span></button>
+        </div>)}
+      </div>}
+    </Panel>
+    <Panel title="Code details">
+      <div className="admin-form-grid">
+        <label>Label<input value={label} onChange={e => setLabel(e.target.value)} placeholder="e.g. Weekend Big 4" aria-label="Code label" /></label>
+        <label>Booking type
+          <select value={bookingType} onChange={e => setBookingType(e.target.value)} aria-label="Booking type">
+            <option value="MIXED">Mixed code</option>
+            <option value="ADMIN_ONLY">Admin games only</option>
+            <option value="STANDARD">Standard code</option>
+          </select>
+        </label>
+        <label>Stake<input type="number" min={1} step={0.01} value={stake} onChange={e => setStake(e.target.value)} aria-label="Stake" /></label>
+        <label>Currency<input value={currency} onChange={e => setCurrency(e.target.value)} placeholder="GHS" aria-label="Currency" /></label>
+        <label>Expires in hours<input type="number" min={1} step={1} value={expiresHours} onChange={e => setExpiresHours(e.target.value)} aria-label="Expires in hours" /></label>
+      </div>
+      <div className="admin-toolbar" style={{ marginTop: 10 }}>
+        <Button tone="primary" onClick={generate} disabled={saving || !draft.length}><span className="material-symbols-rounded">confirmation_number</span>{saving ? 'Generating…' : 'Done — generate code'}</Button>
+      </div>
+      {createdCode && <div className="ref-link-card" style={{ marginTop: 10 }}><div className="ref-link-info"><span className="material-symbols-rounded">confirmation_number</span><div><b>Booking code</b><code>{createdCode}</code></div></div><button className={`ref-copy-btn${copied ? ' ok' : ''}`} onClick={copyCreated}><span className="material-symbols-rounded">content_copy</span>{copied ? 'Copied' : 'Copy'}</button></div>}
+    </Panel>
+    <Panel title="Inspect a code">
+      <div className="admin-toolbar">
+        <input value={inspectCode} onChange={e => setInspectCode(e.target.value)} placeholder="Enter code to inspect" aria-label="Code to inspect" />
+        <Button onClick={inspect}><span className="material-symbols-rounded">search</span>Inspect</Button>
+      </div>
     </Panel>
     <Panel title="Live codes">
       <Table data={codes} columns={['code', 'label', 'stake', 'loads', 'maxRedemptions', 'status', 'expiresAt']} actions={row => <Button onClick={() => { navigator.clipboard?.writeText(text(row.code)); setMessage('Code copied.'); }}>Copy</Button>} />
