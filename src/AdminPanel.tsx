@@ -1358,6 +1358,21 @@ function SuperCommission() {
     } catch (e) { setError(e instanceof Error ? e.message : 'Settlement failed'); }
     finally { setSettling(false); }
   };
+  const topUp = async (row: Row) => {
+    const name = text(row.adminName ?? row.adminEmail, 'this admin');
+    const short = Math.max(0, numberValue(row.expectedRaw) - numberValue(row.earnedRaw));
+    if (short < 0.01) return;
+    if (!window.confirm(`Top up ${name}'s commission for ${date} by ${money(short)}? That's their deposits × rate minus what's already credited — it lands in their commission balance.`)) return;
+    setSettling(true); setError(''); setMessage('');
+    try {
+      const res = await api('POST', `/api/super-admin/commission/admins/${encodeURIComponent(idOf(row))}/reconcile?date=${encodeURIComponent(date)}`) as { toppedUp?: unknown } | null;
+      const topped = numberValue(res?.toppedUp);
+      console.info('[LS-COMMISSION] reconcile', { date, admin: name, toppedUp: topped });
+      setMessage(topped > 0 ? `Topped up ${money(topped)} for ${name} — their commission for ${date} is now whole.` : `${name} was already fully credited for ${date}.`);
+      await load(date);
+    } catch (e) { setError(e instanceof Error ? e.message : 'Top up failed'); }
+    finally { setSettling(false); }
+  };
   const clearDay = async () => {
     if (!window.confirm(`Mark ALL unpaid commission for ${date} as paid? This settles every admin.`)) return;
     setSettling(true); setError(''); setMessage('');
@@ -1383,8 +1398,8 @@ function SuperCommission() {
     <Panel title={`Commission by admin — ${date}`} action={<div className="admin-toolbar" style={{ margin: 0 }}><input type="search" value={query} onChange={e => setQuery(e.target.value)} placeholder="Search admin" aria-label="Search administrators" /><input type="date" value={date} max={today()} onChange={e => { if (e.target.value) setDate(e.target.value); }} aria-label="Commission date" /><Button onClick={clearDay} disabled={settling || totals.unpaid <= 0}><span className="material-symbols-rounded">done_all</span>{settling ? 'Settling…' : 'Settle day'}</Button></div>}>
       <Table data={visibleData} columns={['adminName', 'adminEmail', 'commissionPercent', 'totalDeposits', 'expected', 'commissionEarned', 'commissionBalance', 'depositCount']}
         labels={{ adminName: 'Admin', adminEmail: 'Email', commissionPercent: 'Rate', totalDeposits: 'Deposits', expected: 'Expected at rate', commissionEarned: 'Earned', commissionBalance: 'Unpaid', depositCount: 'Deposit count' }}
-        actions={row => numberValue(row.unpaidRaw) > 0 ? <Button onClick={() => markPaid(row)} disabled={settling}>{settling ? '…' : 'Mark paid'}</Button> : null} />
-      {totals.mismatched > 0 && <p style={{ color: '#ffb020', fontSize: 12, marginTop: 10 }}>{totals.mismatched} admin{totals.mismatched === 1 ? ' has' : 's have'} less commission credited than their deposits × rate — {money(totals.shortfall)} not yet recorded in the commission ledger for {date}.</p>}
+        actions={row => { const short = numberValue(row.expectedRaw) - numberValue(row.earnedRaw); return <span style={{ display: 'inline-flex', gap: 6, flexWrap: 'wrap' }}>{short >= 0.01 && <Button onClick={() => topUp(row)} disabled={settling}>{settling ? '…' : `Top up ${money(short)}`}</Button>}{numberValue(row.unpaidRaw) > 0 && <Button onClick={() => markPaid(row)} disabled={settling}>{settling ? '…' : 'Mark paid'}</Button>}</span>; }} />
+      {totals.mismatched > 0 && <p style={{ color: '#ffb020', fontSize: 12, marginTop: 10 }}>{totals.mismatched} admin{totals.mismatched === 1 ? ' has' : 's have'} less commission credited than their deposits × rate — {money(totals.shortfall)} not yet recorded in the commission ledger for {date}. Use a row's Top up button to credit the difference into their balance.</p>}
     </Panel>
   </div>;
 }
