@@ -5,8 +5,8 @@ export const LIMITS = {
   /** Baseline minimum withdrawal amount (GHS). */
   MIN_WITHDRAWAL: 2000,
   MIN_WITHDRAWAL_NG: 2000,
-  /** Ghana minimum deposit (GHS). */
-  MIN_DEPOSIT_GH: 50,
+  /** Ghana minimum deposit (GHS). Owner lowered 50 → 1 on 2026-10-12. */
+  MIN_DEPOSIT_GH: 1,
   /** Nigeria minimum deposit (NGN) — no NGN deposit rail exists on
    *  LuckyStake yet; kept here so the first one ships with it. */
   MIN_DEPOSIT_NG: 2000,
