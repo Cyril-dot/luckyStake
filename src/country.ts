@@ -6,7 +6,7 @@ import { api } from './api';
  * (RegisterRequest / UserDto / PATCH /api/users/me all support it); the
  * frontend captures it at signup, keeps the auth user in localStorage,
  * and lets the country drive the currency and the deposit rail:
- * GH → GHS Mobile Money (Flutterwave v4 direct push), NG → NGN Flutterwave v4.
+ * GH → GHS Mobile Money (ShinobiPay), NG → NGN Flutterwave v4.
  */
 export type CountryCode = 'GH' | 'NG';
 
