@@ -71,7 +71,11 @@ function GhanaMomoDeposit({ onDone, fixedAmount }: { onDone: (amount: number) =>
       setStillConfirming(false);
       setStep(3);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not start the deposit.');
+      // A server-side 500 (e.g. gateway credentials not configured on the
+      // backend) must never surface Spring's raw 'Internal Server Error'
+      // text to the player — translate it; real 4xx messages pass through.
+      const raw = err instanceof Error ? err.message : '';
+      setError(!raw || /internal server error|request failed \(5\d\d\)/i.test(raw) ? 'Payments are temporarily unavailable — please try again in a few minutes.' : raw);
     }
     finally { setLoading(false); }
   };
