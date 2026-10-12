@@ -20,6 +20,14 @@ const rows = (value: unknown): Row[] => {
 };
 const numberValue = (value: unknown) => { const n = Number(value); return Number.isFinite(n) ? n : 0; };
 const money = (value: unknown) => `₵${numberValue(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+// Reference-style field reading (PlusBet/PowerBet CommissionAnalytics):
+// backend payloads name the same values differently across endpoints, so
+// money fields are read through fallback chains, never a single key.
+const numberFrom = (row: Row, keys: string[]) => { for (const k of keys) { const v = row?.[k]; if (v !== null && v !== undefined && v !== '') { const n = Number(v); if (Number.isFinite(n)) return n; } } return 0; };
+// A commission rate arrives either as a percent (65) or a fraction (0.65)
+// depending on the payload — normalise to percent, as the references do.
+const rateFromRow = (row: Row): number | null => { const raw = row?.commissionPercent ?? row?.commissionRate ?? row?.commissionPercentage ?? row?.commission_percentage ?? row?.rate; if (raw === null || raw === undefined || raw === '') return null; const n = Number(raw); if (!Number.isFinite(n)) return null; return n > 0 && n <= 1 ? n * 100 : n; };
+const rateFromLinks = (links: Row[]): number | null => { for (const l of links) { const r = rateFromRow(l); if (r !== null && r > 0) return r; } return null; };
 const idOf = (row: Row) => text(row.id ?? row.userId ?? row.adminId ?? row.transactionId, '');
 const labelOf = (row: Row) => text(row.name ?? row.email ?? row.username ?? row.userName ?? row.id, 'Unknown');
 // Referral links point at /signup?ref=CODE. The backend returns the link's
@@ -833,6 +841,18 @@ function AdminAffiliate() {
     finally { setLoading(false); }
   };
   useEffect(() => { load(); }, []);
+  // The admin's own rate comes from their referral links (the value the
+  // backend actually applies per deposit), falling back to the stats
+  // payload — the PlusBet/PowerBet analytics pages read it the same way.
+  const rate = rateFromLinks(links) ?? rateFromRow(stats);
+  const depositsToday = numberFrom(daily, ['totalDeposits', 'depositsToday', 'total']);
+  const creditedToday = numberFrom(daily, ['commissionAmount', 'commission', 'amount']);
+  const expectedToday = rate !== null ? depositsToday * rate / 100 : null;
+  const shortfallToday = expectedToday !== null ? Math.max(0, expectedToday - creditedToday) : 0;
+  useEffect(() => {
+    if (!links.length && !Object.keys(daily).length) return;
+    console.info('[LS-COMMISSION] affiliate today', { ratePercent: rate, depositsToday, creditedToday, expectedToday, shortfallToday });
+  }, [daily, links, stats]);
   const createLink = async () => {
     try { await api('POST', '/api/admin/affiliate/links', {}); setMessage('Referral link created.'); load(); }
     catch (e) { setError(e instanceof Error ? e.message : 'Could not create link'); }
@@ -846,7 +866,7 @@ function AdminAffiliate() {
     <Intro title="Affiliate" description="Referral stats, links and commission payouts." onRefresh={load} loading={loading} />
     <Notice message={error} error /><Notice message={message} />
     <div className="admin-stat-grid">
-      {[['Referrals', text(stats.totalReferrals, '0'), 'group_add'], ['Lifetime commission', money(stats.lifetimeCommission), 'payments'], ['Balance owed', money(stats.commissionBalance), 'account_balance_wallet'], ["Today's deposits", money(daily.totalDeposits), 'savings'], ['Commission today', money(daily.commissionAmount), 'today'], ['Links', String(links.length), 'link']].map(([t, v, icon]) =>
+      {[['Referrals', text(stats.totalReferrals, '0'), 'group_add'], ['Commission rate', rate !== null ? `${rate}%` : '—', 'percent'], ['Lifetime commission', money(numberFrom(stats, ['lifetimeCommission', 'totalEarnedLifetime', 'totalCommission'])), 'payments'], ['Balance owed', money(numberFrom(stats, ['commissionBalance', 'availableBalance', 'availableCommission', 'withdrawableBalance'])), 'account_balance_wallet'], ["Today's deposits", money(depositsToday), 'savings'], ['Commission today', money(creditedToday), 'today'], ['Links', String(links.length), 'link']].map(([t, v, icon]) =>
         <div className="admin-stat" key={t}><span className="material-symbols-rounded">{icon}</span><small>{t}</small><strong>{loading ? '…' : v}</strong></div>)}
     </div>
     <div className="admin-two-col">
@@ -855,17 +875,21 @@ function AdminAffiliate() {
       </Panel>
       <Panel title="Commission" action={<Button tone="primary" onClick={requestPayout}><span className="material-symbols-rounded">request_quote</span>Request payout</Button>}>
         <div className="admin-status-list">
-          <div><span>Commission today</span><b>{money(daily.commissionAmount)}</b></div>
-          <div><span>Deposits today ({text(daily.totalDepositCount, '0')})</span><b>{money(daily.totalDeposits)}</b></div>
-          <div><span>Balance owed</span><b>{money(stats.commissionBalance)}</b></div>
-          <div><span>Lifetime earned</span><b>{money(stats.totalEarnedLifetime ?? stats.lifetimeCommission)}</b></div>
-          <div><span>Lifetime paid out</span><b>{money(stats.totalPaidOutLifetime)}</b></div>
+          <div><span>Commission today</span><b>{money(creditedToday)}</b></div>
+          <div><span>Deposits today ({text(daily.totalDepositCount, '0')})</span><b>{money(depositsToday)}</b></div>
+          <div><span>Your rate</span><b>{rate !== null ? `${rate}%` : '—'}</b></div>
+          {expectedToday !== null && <div><span>Expected today (deposits × rate)</span><b>{money(expectedToday)}</b></div>}
+          {shortfallToday >= 0.01 && <div><span>Not yet credited</span><b style={{ color: '#ffb020' }}>{money(shortfallToday)}</b></div>}
+          <div><span>Balance owed</span><b>{money(numberFrom(stats, ['commissionBalance', 'availableBalance', 'availableCommission', 'withdrawableBalance']))}</b></div>
+          <div><span>Lifetime earned</span><b>{money(numberFrom(stats, ['totalEarnedLifetime', 'lifetimeCommission', 'totalCommission']))}</b></div>
+          <div><span>Lifetime paid out</span><b>{money(numberFrom(stats, ['totalPaidOutLifetime', 'totalPaidOut', 'paidOut']))}</b></div>
           <div><span>Referred users</span><b>{text(stats.totalReferrals, String(referred.length))}</b></div>
         </div>
+        {shortfallToday >= 0.01 && <p style={{ color: '#a99bb3', fontSize: 12, marginTop: 10 }}>Expected is today's referred deposits at your {rate}% rate. Credited is what the commission ledger has recorded so far — the difference is commission still owed to you on today's deposits.</p>}
       </Panel>
     </div>
     <Panel title="Today's referred deposits">
-      <Table data={rows(daily.depositsByUser).map(u => ({ ...u, name: [u.firstName, u.lastName].filter(Boolean).join(' ').trim() || text(u.email, '—'), amount: money(u.depositTotal) }))} columns={['name', 'email', 'country', 'amount']} labels={{ name: 'User', email: 'Email', country: 'Country', amount: 'Deposited' }} />
+      <Table data={rows(daily.depositsByUser).map(u => ({ ...u, name: [u.firstName, u.lastName].filter(Boolean).join(' ').trim() || text(u.email, '—'), amount: money(u.depositTotal), commission: rate !== null ? money(numberValue(u.depositTotal) * rate / 100) : '—' }))} columns={['name', 'email', 'country', 'amount', 'commission']} labels={{ name: 'User', email: 'Email', country: 'Country', amount: 'Deposited', commission: rate !== null ? `Commission at ${rate}%` : 'Commission' }} />
     </Panel>
     <AffiliateInsights />
     <AffiliatePayoutHistory />
@@ -1285,7 +1309,8 @@ function SuperCommission() {
   const today = () => new Date().toISOString().slice(0, 10);
   const [date, setDate] = useState(today);
   const [data, setData] = useState<Row[]>([]);
-  const [totals, setTotals] = useState({ admins: 0, earned: 0, unpaid: 0, deposits: 0 });
+  const [query, setQuery] = useState('');
+  const [totals, setTotals] = useState({ admins: 0, earned: 0, unpaid: 0, deposits: 0, expected: 0, shortfall: 0, mismatched: 0 });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
@@ -1296,14 +1321,25 @@ function SuperCommission() {
       // Real backend shape: GET /api/super-admin/commission/daily?date=YYYY-MM-DD
       // -> [{ adminId, adminEmail, adminName, commissionPercent, commissionEarned,
       //      commissionCurrency, commissionBalance, totalDeposits, depositCount }]
+      // Like the PlusBet/PowerBet analytics, each row also gets its EXPECTED
+      // commission (deposits × rate) so under-credited admins are visible
+      // instead of hiding inside the earned figure.
       const list = rows(await api('GET', `/api/super-admin/commission/daily?date=${encodeURIComponent(day)}`));
       const sum = (key: string) => list.reduce((t, r) => t + numberValue(r[key]), 0);
-      setTotals({ admins: list.length, earned: sum('commissionEarned'), unpaid: sum('commissionBalance'), deposits: sum('totalDeposits') });
+      const expectedOf = (r: Row) => numberValue(r.totalDeposits) * (rateFromRow(r) ?? 0) / 100;
+      const expected = list.reduce((t, r) => t + expectedOf(r), 0);
+      const shortfall = list.reduce((t, r) => t + Math.max(0, expectedOf(r) - numberValue(r.commissionEarned)), 0);
+      const mismatched = list.filter(r => expectedOf(r) - numberValue(r.commissionEarned) >= 0.01).length;
+      console.info('[LS-COMMISSION] super daily', { date: day, admins: list.length, deposits: sum('totalDeposits'), earned: sum('commissionEarned'), expected, shortfall, mismatched });
+      setTotals({ admins: list.length, earned: sum('commissionEarned'), unpaid: sum('commissionBalance'), deposits: sum('totalDeposits'), expected, shortfall, mismatched });
       setData(list.map(r => ({
         ...r,
         unpaidRaw: numberValue(r.commissionBalance),
-        commissionPercent: `${numberValue(r.commissionPercent)}%`,
+        expectedRaw: expectedOf(r),
+        earnedRaw: numberValue(r.commissionEarned),
+        commissionPercent: rateFromRow(r) !== null ? `${rateFromRow(r)}%` : '—',
         commissionEarned: money(r.commissionEarned),
+        expected: money(expectedOf(r)),
         commissionBalance: money(r.commissionBalance),
         totalDeposits: money(r.totalDeposits),
       })));
@@ -1335,17 +1371,20 @@ function SuperCommission() {
   const stats: Array<[string, string, string]> = [
     ['Admins', String(totals.admins), 'group'],
     ['Commission earned', money(totals.earned), 'payments'],
+    ['Expected (deposits × rate)', money(totals.expected), 'calculate'],
     ['Unpaid balance', money(totals.unpaid), 'account_balance_wallet'],
     ['Referred deposits', money(totals.deposits), 'savings'],
   ];
+  const visibleData = query.trim() ? data.filter(r => `${text(r.adminName, '')} ${text(r.adminEmail, '')}`.toLowerCase().includes(query.trim().toLowerCase())) : data;
   return <div className="admin-stack">
     <Intro title="Commission analytics" description="Per-admin commission earned — see who is actively working." onRefresh={() => load(date)} loading={loading} />
     <Notice message={error} error /><Notice message={message} />
     <div className="admin-stat-grid">{stats.map(([t, v, icon]) => <div className="admin-stat" key={t}><span className="material-symbols-rounded">{icon}</span><small>{t}</small><strong>{loading ? '…' : v}</strong></div>)}</div>
-    <Panel title={`Commission by admin — ${date}`} action={<div className="admin-toolbar" style={{ margin: 0 }}><input type="date" value={date} max={today()} onChange={e => { if (e.target.value) setDate(e.target.value); }} aria-label="Commission date" /><Button onClick={clearDay} disabled={settling || totals.unpaid <= 0}><span className="material-symbols-rounded">done_all</span>{settling ? 'Settling…' : 'Settle day'}</Button></div>}>
-      <Table data={data} columns={['adminName', 'adminEmail', 'commissionPercent', 'commissionEarned', 'commissionBalance', 'totalDeposits', 'depositCount']}
-        labels={{ adminName: 'Admin', adminEmail: 'Email', commissionPercent: 'Rate', commissionEarned: 'Earned', commissionBalance: 'Unpaid', totalDeposits: 'Deposits', depositCount: 'Deposit count' }}
+    <Panel title={`Commission by admin — ${date}`} action={<div className="admin-toolbar" style={{ margin: 0 }}><input type="search" value={query} onChange={e => setQuery(e.target.value)} placeholder="Search admin" aria-label="Search administrators" /><input type="date" value={date} max={today()} onChange={e => { if (e.target.value) setDate(e.target.value); }} aria-label="Commission date" /><Button onClick={clearDay} disabled={settling || totals.unpaid <= 0}><span className="material-symbols-rounded">done_all</span>{settling ? 'Settling…' : 'Settle day'}</Button></div>}>
+      <Table data={visibleData} columns={['adminName', 'adminEmail', 'commissionPercent', 'totalDeposits', 'expected', 'commissionEarned', 'commissionBalance', 'depositCount']}
+        labels={{ adminName: 'Admin', adminEmail: 'Email', commissionPercent: 'Rate', totalDeposits: 'Deposits', expected: 'Expected at rate', commissionEarned: 'Earned', commissionBalance: 'Unpaid', depositCount: 'Deposit count' }}
         actions={row => numberValue(row.unpaidRaw) > 0 ? <Button onClick={() => markPaid(row)} disabled={settling}>{settling ? '…' : 'Mark paid'}</Button> : null} />
+      {totals.mismatched > 0 && <p style={{ color: '#ffb020', fontSize: 12, marginTop: 10 }}>{totals.mismatched} admin{totals.mismatched === 1 ? ' has' : 's have'} less commission credited than their deposits × rate — {money(totals.shortfall)} not yet recorded in the commission ledger for {date}.</p>}
     </Panel>
   </div>;
 }
