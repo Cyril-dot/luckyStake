@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
-import { api } from './api';
+import { api, ApiError } from './api';
 import { LIMITS } from './limits';
 import { COUNTRY_LIST, useCountry, type CountryProfile } from './country';
 
@@ -149,10 +149,10 @@ function GhanaMomoDeposit({ onDone, fixedAmount }: { onDone: (amount: number) =>
         <small>{fixedAmount ? 'REQUIRED DEPOSIT' : 'AMOUNT'}</small>
         {fixedAmount
           ? <div className="lp-amount-input"><span>GH₵</span><input value={String(fixedAmount)} disabled /></div>
-          : <><div className="lp-amount-input"><span>GH₵</span><input value={amount} onChange={e => setAmount(e.target.value.replace(/[^0-9.]/g, ''))} inputMode="decimal" placeholder="50.00" autoFocus /></div>
+          : <><div className="lp-amount-input"><span>GH₵</span><input value={amount} onChange={e => setAmount(e.target.value.replace(/[^0-9.]/g, ''))} inputMode="decimal" placeholder="1.00" autoFocus /></div>
       <p className="lp-min-hint">Minimum deposit GH₵{LIMITS.MIN_DEPOSIT_GH}</p></>}
       </div>
-      {!fixedAmount && <div className="lp-chips">{[50, 100, 200, 500, 1000, 2000].map(v => <button key={v} type="button" className={Number(amount) === v ? 'on' : ''} onClick={() => setAmount(String(v))}>₵{v.toLocaleString()}</button>)}</div>}
+      {!fixedAmount && <div className="lp-chips">{[1, 50, 100, 200, 500, 1000, 2000].map(v => <button key={v} type="button" className={Number(amount) === v ? 'on' : ''} onClick={() => setAmount(String(v))}>₵{v.toLocaleString()}</button>)}</div>}
       <label className="lp-field"><span>MoMo number</span><input value={phone} onChange={e => { setPhone(e.target.value.replace(/[^0-9+]/g, '')); const detected = lpDetectNetwork(e.target.value); if (detected) setNetwork(detected); }} inputMode="tel" placeholder="024 123 4567" /></label>
       <div className="lp-chips">{(['MTN', 'TELECEL', 'AIRTELTIGO'] as const).map(n => <button key={n} type="button" className={network === n ? 'on' : ''} onClick={() => setNetwork(n)}>{n === 'AIRTELTIGO' ? 'AirtelTigo' : n === 'MTN' ? 'MTN' : 'Telecel'}</button>)}</div>
       {error && <p className="lp-error"><span className="material-symbols-rounded">error</span>{error}</p>}
@@ -401,7 +401,7 @@ function NigeriaDeposit({ onDone }: { onDone: () => void }) {
         window.location.assign(url);
         return;
       }
-    } catch (err) { depErr('NG', `init ✗ ${method} request failed`, err); setError(err instanceof Error ? err.message : 'Could not start the deposit.'); }
+    } catch (err) { depErr('NG', `init ✗ ${method} request failed`, err); const status = err instanceof ApiError ? err.status : 0; const raw = err instanceof Error ? err.message : ''; setError(status >= 500 || !raw || /internal (server )?error/i.test(raw) ? 'Payments are temporarily unavailable — please try again in a few minutes.' : raw); }
     finally { setBusy(false); }
   }
 
