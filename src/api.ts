@@ -52,6 +52,20 @@ export function ensureDistinctMatchLogos(matches: MatchRow[]) { const homeUsed =
 export function normalizeMatches(payload: unknown, sport: Sport = 'football'): MatchRow[] { let rows: unknown = payload; if (rows && typeof rows === 'object' && 'data' in rows) rows = (rows as { data: unknown }).data; if (rows && typeof rows === 'object' && Array.isArray((rows as { content?: unknown[] }).content)) rows = (rows as { content: unknown[] }).content; if (rows && typeof rows === 'object' && Array.isArray((rows as { matches?: unknown[] }).matches)) rows = (rows as { matches: unknown[] }).matches; if (!Array.isArray(rows) && rows && typeof rows === 'object') { const obj = rows as Record<string, unknown>; rows = Object.values(obj).flatMap(value => Array.isArray(value) ? value : []); } if (!Array.isArray(rows)) return []; const unique = new Map<string, MatchRow>(); for (const entry of rows) { const match = normalizeMatch(entry, sport); if (!match) continue; const prior = unique.get(match.id); if (!prior || (isLiveStatus(match.status) && !isLiveStatus(prior.status)) || (match.scoreHome != null && prior.scoreHome == null)) unique.set(match.id, match); } return ensureDistinctMatchLogos(Array.from(unique.values())); }
 export function sportFeedPath(sport: Sport, feed: Feed) { return feed === 'results' ? `/api/public/${sport}/matches/results?limit=50` : `/api/public/${sport}/matches/${feed}`; }
 export function primaryOdds(raw: unknown, homeTeam: string, awayTeam: string) { const rows: Record<string, unknown>[] = []; const walk = (value: unknown) => { if (Array.isArray(value)) { value.forEach(walk); return; } if (!value || typeof value !== 'object') return; const obj = value as Record<string, unknown>; const selection = obj.selection ?? obj.outcome ?? obj.name ?? obj.label ?? obj.type; const odd = obj.odd ?? obj.value ?? obj.odds ?? obj.price; if (selection != null && odd != null) rows.push(obj); for (const [key, child] of Object.entries(obj)) if (['data','odds','match_result','markets','options'].includes(key)) walk(child); }; walk(raw); const norm = (value: unknown) => String(value ?? '').trim().toLowerCase(); const home = norm(homeTeam), away = norm(awayTeam); const teamMatch = (selection: string, team: string) => selection === team || selection.includes(team) || team.includes(selection); let one='', draw='', two=''; for (const row of rows) { const selection = norm(row.selection ?? row.outcome ?? row.name ?? row.label ?? row.type); const value = Number(row.odd ?? row.value ?? row.odds ?? row.price); if (!Number.isFinite(value) || value <= 1 || value > 200) continue; if (selection === '1' || selection === 'home' || teamMatch(selection, home)) one ||= value.toFixed(2); else if (selection === 'x' || selection === 'draw') draw ||= value.toFixed(2); else if (selection === '2' || selection === 'away' || teamMatch(selection, away)) two ||= value.toFixed(2); } if (!one && !draw && !two) { const values = rows.map(row => Number(row.odd ?? row.value ?? row.odds ?? row.price)).filter(value => Number.isFinite(value) && value > 1 && value < 50); if (values.length >= 2) { one = values[0].toFixed(2); if (values.length >= 3) draw = values[1].toFixed(2); two = values[values.length >= 3 ? 2 : 1].toFixed(2); } } return { homeOdds: one, drawOdds: draw, awayOdds: two }; }
+// Admin-match odds come from one request per match, and this loader runs
+// on every board mount and refresh — cache each match's parsed odds for
+// 30s so repeat loads reuse them instead of bursting the endpoint again.
+const adminOddsCache = new Map<string, { at: number; odds: { homeOdds: string; drawOdds: string; awayOdds: string } }>();
+const ADMIN_ODDS_TTL_MS = 30_000;
+async function adminOddsFor(match: MatchRow) {
+  const hit = adminOddsCache.get(match.id);
+  if (hit && Date.now() - hit.at < ADMIN_ODDS_TTL_MS) return hit.odds;
+  const parsed = primaryOdds(await api('GET', `/api/public/admin-matches/${encodeURIComponent(match.id)}/odds`), match.homeTeam, match.awayTeam);
+  const odds = { homeOdds: parsed.homeOdds || '', drawOdds: parsed.drawOdds || '', awayOdds: parsed.awayOdds || '' };
+  if (odds.homeOdds || odds.drawOdds || odds.awayOdds) adminOddsCache.set(match.id, { at: Date.now(), odds });
+  return odds;
+}
+
 export async function fetchAdminMatches(): Promise<MatchRow[]> {
   try {
     const [adminPayload, livePayload, upcomingPayload] = await Promise.all([
@@ -72,15 +86,19 @@ export async function fetchAdminMatches(): Promise<MatchRow[]> {
       .filter(match => adminIds.has(match.id) || match.isAdmin);
     const merged = normalizeMatches([...feedAdmin, ...adminRows], 'football')
       .filter(match => !isFinishedMatch(match));
-    const enriched = await Promise.all(merged.map(async match => {
-      let odds = { homeOdds: match.homeOdds || '', drawOdds: match.drawOdds || '', awayOdds: match.awayOdds || '' };
-      try {
-        odds = { ...odds, ...primaryOdds(await api('GET', `/api/public/admin-matches/${encodeURIComponent(match.id)}/odds`), match.homeTeam, match.awayTeam) };
-      } catch { /* public featured odds can be empty */ }
-      const homeLogo = match.displayHomeLogo || match.homeLogo || fallbackCrest(match.homeTeam, 'home');
-      const awayLogo = (!match.awayLogo || match.awayLogo === homeLogo) ? fallbackCrest(match.awayTeam, 'away') : (match.displayAwayLogo || match.awayLogo);
-      return { ...match, isAdmin: true, featured: true, homeLogo, awayLogo, displayHomeLogo: homeLogo, displayAwayLogo: awayLogo, ...odds };
-    }));
+    const enriched: MatchRow[] = [];
+    for (let i = 0; i < merged.length; i += 4) {
+      const batch = merged.slice(i, i + 4);
+      enriched.push(...await Promise.all(batch.map(async match => {
+        let odds = { homeOdds: match.homeOdds || '', drawOdds: match.drawOdds || '', awayOdds: match.awayOdds || '' };
+        try {
+          odds = { ...odds, ...(await adminOddsFor(match)) };
+        } catch { /* public featured odds can be empty */ }
+        const homeLogo = match.displayHomeLogo || match.homeLogo || fallbackCrest(match.homeTeam, 'home');
+        const awayLogo = (!match.awayLogo || match.awayLogo === homeLogo) ? fallbackCrest(match.awayTeam, 'away') : (match.displayAwayLogo || match.awayLogo);
+        return { ...match, isAdmin: true, featured: true, homeLogo, awayLogo, displayHomeLogo: homeLogo, displayAwayLogo: awayLogo, ...odds };
+      })));
+    }
     return enriched.sort((a, b) => {
       if (isLiveStatus(a.status) !== isLiveStatus(b.status)) return isLiveStatus(a.status) ? -1 : 1;
       return new Date(a.kickoffAt || 0).getTime() - new Date(b.kickoffAt || 0).getTime();
