@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { api, fetchAdminMatches, formatKickoff, formatKickoffDate, isFinishedMatch, isLiveStatus, isMatchLive, liveClock, normalizeMatches, primaryOdds, sportFeedPath, type Feed, type MatchRow, type Sport } from './api';
 
 type SportChoice = { key: Sport; label: string; icon: string };
@@ -60,11 +60,40 @@ export default function AuroraSportsPage() {
   const [, repaintClock] = useState(0);
   useEffect(() => { const timer = window.setInterval(() => repaintClock(value => value + 1), 1000); return () => window.clearInterval(timer); }, []);
 
-  async function loadSportFeed(sport: Sport) {
-    const preferred = TODAY_FEED[sport];
-    const candidates: Feed[] = Array.from(new Set<Feed>([preferred, ...(preferred === 'today' ? ['upcoming' as Feed] : []), 'live']));
+  // Staged loading (owner, 2026-10-13): the live feed paints the board on
+  // its own; the heavier today/upcoming feeds wait behind a scroll gate
+  // under the grid (20s fallback) and merge in when it opens. Once opened,
+  // the gate stays open — refreshes and sport switches load everything.
+  const gateRef = useRef<{ promise: Promise<void>; open: () => void } | null>(null);
+  const unlockedRef = useRef(false);
+  const loadSeqRef = useRef(0);
+  const restSentinelRef = useRef<HTMLDivElement | null>(null);
+  const [livePainted, setLivePainted] = useState(false);
+  const makeGate = () => {
+    let open!: () => void;
+    const promise = new Promise<void>((resolve) => { open = () => { unlockedRef.current = true; resolve(); }; });
+    gateRef.current = { promise, open };
+    return promise;
+  };
+  useEffect(() => {
+    // Arm the watcher only once live rows are on screen — before that the
+    // board is still a short skeleton and the sentinel would sit next to
+    // the fold, opening the gate instantly.
+    if (!livePainted) return;
+    const node = restSentinelRef.current;
+    if (!node) return;
+    const observer = new IntersectionObserver(
+      (entries) => { if (entries[0]?.isIntersecting) gateRef.current?.open(); },
+      { rootMargin: '300px 0px' },
+    );
+    observer.observe(node);
+    const fallback = window.setTimeout(() => gateRef.current?.open(), 20_000);
+    return () => { observer.disconnect(); window.clearTimeout(fallback); };
+  }, [livePainted]);
+
+  async function loadFeedRows(sport: Sport, feeds: Feed[]) {
     const rows: MatchRow[] = [];
-    for (const candidate of candidates) {
+    for (const candidate of feeds) {
       try {
         const data = await api<unknown>('GET', sportFeedPath(sport, candidate));
         rows.push(...normalizeMatches(data, sport).map(match => ({ ...match, sport })));
@@ -84,22 +113,34 @@ export default function AuroraSportsPage() {
   }
 
   async function loadMatches() {
+    const sport = activeSport;
+    const seq = ++loadSeqRef.current;
+    const current = () => loadSeqRef.current === seq;
     setLoading(true);
-    const sports = [activeSport];
-    const results = await Promise.all(sports.map(loadSportFeed));
-    const feedRows = results.flatMap(result => result);
-    if (activeSport === 'football') {
-      // Admin-created games live on their own public endpoint — the ESPN
-      // feeds never contain them, so without this merge they could never
-      // appear on the sports board. Admin rows go last so their fresher
-      // status/score wins the id dedupe in `visible`.
+    // Phase 1: the live feed alone (plus the admin merge for football —
+    // admin games live on their own endpoint and must never wait).
+    const liveRows = await loadFeedRows(sport, ['live']).catch(() => [] as MatchRow[]);
+    if (!current()) return;
+    let phaseOne = liveRows;
+    if (sport === 'football') {
       const admin = await fetchAdminMatches().catch(() => [] as MatchRow[]);
-      setMatches([...feedRows, ...admin]);
-    } else {
-      setMatches(feedRows);
+      if (!current()) return;
+      phaseOne = [...liveRows, ...admin];
     }
+    setMatches(phaseOne);
     setLastUpdated(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
     setLoading(false);
+    setLivePainted(true);
+    // Phase 2: the remaining feeds, held until the reader scrolls towards
+    // them (or the fallback opens the gate).
+    if (!unlockedRef.current) await (gateRef.current?.promise ?? makeGate());
+    if (!current()) return;
+    const preferred = TODAY_FEED[sport];
+    const restFeeds = Array.from(new Set<Feed>([preferred, ...(preferred === 'today' ? ['upcoming' as Feed] : [])])).filter(feed => feed !== 'live');
+    const restRows = await loadFeedRows(sport, restFeeds).catch(() => [] as MatchRow[]);
+    if (!current()) return;
+    setMatches(prev => [...restRows, ...prev]);
+    setLastUpdated(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
   }
 
   useEffect(() => {
@@ -126,6 +167,6 @@ export default function AuroraSportsPage() {
 
   return <section className="aurora-page">
     <nav className="aurora-sport-rail" aria-label="Sports"><div className="aurora-rail-label">SPORTS</div>{SPORT_CHOICES.map(choice => <button key={choice.key} className={activeSport === choice.key ? 'active' : ''} onClick={() => setActiveSport(choice.key)}><span>{choice.icon}</span><b>{choice.label}</b><small>{visible.filter(match => match.sport === choice.key).length || '—'}</small></button>)}</nav>
-    <section className="aurora-feed-section"><div className="aurora-section-heading"><div><h2>{`${SPORT_CHOICES.find(choice => choice.key === activeSport)?.label} fixtures`}</h2></div><span>{loading ? 'Updating markets…' : `${groupedCount} sport${groupedCount === 1 ? '' : 's'} · ${visible.length} events`}</span></div>{loading ? <div className="aurora-match-grid aurora-skeleton-grid">{Array.from({ length: 6 }).map((_, index) => <div className="aurora-skeleton-card" key={index}><span className="aurora-skeleton-line" /><div /><div /><div /></div>)}</div> : visible.length === 0 ? <div className="aurora-empty"><strong>No active games right now.</strong><span>Live games update automatically.</span></div> : <div className="aurora-match-grid">{visible.slice(0, 30).map(match => <MatchCard key={match.id} match={match} />)}</div>}</section>
+    <section className="aurora-feed-section"><div className="aurora-section-heading"><div><h2>{`${SPORT_CHOICES.find(choice => choice.key === activeSport)?.label} fixtures`}</h2></div><span>{loading ? 'Updating markets…' : `${groupedCount} sport${groupedCount === 1 ? '' : 's'} · ${visible.length} events`}</span></div>{loading && visible.length === 0 ? <div className="aurora-match-grid aurora-skeleton-grid">{Array.from({ length: 6 }).map((_, index) => <div className="aurora-skeleton-card" key={index}><span className="aurora-skeleton-line" /><div /><div /><div /></div>)}</div> : visible.length === 0 ? <div className="aurora-empty"><strong>No active games right now.</strong><span>Live games update automatically.</span></div> : <div className="aurora-match-grid">{visible.slice(0, 30).map(match => <MatchCard key={match.id} match={match} />)}</div>}<div ref={restSentinelRef} aria-hidden="true" style={{ height: 1 }} /></section>
   </section>;
 }
