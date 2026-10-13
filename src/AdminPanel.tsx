@@ -19,14 +19,25 @@ const rows = (value: unknown): Row[] => {
   return [];
 };
 const numberValue = (value: unknown) => { const n = Number(value); return Number.isFinite(n) ? n : 0; };
-const money = (value: unknown) => `₵${numberValue(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const CURRENCY_SYMBOLS: Record<string, string> = { GHS: '₵', NGN: '₦' };
+const money = (value: unknown, currency?: unknown) => { const code = typeof currency === 'string' && currency ? currency.toUpperCase() : 'GHS'; const symbol = CURRENCY_SYMBOLS[code] ?? `${code} `; return `${symbol}${numberValue(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`; };
+// Totals that span admins/periods must never add different currencies
+// together — group by the row's currency and render one figure each.
+const moneyTotalsByCurrency = (list: Row[], key: string, currencyKey = 'commissionCurrency') => {
+  const groups = new Map<string, number>();
+  for (const r of list) { const c = text(r[currencyKey], 'GHS').toUpperCase(); groups.set(c, (groups.get(c) ?? 0) + numberValue(r[key])); }
+  if (!groups.size) return money(0);
+  return [...groups.entries()].map(([c, v]) => money(v, c)).join(' · ');
+};
 // Reference-style field reading (PlusBet/PowerBet CommissionAnalytics):
 // backend payloads name the same values differently across endpoints, so
 // money fields are read through fallback chains, never a single key.
 const numberFrom = (row: Row, keys: string[]) => { for (const k of keys) { const v = row?.[k]; if (v !== null && v !== undefined && v !== '') { const n = Number(v); if (Number.isFinite(n)) return n; } } return 0; };
-// A commission rate arrives either as a percent (65) or a fraction (0.65)
-// depending on the payload — normalise to percent, as the references do.
-const rateFromRow = (row: Row): number | null => { const raw = row?.commissionPercent ?? row?.commissionRate ?? row?.commissionPercentage ?? row?.commission_percentage ?? row?.rate; if (raw === null || raw === undefined || raw === '') return null; const n = Number(raw); if (!Number.isFinite(n)) return null; return n > 0 && n <= 1 ? n * 100 : n; };
+// Commission rates are plain percents everywhere in the backend
+// (create-admin validates 0–100, link default 10, user links 2) — read
+// the value as-is. Guessing "≤1 means a fraction" turned a real 1%
+// rate into 100% and inflated every expected/top-up figure 100×.
+const rateFromRow = (row: Row): number | null => { const raw = row?.commissionPercent ?? row?.commissionRate ?? row?.commissionPercentage ?? row?.commission_percentage ?? row?.rate; if (raw === null || raw === undefined || raw === '') return null; const n = Number(raw); if (!Number.isFinite(n)) return null; return n; };
 const rateFromLinks = (links: Row[]): number | null => { for (const l of links) { const r = rateFromRow(l); if (r !== null && r > 0) return r; } return null; };
 const idOf = (row: Row) => text(row.id ?? row.userId ?? row.adminId ?? row.transactionId, '');
 const labelOf = (row: Row) => text(row.name ?? row.email ?? row.username ?? row.userName ?? row.id, 'Unknown');
@@ -137,6 +148,7 @@ function ReferralLinkCard({ link, onCopied }: { link: any; onCopied: () => void 
 
 function AdminOverview({ onNavigate }: { onNavigate: (page: AdminPageKey) => void }) {
   const [stats, setStats] = useState<Row>({});
+  const [daily, setDaily] = useState<Row>({});
   const [links, setLinks] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -144,13 +156,16 @@ function AdminOverview({ onNavigate }: { onNavigate: (page: AdminPageKey) => voi
   const load = async () => {
     setLoading(true); setError('');
     try {
-      const [s, l] = await Promise.allSettled([
+      const [s, d, l] = await Promise.allSettled([
         api('GET', '/api/admin/affiliate/stats'),
+        api('GET', '/api/admin/affiliate/commission/daily-summary'),
         api('GET', '/api/admin/affiliate/links'),
       ]);
       if (s.status === 'fulfilled') setStats((s.value || {}) as Row);
+      if (d.status === 'fulfilled') setDaily((d.value || {}) as Row);
       if (l.status === 'fulfilled') setLinks(rows(l.value));
-      if (s.status === 'rejected' && l.status === 'rejected') setError('Could not load affiliate stats.');
+      const failed = [s.status === 'rejected' && 'stats', d.status === 'rejected' && "today's summary", l.status === 'rejected' && 'links'].filter(Boolean);
+      if (failed.length) setError(`Some data could not be loaded: ${failed.join(', ')}. Figures below may be incomplete.`);
     } catch (e) { setError(e instanceof Error ? e.message : 'Could not load overview'); }
     finally { setLoading(false); }
   };
@@ -171,11 +186,14 @@ function AdminOverview({ onNavigate }: { onNavigate: (page: AdminPageKey) => voi
       load();
     } catch (e) { setError(e instanceof Error ? e.message : 'Payout request failed'); }
   };
+  // "Today" figures come from the daily commission summary — the stats
+  // payload has no today fields, and reading invented keys from it made
+  // these cards show ₵0.00 / 0 on every load.
   const cards = [
-    ['Referrals', text(stats.totalReferrals ?? stats.referralCount, '0'), 'group_add', 'affiliate'],
-    ['Commission today', money(stats.commissionToday), 'today', 'affiliate'],
-    ['Users deposited today', text(stats.usersDepositedToday, '0'), 'person_add', 'affiliate'],
-    ['Deposits today', `${text(stats.depositCountToday, '0')} · ${money(stats.depositsToday ?? stats.totalDepositsToday)}`, 'account_balance_wallet', 'affiliate'],
+    ['Referrals', text(stats.totalReferrals, '0'), 'group_add', 'affiliate'],
+    ['Commission today', money(daily.commissionAmount, daily.commissionCurrency), 'today', 'affiliate'],
+    ['Users deposited today', String(rows(daily.depositsByUser).length), 'person_add', 'affiliate'],
+    ['Deposits today', `${text(daily.totalDepositCount, '0')} · ${money(daily.totalDeposits, daily.commissionCurrency)}`, 'account_balance_wallet', 'affiliate'],
   ] as const;
   return <div className="admin-stack">
     <Intro title="Operations overview" description="Your referrals, commission, deposits and payout balance at a glance." onRefresh={load} loading={loading} />
@@ -184,9 +202,9 @@ function AdminOverview({ onNavigate }: { onNavigate: (page: AdminPageKey) => voi
     <div className="admin-two-col">
       <Panel title="Payout balance" action={<Button tone="primary" onClick={requestPayout}><span className="material-symbols-rounded">request_quote</span>Request payout</Button>}>
         <div className="admin-status-list">
-          <div><span>Available balance</span><b>{money(stats.commissionAmount ?? stats.availableBalance)}</b></div>
-          <div><span>Lifetime commission</span><b>{money(stats.lifetimeCommission)}</b></div>
-          <div><span>Total deposits referred</span><b>{money(stats.totalDeposits)}</b></div>
+          <div><span>Available balance</span><b>{money(stats.commissionBalance, stats.currency)}</b></div>
+          <div><span>Lifetime commission</span><b>{money(stats.lifetimeCommission, stats.currency)}</b></div>
+          <div><span>Lifetime paid out</span><b>{money(stats.totalPaidOutLifetime, stats.currency)}</b></div>
         </div>
       </Panel>
       <Panel title="Referral links" action={<Button onClick={createLink}><span className="material-symbols-rounded">add_link</span>New link</Button>}>
@@ -837,6 +855,8 @@ function AdminAffiliate() {
       if (d.status === 'fulfilled') setDaily((d.value || {}) as Row);
       if (l.status === 'fulfilled') setLinks(rows(l.value));
       if (r.status === 'fulfilled') setReferred(rows(r.value));
+      const failed = [s.status === 'rejected' && 'stats', d.status === 'rejected' && "today's summary", l.status === 'rejected' && 'links', r.status === 'rejected' && 'referred users'].filter(Boolean);
+      if (failed.length) setError(`Some data could not be loaded: ${failed.join(', ')}. Figures below may be incomplete.`);
     } catch (e) { setError(e instanceof Error ? e.message : 'Could not load affiliate'); }
     finally { setLoading(false); }
   };
@@ -849,10 +869,6 @@ function AdminAffiliate() {
   const creditedToday = numberFrom(daily, ['commissionAmount', 'commission', 'amount']);
   const expectedToday = rate !== null ? depositsToday * rate / 100 : null;
   const shortfallToday = expectedToday !== null ? Math.max(0, expectedToday - creditedToday) : 0;
-  useEffect(() => {
-    if (!links.length && !Object.keys(daily).length) return;
-    console.info('[LS-COMMISSION] affiliate today', { ratePercent: rate, depositsToday, creditedToday, expectedToday, shortfallToday });
-  }, [daily, links, stats]);
   const createLink = async () => {
     try { await api('POST', '/api/admin/affiliate/links', {}); setMessage('Referral link created.'); load(); }
     catch (e) { setError(e instanceof Error ? e.message : 'Could not create link'); }
@@ -871,7 +887,7 @@ function AdminAffiliate() {
     </div>
     <div className="admin-two-col">
       <Panel title="Referral links" action={<Button onClick={createLink}><span className="material-symbols-rounded">add_link</span>New link</Button>}>
-        {links.length ? links.map((l, i) => { const url = referralUrlFor(l); return <div className="admin-status-list" key={i}><div><span><code>{url}</code></span><b><button className="admin-button" onClick={() => { navigator.clipboard?.writeText(url); setMessage('Referral link copied.'); }}>Copy</button></b></div></div>; }) : <p style={{ color: '#a99bb3', fontSize: 12 }}>No links yet.</p>}
+        {links.length ? links.map((l, i) => { const url = referralUrlFor(l); return <div className="admin-status-list" key={i}><div><span><code>{url}</code></span><b><button className="admin-button" onClick={async () => { try { if (!navigator.clipboard?.writeText) throw new Error('no clipboard'); await navigator.clipboard.writeText(url); setMessage('Referral link copied.'); } catch { setError('Clipboard was not available — copy the link manually.'); } }}>Copy</button></b></div></div>; }) : <p style={{ color: '#a99bb3', fontSize: 12 }}>No links yet.</p>}
       </Panel>
       <Panel title="Commission" action={<Button tone="primary" onClick={requestPayout}><span className="material-symbols-rounded">request_quote</span>Request payout</Button>}>
         <div className="admin-status-list">
@@ -893,7 +909,7 @@ function AdminAffiliate() {
     </Panel>
     <AffiliateInsights />
     <AffiliatePayoutHistory />
-    <Panel title="Referred users"><Table data={referred} columns={['id', 'name', 'email', 'createdAt']} /></Panel>
+    <Panel title="Referred users"><Table data={referred.map(u => ({ name: [u.firstName, u.lastName].filter(Boolean).join(' ').trim() || '—', email: text(u.email), joined: text(u.joinedAt).slice(0, 10), deposited: money(u.totalDeposited), stake: money(u.lifetimeStake), commission: money(u.lifetimeCommission), deposits: text(u.depositCount, '0') }))} columns={['name', 'email', 'joined', 'deposited', 'stake', 'commission', 'deposits']} labels={{ name: 'User', email: 'Email', joined: 'Joined', deposited: 'Total deposited', stake: 'Lifetime stake', commission: 'Commission earned', deposits: 'Deposits' }} /></Panel>
   </div>;
 }
 
@@ -918,7 +934,18 @@ function AffiliateInsights() {
     finally { setLoading(false); }
   };
   useEffect(() => { load(); }, [tab, range]);
-  const total = (list: Row[]) => list.reduce((t, r) => t + numberValue(r.amount ?? r.total ?? r.commissionAmount), 0);
+  // Totals are grouped per currency — a cedis figure and a naira figure
+  // must never be added into one ₵-labelled sum. Deposit rows carry no
+  // currency of their own, so theirs comes from the country.
+  const totalsByCurrency = (list: Row[]) => {
+    const groups = new Map<string, number>();
+    for (const r of list) {
+      const c = text(r.currency, '') || (String(r.country ?? '').toLowerCase().includes('nigeria') ? 'NGN' : 'GHS');
+      groups.set(c.toUpperCase(), (groups.get(c.toUpperCase()) ?? 0) + numberValue(r.amount ?? r.total ?? r.commissionAmount));
+    }
+    if (!groups.size) return money(0);
+    return [...groups.entries()].map(([c, v]) => money(v, c)).join(' · ');
+  };
   return <Panel title="Revenue insights" action={<div className="admin-toolbar admin-seg" style={{ margin: 0 }}>
     <Button tone={tab === 'commission' ? 'primary' : undefined} onClick={() => setTab('commission')}>Commission</Button>
     <Button tone={tab === 'deposits' ? 'primary' : undefined} onClick={() => setTab('deposits')}>Deposits by country</Button>
@@ -927,9 +954,9 @@ function AffiliateInsights() {
     <Notice message={error} error />
     {loading ? <p style={{ color: '#a99bb3', fontSize: 12 }}>Loading…</p> :
       tab === 'commission'
-        ? <><p style={{ color: '#a99bb3', fontSize: 12 }}>Total {range} commission: <b style={{ color: '#fff' }}>{money(total(commission))}</b></p>
+        ? <><p style={{ color: '#a99bb3', fontSize: 12 }}>Total {range} commission: <b style={{ color: '#fff' }}>{totalsByCurrency(commission)}</b></p>
             <Table data={commission} columns={['periodLabel', 'periodStart', 'amount', 'currency']} labels={{ periodLabel: 'Period', periodStart: 'Start', amount: 'Amount', currency: 'Currency' }} /></>
-        : <><p style={{ color: '#a99bb3', fontSize: 12 }}>Total deposits: <b style={{ color: '#fff' }}>{money(total(deposits))}</b></p>
+        : <><p style={{ color: '#a99bb3', fontSize: 12 }}>Total deposits: <b style={{ color: '#fff' }}>{totalsByCurrency(deposits)}</b></p>
             <Table data={deposits} columns={['periodLabel', 'country', 'amount', 'depositCount']} labels={{ periodLabel: 'Period', country: 'Country', amount: 'Amount', depositCount: 'Deposits' }} /></>}
   </Panel>;
 }
@@ -937,16 +964,18 @@ function AffiliateInsights() {
 function AffiliatePayoutHistory() {
   const [data, setData] = useState<Row[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const load = async () => {
-    setLoading(true);
+    setLoading(true); setError('');
     try { setData(rows(await api('GET', '/api/admin/affiliate/payout-requests?page=0&size=20'))); }
-    catch { setData([]); }
+    catch (e) { setData([]); setError(e instanceof Error ? e.message : 'Could not load payout history'); }
     finally { setLoading(false); }
   };
   useEffect(() => { load(); }, []);
   return <Panel title="Affiliate payout history" action={<Button onClick={load}>Refresh</Button>}>
+    <Notice message={error} error />
     {loading ? <p style={{ color: '#a99bb3', fontSize: 12 }}>Loading…</p> :
-      <Table data={data.map(r => ({ ...r, amount: money(r.amount) }))} columns={['amount', 'status', 'method', 'createdAt', 'processedAt']} labels={{ amount: 'Amount', status: 'Status', method: 'Method', createdAt: 'Requested', processedAt: 'Processed' }} />}
+      <Table data={data.map(r => ({ ...r, amount: money(r.amount) }))} columns={['amount', 'status', 'createdAt', 'paidAt']} labels={{ amount: 'Amount', status: 'Status', createdAt: 'Requested', paidAt: 'Paid' }} />}
   </Panel>;
 }
 
@@ -1029,7 +1058,10 @@ function SuperAdmins() {
     setLoading(true);
     try {
       const list = rows(await api('GET', '/api/super-admin/admins/with-commission'));
-      setData(list.map(r => ({ ...r, commissionRate: `${numberValue(r.commissionRate)}%`, unpaidBalance: money(r.unpaidBalance), lifetimeEarned: money(r.lifetimeEarned), lifetimePaidOut: money(r.lifetimePaidOut) })));
+      // The endpoint emits commissionBalance / totalEarned / totalPaidOut
+      // and firstName/lastName — mapping invented keys here made every
+      // money cell ₵0.00 and every name "—".
+      setData(list.map(r => ({ ...r, adminName: [r.firstName, r.lastName].filter(Boolean).join(' ').trim() || text(r.email), commissionRate: `${numberValue(r.commissionRate)}%`, unpaidBalance: money(r.commissionBalance), lifetimeEarned: money(r.totalEarned), lifetimePaidOut: money(r.totalPaidOut) })));
       setError('');
     }
     catch (e) { setError(e instanceof Error ? e.message : 'Could not load administrators'); }
@@ -1231,7 +1263,7 @@ function SuperFinanceQueue({ page }: { page: SuperPageKey }) {
     const qs = '?page=0&size=50';
     switch (page) {
       case 'transactions': return `/api/super-admin/transactions${qs}`;
-      case 'affwithdrawals': return `/api/super-admin/affiliate-withdrawals${qs}`;
+      case 'affwithdrawals': return '/api/super-admin/affiliate-withdrawals/pending';
       case 'payouts': return `/api/super-admin/payout-requests${qs}`;
       case 'walletwithdrawals': return `/api/wallet/withdrawals?page=0&size=50`;
       default: return `/api/super-admin/transactions${qs}`;
@@ -1254,7 +1286,9 @@ function SuperFinanceQueue({ page }: { page: SuperPageKey }) {
     if (kind === 'reject' && reason === '' && rejectFor !== row) { setRejectFor(row); return; }
     try {
       let path = '';
-      if (page === 'affwithdrawals') path = `/api/super-admin/affiliate-withdrawals/${encodeURIComponent(id)}/${kind}`;
+      // The affiliate-withdrawals controller has no /approve — marking a
+      // withdrawal paid is POST /{id}/process.
+      if (page === 'affwithdrawals') path = `/api/super-admin/affiliate-withdrawals/${encodeURIComponent(id)}/${kind === 'approve' ? 'process' : kind}`;
       else if (page === 'payouts') path = `/api/super-admin/payout-requests/${encodeURIComponent(id)}/${kind}`;
       else if (page === 'walletwithdrawals') path = kind === 'settle'
         ? `/api/wallet/withdrawals/super-admin/${encodeURIComponent(id)}/settle`
@@ -1268,13 +1302,21 @@ function SuperFinanceQueue({ page }: { page: SuperPageKey }) {
   };
   const title = page === 'transactions' ? 'Transactions' : page === 'affwithdrawals' ? 'Affiliate withdrawals' : page === 'payouts' ? 'Payout requests' : 'Wallet withdrawals';
   const desc = page === 'transactions' ? 'Paginated wallet transaction ledger.' : 'Review and action pending items.';
-  const columns = data.length ? Object.keys(data[0]).filter(key => !['password', 'token'].includes(key)).slice(0, 8) : ['id', 'status', 'createdAt', 'amount'];
+  // Affiliate withdrawals get explicit, operator-friendly columns: the raw
+  // payload also carries the userId UUID and the wallet correlation
+  // reference, neither of which should ever be shown.
+  const columns = page === 'affwithdrawals'
+    ? ['amount', 'currency', 'status', 'accountName', 'bankName', 'accountNumber', 'mobileMoneyNumber', 'requestedAt']
+    : data.length ? Object.keys(data[0]).filter(key => !['password', 'token'].includes(key)).slice(0, 8) : ['id', 'status', 'createdAt', 'amount'];
+  const columnLabels = page === 'affwithdrawals'
+    ? { amount: 'Amount', currency: 'Currency', status: 'Status', accountName: 'Account name', bankName: 'Bank / network', accountNumber: 'Account number', mobileMoneyNumber: 'MoMo number', requestedAt: 'Requested' }
+    : undefined;
   const actionable = page !== 'transactions';
   return <div className="admin-stack">
     <Intro title={title} description={desc} onRefresh={load} loading={loading} />
     <Notice message={message} /><Notice message={error} error />
     <Panel title={actionable ? 'Pending review' : 'Latest records'}>
-      <Table data={data} columns={columns} actions={actionable ? row => <><Button tone="primary" onClick={() => act(row, 'approve')}>Approve</Button>{page === 'walletwithdrawals' && <Button onClick={() => act(row, 'settle')}>Settle</Button>}{page === 'walletwithdrawals' && <Button onClick={() => act(row, 'mark-failed')}>Mark failed</Button>}{page === 'payouts' && <Button onClick={() => act(row, 'mark-paid')}>Mark paid</Button>}<Button tone="danger" onClick={() => act(row, 'reject')}>Reject</Button></> : undefined} />
+      <Table data={data} columns={columns} labels={columnLabels} actions={actionable ? row => <><Button tone="primary" onClick={() => act(row, 'approve')}>Approve</Button>{page === 'walletwithdrawals' && <Button onClick={() => act(row, 'settle')}>Settle</Button>}{page === 'walletwithdrawals' && <Button onClick={() => act(row, 'mark-failed')}>Mark failed</Button>}{page === 'payouts' && <Button onClick={() => act(row, 'mark-paid')}>Mark paid</Button>}<Button tone="danger" onClick={() => act(row, 'reject')}>Reject</Button></> : undefined} />
     </Panel>
     {rejectFor && <PromptDialog title="Reject request" label="Rejection reason (optional)" initial="" onSubmit={v => { const row = rejectFor; setRejectFor(null); if (row) act(row, 'reject', v || ' '); }} onClose={() => setRejectFor(null)} />}
   </div>;
@@ -1309,6 +1351,7 @@ function SuperCommission() {
   const today = () => new Date().toISOString().slice(0, 10);
   const [date, setDate] = useState(today);
   const [data, setData] = useState<Row[]>([]);
+  const [rawList, setRawList] = useState<Row[]>([]);
   const [query, setQuery] = useState('');
   const [totals, setTotals] = useState({ admins: 0, earned: 0, unpaid: 0, deposits: 0, expected: 0, shortfall: 0, mismatched: 0 });
   const [loading, setLoading] = useState(false);
@@ -1330,18 +1373,18 @@ function SuperCommission() {
       const expected = list.reduce((t, r) => t + expectedOf(r), 0);
       const shortfall = list.reduce((t, r) => t + Math.max(0, expectedOf(r) - numberValue(r.commissionEarned)), 0);
       const mismatched = list.filter(r => expectedOf(r) - numberValue(r.commissionEarned) >= 0.01).length;
-      console.info('[LS-COMMISSION] super daily', { date: day, admins: list.length, deposits: sum('totalDeposits'), earned: sum('commissionEarned'), expected, shortfall, mismatched });
       setTotals({ admins: list.length, earned: sum('commissionEarned'), unpaid: sum('commissionBalance'), deposits: sum('totalDeposits'), expected, shortfall, mismatched });
+      setRawList(list);
       setData(list.map(r => ({
         ...r,
         unpaidRaw: numberValue(r.commissionBalance),
         expectedRaw: expectedOf(r),
         earnedRaw: numberValue(r.commissionEarned),
         commissionPercent: rateFromRow(r) !== null ? `${rateFromRow(r)}%` : '—',
-        commissionEarned: money(r.commissionEarned),
-        expected: money(expectedOf(r)),
-        commissionBalance: money(r.commissionBalance),
-        totalDeposits: money(r.totalDeposits),
+        commissionEarned: money(r.commissionEarned, r.commissionCurrency),
+        expected: money(expectedOf(r), r.commissionCurrency),
+        commissionBalance: money(r.commissionBalance, r.commissionCurrency),
+        totalDeposits: money(r.totalDeposits, r.commissionCurrency),
       })));
     } catch (e) { setError(e instanceof Error ? e.message : 'Could not load commission data'); }
     finally { setLoading(false); }
@@ -1362,13 +1405,12 @@ function SuperCommission() {
     const name = text(row.adminName ?? row.adminEmail, 'this admin');
     const short = Math.max(0, numberValue(row.expectedRaw) - numberValue(row.earnedRaw));
     if (short < 0.01) return;
-    if (!window.confirm(`Top up ${name}'s commission for ${date} by ${money(short)}? That's their deposits × rate minus what's already credited — it lands in their commission balance.`)) return;
+    if (!window.confirm(`Top up ${name}'s commission for ${date} by ${money(short, row.commissionCurrency)}? That's their deposits × rate minus what's already credited — it lands in their commission balance.`)) return;
     setSettling(true); setError(''); setMessage('');
     try {
       const res = await api('POST', `/api/super-admin/commission/admins/${encodeURIComponent(idOf(row))}/reconcile?date=${encodeURIComponent(date)}`) as { toppedUp?: unknown } | null;
       const topped = numberValue(res?.toppedUp);
-      console.info('[LS-COMMISSION] reconcile', { date, admin: name, toppedUp: topped });
-      setMessage(topped > 0 ? `Topped up ${money(topped)} for ${name} — their commission for ${date} is now whole.` : `${name} was already fully credited for ${date}.`);
+      setMessage(topped > 0 ? `Topped up ${money(topped, row.commissionCurrency)} for ${name} — their commission for ${date} is now whole.` : `${name} was already fully credited for ${date}.`);
       await load(date);
     } catch (e) { setError(e instanceof Error ? e.message : 'Top up failed'); }
     finally { setSettling(false); }
@@ -1383,12 +1425,14 @@ function SuperCommission() {
     } catch (e) { setError(e instanceof Error ? e.message : 'Clear failed'); }
     finally { setSettling(false); }
   };
+  // Headline figures are grouped per currency (rows carry
+  // commissionCurrency) — never one mixed ₵ sum over GH + NG admins.
   const stats: Array<[string, string, string]> = [
     ['Admins', String(totals.admins), 'group'],
-    ['Commission earned', money(totals.earned), 'payments'],
-    ['Expected (deposits × rate)', money(totals.expected), 'calculate'],
-    ['Unpaid balance', money(totals.unpaid), 'account_balance_wallet'],
-    ['Referred deposits', money(totals.deposits), 'savings'],
+    ['Commission earned', moneyTotalsByCurrency(rawList, 'commissionEarned'), 'payments'],
+    ['Expected (deposits × rate)', moneyTotalsByCurrency(rawList.map(r => ({ ...r, __expected: numberValue(r.totalDeposits) * (rateFromRow(r) ?? 0) / 100 })), '__expected'), 'calculate'],
+    ['Unpaid balance', moneyTotalsByCurrency(rawList, 'commissionBalance'), 'account_balance_wallet'],
+    ['Referred deposits', moneyTotalsByCurrency(rawList, 'totalDeposits'), 'savings'],
   ];
   const visibleData = query.trim() ? data.filter(r => `${text(r.adminName, '')} ${text(r.adminEmail, '')}`.toLowerCase().includes(query.trim().toLowerCase())) : data;
   return <div className="admin-stack">

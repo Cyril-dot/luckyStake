@@ -11,7 +11,7 @@ export function setApiBase(value: string) { localStorage.setItem('luckystakeApiB
 export async function api<T>(method: string, path: string, body?: unknown): Promise<T> {
   const res = await fetch(`${API_BASE().replace(/\/$/, '')}${path}`, { method, credentials: 'include', headers: { Accept: 'application/json', ...(body === undefined ? {} : { 'Content-Type': 'application/json' }), ...(token() ? { Authorization: `Bearer ${token()}` } : {}) }, body: body === undefined ? undefined : JSON.stringify(body) });
   const text = await res.text(); let payload: unknown; try { payload = text ? JSON.parse(text) : undefined; } catch { payload = text; }
-  if (!res.ok) { const p = payload as Record<string, unknown> | null; throw new ApiError(String(p?.message || p?.error || p?.detail || `Request failed (${res.status})`), res.status); }
+  if (!res.ok) { const p = payload as Record<string, unknown> | null; const rawMessage = String(p?.message || p?.error || p?.detail || `Request failed (${res.status})`); throw new ApiError(rawMessage.replace(/operationId=[0-9a-fA-F-]{36}\s*/g, '').trim() || rawMessage, res.status); }
   if (payload && typeof payload === 'object' && 'success' in payload && 'data' in payload) return (payload as { data: T }).data;
   return payload as T;
 }
