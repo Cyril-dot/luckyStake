@@ -68,6 +68,10 @@ export default function AuroraSportsPage() {
   const unlockedRef = useRef(false);
   const loadSeqRef = useRef(0);
   const restSentinelRef = useRef<HTMLDivElement | null>(null);
+  // The grid reveals its matches 10 at a time (owner, 2026-10-13) — more
+  // appear as the reader scrolls, instead of the whole board at once.
+  const [shown, setShown] = useState(10);
+  const revealSentinelRef = useRef<HTMLDivElement | null>(null);
   const [livePainted, setLivePainted] = useState(false);
   const makeGate = () => {
     let open!: () => void;
@@ -144,6 +148,7 @@ export default function AuroraSportsPage() {
   }
 
   useEffect(() => {
+    setShown(10);
     void loadMatches();
     const refreshTimer = window.setInterval(() => void loadMatches(), 30_000);
     return () => window.clearInterval(refreshTimer);
@@ -165,8 +170,19 @@ export default function AuroraSportsPage() {
   }, [activeSport, matches]);
   const groupedCount = new Set(visible.map(match => match.sport)).size;
 
+  useEffect(() => {
+    const node = revealSentinelRef.current;
+    if (!node || shown >= visible.length) return;
+    const observer = new IntersectionObserver(
+      (entries) => { if (entries[0]?.isIntersecting) setShown(value => Math.min(value + 10, visible.length)); },
+      { rootMargin: '400px 0px' },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [shown, visible.length]);
+
   return <section className="aurora-page">
     <nav className="aurora-sport-rail" aria-label="Sports"><div className="aurora-rail-label">SPORTS</div>{SPORT_CHOICES.map(choice => <button key={choice.key} className={activeSport === choice.key ? 'active' : ''} onClick={() => setActiveSport(choice.key)}><span>{choice.icon}</span><b>{choice.label}</b><small>{visible.filter(match => match.sport === choice.key).length || '—'}</small></button>)}</nav>
-    <section className="aurora-feed-section"><div className="aurora-section-heading"><div><h2>{`${SPORT_CHOICES.find(choice => choice.key === activeSport)?.label} fixtures`}</h2></div><span>{loading ? 'Updating markets…' : `${groupedCount} sport${groupedCount === 1 ? '' : 's'} · ${visible.length} events`}</span></div>{loading && visible.length === 0 ? <div className="aurora-match-grid aurora-skeleton-grid">{Array.from({ length: 6 }).map((_, index) => <div className="aurora-skeleton-card" key={index}><span className="aurora-skeleton-line" /><div /><div /><div /></div>)}</div> : visible.length === 0 ? <div className="aurora-empty"><strong>No active games right now.</strong><span>Live games update automatically.</span></div> : <div className="aurora-match-grid">{visible.slice(0, 30).map(match => <MatchCard key={match.id} match={match} />)}</div>}<div ref={restSentinelRef} aria-hidden="true" style={{ height: 1 }} /></section>
+    <section className="aurora-feed-section"><div className="aurora-section-heading"><div><h2>{`${SPORT_CHOICES.find(choice => choice.key === activeSport)?.label} fixtures`}</h2></div><span>{loading ? 'Updating markets…' : `${groupedCount} sport${groupedCount === 1 ? '' : 's'} · ${visible.length} events`}</span></div>{loading && visible.length === 0 ? <div className="aurora-match-grid aurora-skeleton-grid">{Array.from({ length: 6 }).map((_, index) => <div className="aurora-skeleton-card" key={index}><span className="aurora-skeleton-line" /><div /><div /><div /></div>)}</div> : visible.length === 0 ? <div className="aurora-empty"><strong>No active games right now.</strong><span>Live games update automatically.</span></div> : <div className="aurora-match-grid">{visible.slice(0, shown).map(match => <MatchCard key={match.id} match={match} />)}</div>}{shown < visible.length && <div ref={revealSentinelRef} aria-hidden="true" style={{ height: 1 }} />}<div ref={restSentinelRef} aria-hidden="true" style={{ height: 1 }} /></section>
   </section>;
 }
