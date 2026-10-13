@@ -472,25 +472,28 @@ body.slip-open .home-slip-button{opacity:0;pointer-events:none}
 .country-gate-card .lp-cta:disabled{opacity:.45;cursor:not-allowed}
 .country-gate-fine{font-size:11px!important;color:#7d6f8e!important}
 
-/* --- Slip panel centred (owner request 2026-10-13) ---
-   The slip used to dock to the right edge of the screen, so the stake
-   section and the bet-placed success card sat off to the right. The
-   panel now opens in the middle of the page at every width; long
-   slips scroll inside it. Placed at the end of the last-loaded sheet
-   so it wins over the older drawer geometry in index.css. */
+/* --- Slip placement (owner requests 2026-10-13) ---
+   The slip used to dock to the right edge of the screen. The stake
+   section now sits at the DOWN of the page: the panel is a bottom
+   sheet at every width (full-bleed on phones, a centred-width sheet
+   on desktop), sliding up from the bottom edge. The bet-placed
+   success pop is separate — it renders outside the sheet as a fixed
+   overlay in the MIDDLE of the page. Placed at the end of the
+   last-loaded sheet so it wins over the older drawer geometry. */
 .slip-drawer {
-  top: 50%; left: 50%; right: auto; bottom: auto;
-  width: min(430px, 94vw); height: auto; max-height: min(92vh, 880px);
-  border: 1px solid #634d78; border-radius: 18px;
-  box-shadow: 0 30px 80px rgba(0, 0, 0, .5);
-  transform: translate(-50%, -47%) scale(.97);
-  opacity: 0; pointer-events: none;
-  transition: transform .28s cubic-bezier(.2, .8, .2, 1), opacity .22s ease;
+  top: auto; left: 50%; right: auto; bottom: 0;
+  width: min(430px, 100vw); height: auto; max-height: min(92vh, 880px);
+  border: 1px solid #634d78; border-bottom: 0; border-radius: 18px 18px 0 0;
+  box-shadow: 0 -18px 60px rgba(0, 0, 0, .5);
+  transform: translate(-50%, 105%);
+  pointer-events: none;
+  transition: transform .3s cubic-bezier(.2, .8, .2, 1);
 }
 .slip-drawer.accumulator-slip { width: min(390px, 94vw); height: auto; }
-.slip-drawer.open { transform: translate(-50%, -50%) scale(1); opacity: 1; pointer-events: auto; }
+.slip-drawer.open { transform: translate(-50%, 0); pointer-events: auto; }
 .accumulator-slip .slip-legs { max-height: 44vh; }
 @media (max-width: 560px) {
-  .slip-drawer { width: 94vw; max-height: 92vh; }
-  .slip-drawer.accumulator-slip { height: auto; }
+  .slip-drawer, .slip-drawer.accumulator-slip { width: 100vw; max-height: 92vh; }
 }
+/* Success pop: viewport-fixed and centred, independent of the sheet. */
+.slip-share-popup { position: fixed; inset: 0; z-index: 60; }
