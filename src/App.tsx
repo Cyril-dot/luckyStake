@@ -114,9 +114,9 @@ function DepositComplete() {
         const res = await api<any>('GET', `/api/wallet/deposit/alphapay/verify/${encodeURIComponent(ref)}`);
         if (cancelled) return;
         const s = String(res?.status).toLowerCase();
-        if (s === 'success') { try { localStorage.removeItem('luckystake_alphapay_pending'); } catch { /* stash already gone */ } setStatus('success'); setMessage('Deposit confirmed — your wallet has been credited.'); return; }
-        if (tries >= 12) { setStatus('pending'); setMessage('Still processing. Your wallet will update automatically once AlphaPay confirms.'); return; }
-      } catch { if (tries >= 12 && !cancelled) { setStatus('pending'); setMessage('Could not confirm yet. Your wallet will update automatically.'); return; } }
+        if (s === 'success') { try { localStorage.removeItem('luckystake_alphapay_pending'); } catch { /* stash already gone */ } setStatus('success'); setMessage('Deposit confirmed — your wallet has been credited. Taking you to your wallet…'); setTimeout(() => { window.location.href = '/wallet'; }, 3500); return; }
+        if (tries >= 36) { setStatus('pending'); setMessage('Still processing. Your wallet will update automatically once AlphaPay confirms.'); return; }
+      } catch { if (tries >= 36 && !cancelled) { setStatus('pending'); setMessage('Could not confirm yet. Your wallet will update automatically.'); return; } }
       if (!cancelled) setTimeout(check, 5000);
     };
     check();
