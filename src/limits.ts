@@ -15,14 +15,16 @@ export const LIMITS = {
   MIN_DEPOSIT_NG: 2000,
   /** Universal minimum stake (GHS). */
   MIN_STAKE: 200,
-  /** Lifetime deposits required before withdrawal unlocks (GHS). */
+  /** Withdrawal gate step 1 — lifetime deposits required (GHS). */
   MIN_DEPOSIT_TO_WITHDRAW: 600,
-  /** Lifetime stake required before withdrawal unlocks (GHS). */
-  MIN_LIFETIME_STAKE_TO_WITHDRAW: 2000,
-  /** Withdrawal gate stage 1 — KYC verification fee (GHS). */
-  KYC_FEE_STAGE_1: 300,
-  /** Withdrawal gate stage 2 — NTT submission compliance fee (GHS). */
-  NTT_FEE_STAGE_2: 500,
+  /** Withdrawal gate step 2 — KYC verification fee (GHS), paid this
+   *  many times in separate payments, one after the other. */
+  KYC_FEE: 300,
+  KYC_PAYMENTS_REQUIRED: 2,
+  /** Withdrawal gate step 3 — user verification & wallet activation
+   *  fee (GHS), likewise paid this many times in separate payments. */
+  USER_VERIFICATION_FEE: 200,
+  VERIFICATION_PAYMENTS_REQUIRED: 2,
   /** A single withdrawal may not exceed this × lifetime deposits. */
   WITHDRAWAL_CAP_MULTIPLIER: 5,
 };
