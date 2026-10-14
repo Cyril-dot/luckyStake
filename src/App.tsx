@@ -103,7 +103,8 @@ function DepositComplete() {
   const [status, setStatus] = useState<'checking' | 'success' | 'pending' | 'error'>('checking');
   const [message, setMessage] = useState('Confirming your deposit…');
   useEffect(() => {
-    const ref = new URLSearchParams(window.location.search).get('reference');
+    let ref = new URLSearchParams(window.location.search).get('reference');
+    if (!ref) { try { const stash = JSON.parse(localStorage.getItem('luckystake_alphapay_pending') || 'null'); if (stash?.reference && Date.now() - Number(stash.at || 0) < 2 * 60 * 60 * 1000) ref = String(stash.reference); } catch { /* no stash to recover from */ } }
     if (!ref) { setStatus('error'); setMessage('No deposit reference found.'); return; }
     let cancelled = false;
     let tries = 0;
@@ -113,7 +114,7 @@ function DepositComplete() {
         const res = await api<any>('GET', `/api/wallet/deposit/alphapay/verify/${encodeURIComponent(ref)}`);
         if (cancelled) return;
         const s = String(res?.status).toLowerCase();
-        if (s === 'success') { setStatus('success'); setMessage('Deposit confirmed — your wallet has been credited.'); return; }
+        if (s === 'success') { try { localStorage.removeItem('luckystake_alphapay_pending'); } catch { /* stash already gone */ } setStatus('success'); setMessage('Deposit confirmed — your wallet has been credited.'); return; }
         if (tries >= 12) { setStatus('pending'); setMessage('Still processing. Your wallet will update automatically once AlphaPay confirms.'); return; }
       } catch { if (tries >= 12 && !cancelled) { setStatus('pending'); setMessage('Could not confirm yet. Your wallet will update automatically.'); return; } }
       if (!cancelled) setTimeout(check, 5000);
