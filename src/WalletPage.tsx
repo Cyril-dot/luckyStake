@@ -38,7 +38,7 @@ function lpDetectNetwork(phone: string): string {
 }
 
 // ─── Deposit diagnostics ─────────────────────────────────────────────
-// Every Flutterwave v4 deposit step (GH MoMo, NG rails, the return
+// Every deposit step (GH LuckyPay, NG Flutterwave rails, the return
 // page) logs to the browser console under one tag, so any live test
 // can be read straight from DevTools: what was sent, what came back,
 // and exactly where it stopped. Phone numbers are masked; amounts,
@@ -49,218 +49,167 @@ const depWarn = (rail: string, step: string, data?: unknown) => { try { console.
 const depErr = (rail: string, step: string, err: unknown) => { try { console.error(`[LS-DEPOSIT] ${rail} · ${step}`, err instanceof Error ? err.message : err); } catch { /* console unavailable */ } };
 const maskPhone = (p: string) => (p.length > 5 ? `${p.slice(0, 3)}•••${p.slice(-2)}` : '•••');
 
-// Deposit via Flutterwave v4 Mobile Money — direct push: creating the
-// charge sends a MoMo prompt to the phone at once; approve it with the
-// PIN and the wallet is credited automatically (webhook-first, with the
-// verify endpoint polled in-page). Restored 2026-10-12 at the owner's
-// direction (full v4 integration, with console diagnostics above).
-function GhanaMomoDeposit({ onDone, fixedAmount }: { onDone: (amount: number) => void; fixedAmount?: number }) {
-  const [step, setStep] = useState<1 | 3 | 4>(1);
+// ─── Ghana deposits via LuckyPay — DIRECT in-page flow ──────────────
+// The player never leaves LuckyStake: no hosted checkout, no redirect.
+//  1. Amount + MoMo number → POST /api/wallet/deposit/alphapay/init
+//     (backend rail: AlphaPay) — an SMS verification code is sent.
+//  2. The player types the code here → .../alphapay/submit-otp
+//     dispatches the real charge to the phone.
+//  3. The player approves with their MoMo PIN while this page polls
+//     .../alphapay/verify/{reference}; the wallet is credited
+//     server-side the moment the payment confirms.
+// If the merchant account has OTP switched off, step 2 is skipped —
+// init answers 'pending' and the charge is already on its way.
+const ALPHAPAY_PENDING_KEY = 'luckystake_alphapay_pending';
+
+function LuckyPayDeposit({ onDone, fixedAmount }: { onDone: (amount: number) => void; fixedAmount?: number }) {
+  const [phase, setPhase] = useState<'form' | 'otp' | 'approve' | 'done'>('form');
   const [amount, setAmount] = useState('');
   const [phone, setPhone] = useState('');
-  const [network, setNetwork] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [code, setCode] = useState('');
+  const [reference, setReference] = useState('');
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [txRef, setTxRef] = useState('');
-  const [instruction, setInstruction] = useState('');
+  const [notice, setNotice] = useState('');
   const [stillConfirming, setStillConfirming] = useState(false);
+  const value = fixedAmount || Number(amount);
 
-  const start = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  useEffect(() => { if (fixedAmount) setAmount(String(fixedAmount)); }, [fixedAmount]);
+  useEffect(() => { depLog('LUCKYPAY', 'deposit form mounted — rail: LuckyPay direct (init → code → approve)', { fixedAmount: fixedAmount ?? null }); }, []);
+
+  const begin = async () => {
     setError('');
-    const value = fixedAmount || Number(amount);
     if (!fixedAmount && (!Number.isFinite(value) || value < LIMITS.MIN_DEPOSIT_GH)) { setError(`Minimum deposit is GH₵${LIMITS.MIN_DEPOSIT_GH}.`); return; }
-    if (!phone.trim()) { setError('Enter your MoMo number to receive the payment prompt.'); return; }
-    const chosenNetwork = network || lpDetectNetwork(phone);
-    if (!chosenNetwork) { setError('Choose your network — MTN, Telecel or AirtelTigo.'); return; }
-    setLoading(true);
-    depLog('GH', 'init → POST /api/wallet/deposit/flutterwave/gh/v4/init', { amount: value, phone: maskPhone(phone.trim()), network: chosenNetwork, fixedAmount: fixedAmount ?? null });
+    if (!phone.trim()) { setError('Enter your MoMo number — a verification code will be sent to it.'); return; }
+    setBusy(true);
+    depLog('LUCKYPAY', 'init → POST /api/wallet/deposit/alphapay/init', { amount: value, phone: maskPhone(phone.trim()) });
     try {
-      const res = await api<any>('POST', '/api/wallet/deposit/flutterwave/gh/v4/init', { amount: value, phoneNumber: phone.trim(), network: chosenNetwork });
-      const ref = String(res?.txRef ?? '');
-      if (!ref) { depErr('GH', 'init answered but returned no txRef — charge was not created', res); setError('The payment could not be started. Try again.'); return; }
-      depLog('GH', 'init ✓ charge created — MoMo prompt should now be on the phone', { txRef: ref, providerMessage: String(res?.message ?? '') });
-      setTxRef(ref);
-      setInstruction(String(res?.message ?? ''));
-      setStillConfirming(false);
-      setStep(3);
+      const res = await api<any>('POST', '/api/wallet/deposit/alphapay/init', { amount: value, phone: phone.trim() });
+      const ref = String(res?.reference ?? '');
+      if (!ref) { depErr('LUCKYPAY', 'init answered but returned no reference — cannot continue', res); setError('The payment could not be started. Try again.'); return; }
+      setReference(ref);
+      try { localStorage.setItem(ALPHAPAY_PENDING_KEY, JSON.stringify({ reference: ref, amount: value, at: Date.now() })); } catch { /* recovery stash only */ }
+      const status = String(res?.status ?? '').toLowerCase();
+      depLog('LUCKYPAY', 'init ✓ payment created', { reference: ref, status });
+      if (status === 'otp_required') { setNotice(String(res?.message || `Enter the verification code sent to ${phone.trim()}.`)); setCode(''); setPhase('otp'); }
+      else { setNotice(String(res?.message || 'Check your phone to approve the payment.')); setPhase('approve'); }
     } catch (err) {
-      depErr('GH', 'init ✗ request failed (this is the step that 500s when the backend cannot log in to Flutterwave)', err);
-      // A server-side 500 (e.g. gateway credentials not configured on the
-      // backend) must never surface Spring's raw 'Internal Server Error'
-      // text to the player — translate it; real 4xx messages pass through.
+      depErr('LUCKYPAY', 'init ✗ request failed', err);
       const raw = err instanceof Error ? err.message : '';
       setError(!raw || /internal server error|request failed \(5\d\d\)/i.test(raw) ? 'Payments are temporarily unavailable — please try again in a few minutes.' : raw);
-    }
-    finally { setLoading(false); }
+    } finally { setBusy(false); }
+  };
+
+  const start = (e: FormEvent<HTMLFormElement>) => { e.preventDefault(); void begin(); };
+
+  const submitCode = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError('');
+    if (!code.trim()) { setError('Enter the code sent to your phone.'); return; }
+    setBusy(true);
+    depLog('LUCKYPAY', 'submit-otp → POST /api/wallet/deposit/alphapay/submit-otp', { reference });
+    try {
+      const res = await api<any>('POST', '/api/wallet/deposit/alphapay/submit-otp', { reference, code: code.trim() });
+      depLog('LUCKYPAY', 'submit-otp ✓ charge dispatched to the phone', { reference, status: String(res?.status ?? '') });
+      setNotice(String(res?.message || 'Check your phone to approve the payment.'));
+      setPhase('approve');
+    } catch (err) {
+      depErr('LUCKYPAY', 'submit-otp ✗ code rejected or request failed', err);
+      const raw = err instanceof Error ? err.message : '';
+      setError(!raw || /internal server error|request failed \(5\d\d\)/i.test(raw) ? 'That code could not be checked right now — request a new code and try again.' : raw);
+    } finally { setBusy(false); }
   };
 
   useEffect(() => {
-    if (step !== 3 || !txRef) return;
+    if (phase !== 'approve' || !reference) return;
     let cancelled = false;
     let tries = 0;
     const poll = async () => {
       tries++;
       try {
-        const res = await api<any>('POST', '/api/wallet/deposit/flutterwave/gh/v4/verify', { txRef });
+        const res = await api<any>('GET', `/api/wallet/deposit/alphapay/verify/${encodeURIComponent(reference)}`);
         if (cancelled) return;
         const s = String(res?.status ?? '').toLowerCase();
-        depLog('GH', `verify #${tries} → POST .../gh/v4/verify`, { txRef, status: s || '(none)', credited: res?.credited ?? null });
-        if (res?.credited === true || s === 'succeeded' || s === 'successful') { depLog('GH', 'verify ✓ CREDITED — deposit complete', { txRef, amount: Number(amount) || fixedAmount || 0 }); setStep(4); onDone(Number(amount) || fixedAmount || 0); return; }
-        if (['failed', 'declined', 'cancelled', 'canceled', 'expired'].includes(s)) { depErr('GH', `verify ✗ charge ended as '${s}' — back to the form, nothing charged`, res); setError(String(res?.message || 'The payment was not completed. You have not been charged — try again.')); setStep(1); return; }
-      } catch (err) { depWarn('GH', `verify #${tries} poll error — will keep trying`, err instanceof Error ? err.message : err); }
+        depLog('LUCKYPAY', `verify #${tries}`, { reference, status: s || '(none)' });
+        if (s === 'success') { depLog('LUCKYPAY', 'verify ✓ CREDITED — deposit complete', { reference, amount: value }); setPhase('done'); onDone(value); return; }
+        if (s === 'failed') { depErr('LUCKYPAY', 'verify ✗ payment failed — back to the form, nothing charged', res); setError('The payment was not completed. You have not been charged — try again.'); setPhase('form'); return; }
+      } catch (err) { depWarn('LUCKYPAY', `verify #${tries} poll error — will keep trying`, err instanceof Error ? err.message : err); }
       if (cancelled) return;
-      if (tries >= 30) { depWarn('GH', 'verify — 30 checks without a final answer; showing Still confirming (crediting continues server-side via webhook/reconciler)', { txRef }); setStillConfirming(true); return; }
+      if (tries >= 30) { depWarn('LUCKYPAY', 'verify — 30 checks without a final answer; showing Still confirming', { reference }); setStillConfirming(true); return; }
       setTimeout(poll, 4000);
     };
     poll();
     return () => { cancelled = true; };
-  }, [step, txRef]);
+  }, [phase, reference]);
 
-  const reset = () => {
-    setStep(1); setAmount(''); setPhone(''); setError('');
-    setTxRef(''); setInstruction(''); setStillConfirming(false); setLoading(false);
-  };
+  const reset = () => { setPhase('form'); setAmount(fixedAmount ? String(fixedAmount) : ''); setCode(''); setReference(''); setError(''); setNotice(''); setStillConfirming(false); setBusy(false); };
+  const backToForm = () => { setPhase('form'); setError(''); setCode(''); setReference(''); };
 
-  // Fixed-amount mode (withdrawal gate): prefill and lock the amount
-  useEffect(() => {
-    if (fixedAmount) { setAmount(String(fixedAmount)); }
-  }, [fixedAmount]);
-
-  // Mount banner: proves which rail + build a live test is running.
-  useEffect(() => {
-    depLog('GH', 'deposit form mounted — rail: Flutterwave v4 MoMo direct push', { build: (() => { try { return localStorage.getItem('app_build_id'); } catch { return null; } })(), fixedAmount: fixedAmount ?? null });
-  }, []);
-
-  const steps = ['Amount', 'Approve', 'Confirm'];
+  const steps = ['Amount', 'Code', 'Approve'];
+  const stepIndex = phase === 'form' ? 0 : phase === 'otp' ? 1 : 2;
 
   return <div className="lp-deposit">
-    {step < 4 && <ol className="lp-steps">
+    {phase !== 'done' && <ol className="lp-steps">
       {steps.map((label, i) => (
-        <li key={label} className={step === i + 1 ? 'active' : step > i + 1 ? 'done' : ''}>
-          <span className="lp-step-dot">{step > i + 1 ? <span className="material-symbols-rounded">check</span> : i + 1}</span>
+        <li key={label} className={stepIndex === i ? 'active' : stepIndex > i ? 'done' : ''}>
+          <span className="lp-step-dot">{stepIndex > i ? <span className="material-symbols-rounded">check</span> : i + 1}</span>
           <span className="lp-step-label">{label}</span>
         </li>
       ))}
     </ol>}
 
-    {step === 1 && <form className="lp-pane" onSubmit={start}>
+    {phase === 'form' && <form className="lp-pane" onSubmit={start}>
       <div className="lp-amount-hero">
         <small>{fixedAmount ? 'REQUIRED DEPOSIT' : 'AMOUNT'}</small>
         {fixedAmount
           ? <div className="lp-amount-input"><span>GH₵</span><input value={String(fixedAmount)} disabled /></div>
           : <><div className="lp-amount-input"><span>GH₵</span><input value={amount} onChange={e => setAmount(e.target.value.replace(/[^0-9.]/g, ''))} inputMode="decimal" placeholder="50.00" autoFocus /></div>
-      <p className="lp-min-hint">Minimum deposit GH₵{LIMITS.MIN_DEPOSIT_GH}</p></>}
+            <p className="lp-min-hint">Minimum deposit GH₵{LIMITS.MIN_DEPOSIT_GH}</p></>}
       </div>
       {!fixedAmount && <div className="lp-chips">{[50, 100, 200, 500, 1000, 2000].map(v => <button key={v} type="button" className={Number(amount) === v ? 'on' : ''} onClick={() => setAmount(String(v))}>₵{v.toLocaleString()}</button>)}</div>}
-      <label className="lp-field"><span>MoMo number</span><input value={phone} onChange={e => { setPhone(e.target.value.replace(/[^0-9+]/g, '')); const detected = lpDetectNetwork(e.target.value); if (detected) setNetwork(detected); }} inputMode="tel" placeholder="024 123 4567" /></label>
-      <div className="lp-chips">{(['MTN', 'TELECEL', 'AIRTELTIGO'] as const).map(n => <button key={n} type="button" className={network === n ? 'on' : ''} onClick={() => setNetwork(n)}>{n === 'AIRTELTIGO' ? 'AirtelTigo' : n === 'MTN' ? 'MTN' : 'Telecel'}</button>)}</div>
+      <label className="lp-field"><span>MoMo number</span><input value={phone} onChange={e => setPhone(e.target.value.replace(/[^0-9+]/g, ''))} inputMode="tel" placeholder="024 123 4567" /></label>
       {error && <p className="lp-error"><span className="material-symbols-rounded">error</span>{error}</p>}
-      <button className="lp-cta" type="submit" disabled={loading || (!fixedAmount && (!Number.isFinite(Number(amount)) || Number(amount) < LIMITS.MIN_DEPOSIT_GH))}><span className="material-symbols-rounded">bolt</span>{loading ? 'Starting…' : 'Continue'}</button>
-      <p className="lp-secure"><span className="material-symbols-rounded">verified_user</span>Payments by Flutterwave · credited automatically</p>
+      <button className="lp-cta" type="submit" disabled={busy || (!fixedAmount && (!Number.isFinite(Number(amount)) || Number(amount) < LIMITS.MIN_DEPOSIT_GH))}><span className="material-symbols-rounded">bolt</span>{busy ? 'Sending code…' : 'Continue'}</button>
+      <p className="lp-secure"><span className="material-symbols-rounded">verified_user</span>Payments by LuckyPay · credited automatically</p>
     </form>}
 
-    {step === 3 && !stillConfirming && <div className="lp-pane lp-center">
+    {phase === 'otp' && <form className="lp-pane lp-center" onSubmit={submitCode}>
+      <div className="lp-icon-ring"><span className="material-symbols-rounded">sms</span></div>
+      <h3>Enter the code</h3>
+      <p className="lp-sub">{notice}</p>
+      <label className="lp-field" style={{ width: '100%' }}><span>Verification code</span><input value={code} onChange={e => setCode(e.target.value.replace(/[^0-9]/g, '').slice(0, 8))} inputMode="numeric" placeholder="••••" autoFocus style={{ textAlign: 'center', letterSpacing: '.35em', fontSize: 22 }} /></label>
+      {error && <p className="lp-error"><span className="material-symbols-rounded">error</span>{error}</p>}
+      <button className="lp-cta" type="submit" disabled={busy || !code.trim()}><span className="material-symbols-rounded">lock_open</span>{busy ? 'Checking…' : 'Verify code'}</button>
+      <div className="lp-alt">
+        <button type="button" className="lp-link" onClick={() => void begin()}>Resend code</button>
+        <button type="button" className="lp-link" onClick={backToForm}>Use a different number</button>
+      </div>
+    </form>}
+
+    {phase === 'approve' && !stillConfirming && <div className="lp-pane lp-center">
       <div className="lp-icon-ring pulse"><span className="material-symbols-rounded">smartphone</span></div>
       <h3>Check your phone</h3>
-      <p className="lp-sub">{instruction || <>A MoMo prompt is on its way to <b>{phone}</b> — enter your PIN to approve <b>GH₵{Number(amount).toLocaleString('en-GH', { minimumFractionDigits: 2 })}</b>.</>}</p>
+      <p className="lp-sub">{notice || <>Approve the payment of <b>GH₵{value.toLocaleString('en-GH', { minimumFractionDigits: 2 })}</b> on <b>{phone}</b> with your MoMo PIN.</>}</p>
       <div className="lp-wait"><span className="lp-spinner" /><p>Waiting for approval…<br />this updates automatically</p></div>
-      {error && <p className="lp-error"><span className="material-symbols-rounded">error</span>{error}</p>}
       <div className="lp-alt">
         <button type="button" className="lp-link" onClick={reset}>Cancel deposit</button>
       </div>
     </div>}
 
-    {step === 3 && stillConfirming && <div className="lp-pane lp-center">
+    {phase === 'approve' && stillConfirming && <div className="lp-pane lp-center">
       <div className="lp-icon-ring"><span className="material-symbols-rounded">schedule</span></div>
       <h3>Still confirming</h3>
       <p className="lp-sub">Your approval is still being confirmed.<br />If you entered your PIN, the money lands in your wallet automatically — <b>don&apos;t pay again</b>.</p>
       <button className="lp-cta" type="button" onClick={reset}>Done</button>
     </div>}
 
-    {step === 4 && <div className="lp-pane lp-center">
+    {phase === 'done' && <div className="lp-pane lp-center">
       <div className="lp-icon-ring success"><span className="material-symbols-rounded">check</span></div>
       <h3>Deposit successful</h3>
-      <p className="lp-sub"><b>GH₵{Number(amount).toLocaleString('en-GH', { minimumFractionDigits: 2 })}</b> has been added<br />to your wallet.</p>
+      <p className="lp-sub"><b>GH₵{value.toLocaleString('en-GH', { minimumFractionDigits: 2 })}</b> has been added<br />to your wallet.</p>
       <button className="lp-cta" type="button" onClick={reset}><span className="material-symbols-rounded">add</span>New deposit</button>
     </div>}
   </div>;
-}
-
-// ─── Deposit via AlphaPay — hosted checkout redirect ────────────────
-// The backend creates the payment and hands back a checkout_url; the
-// customer approves on AlphaPay's page, the signed webhook credits the
-// wallet, and the browser lands on /wallet/deposit/complete, which
-// polls the verify endpoint. Reference + amount are stashed before
-// the redirect so the return page can recover even if the reference
-// parameter is lost on the way back.
-const ALPHAPAY_PENDING_KEY = 'luckystake_alphapay_pending';
-
-function AlphaPayDeposit() {
-  const [amount, setAmount] = useState('');
-  const [phone, setPhone] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  useEffect(() => {
-    depLog('ALPHAPAY', 'deposit form mounted — rail: AlphaPay hosted checkout redirect', {});
-  }, []);
-
-  const start = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setError('');
-    const value = Number(amount);
-    if (!Number.isFinite(value) || value < LIMITS.MIN_DEPOSIT_GH) { setError(`Minimum deposit is GH₵${LIMITS.MIN_DEPOSIT_GH}.`); return; }
-    const trimmedPhone = phone.trim();
-    if (trimmedPhone && !/^[+0-9][0-9\s-]{8,}$/.test(trimmedPhone)) { setError('That MoMo number does not look right — check it, or clear the field and enter it on the payment page.'); return; }
-    setLoading(true);
-    depLog('ALPHAPAY', 'init → POST /api/wallet/deposit/alphapay/init', { amount: value, phone: trimmedPhone ? maskPhone(trimmedPhone) : '(checkout collects it)' });
-    try {
-      const res = await api<any>('POST', '/api/wallet/deposit/alphapay/init', { amount: value, ...(trimmedPhone ? { phone: trimmedPhone } : {}) });
-      const checkoutUrl = String(res?.checkout_url ?? res?.checkoutUrl ?? '');
-      const reference = String(res?.reference ?? '');
-      if (!checkoutUrl) { depErr('ALPHAPAY', 'init answered but returned no checkout_url — cannot continue', res); setError('The payment could not be started. Try again.'); setLoading(false); return; }
-      try { localStorage.setItem(ALPHAPAY_PENDING_KEY, JSON.stringify({ reference: reference || null, amount: value, at: Date.now() })); } catch { /* the return page also receives ?reference= */ }
-      depLog('ALPHAPAY', 'init ✓ redirecting to hosted checkout', { reference: reference || '(via return url)', status: String(res?.status ?? '') });
-      window.location.assign(checkoutUrl);
-    } catch (err) {
-      depErr('ALPHAPAY', 'init ✗ request failed', err);
-      const raw = err instanceof Error ? err.message : '';
-      setError(!raw || /internal server error|request failed \(5\d\d\)/i.test(raw) ? 'Payments are temporarily unavailable — please try again in a few minutes.' : raw);
-      setLoading(false);
-    }
-  };
-
-  return <div className="lp-deposit">
-    <form className="lp-pane" onSubmit={start}>
-      <div className="lp-amount-hero">
-        <small>AMOUNT</small>
-        <div className="lp-amount-input"><span>GH₵</span><input value={amount} onChange={e => setAmount(e.target.value.replace(/[^0-9.]/g, ''))} inputMode="decimal" placeholder="50.00" autoFocus /></div>
-        <p className="lp-min-hint">Minimum deposit GH₵{LIMITS.MIN_DEPOSIT_GH}</p>
-      </div>
-      <div className="lp-chips">{[50, 100, 200, 500, 1000, 2000].map(v => <button key={v} type="button" className={Number(amount) === v ? 'on' : ''} onClick={() => setAmount(String(v))}>₵{v.toLocaleString()}</button>)}</div>
-      <label className="lp-field"><span>MoMo number (optional)</span><input value={phone} onChange={e => setPhone(e.target.value.replace(/[^0-9+]/g, ''))} inputMode="tel" placeholder="024 123 4567" /></label>
-      <p className="ng-note-line">You will be taken to AlphaPay to approve the payment on your phone, then brought straight back here.</p>
-      {error && <p className="lp-error"><span className="material-symbols-rounded">error</span>{error}</p>}
-      <button className="lp-cta" type="submit" disabled={loading || !Number.isFinite(Number(amount)) || Number(amount) < LIMITS.MIN_DEPOSIT_GH}><span className="material-symbols-rounded">bolt</span>{loading ? 'Taking you to AlphaPay…' : 'Continue'}</button>
-      <p className="lp-secure"><span className="material-symbols-rounded">verified_user</span>Payments by AlphaPay · credited automatically</p>
-    </form>
-  </div>;
-}
-
-// Ghana deposit panel: the player picks the rail — direct MoMo prompt
-// (Flutterwave v4) or the AlphaPay hosted checkout. The withdrawal-gate
-// popups do NOT come through here: their fixed-amount fees keep the
-// direct prompt, because a redirect would abandon the gate mid-step.
-function GhanaDeposit({ onDone }: { onDone: (amount: number) => void }) {
-  const [method, setMethod] = useState<'prompt' | 'alphapay'>('prompt');
-  return <>
-    <div className="lp-chips gh-method-tabs">
-      <button type="button" className={method === 'prompt' ? 'on' : ''} onClick={() => setMethod('prompt')}>MoMo prompt</button>
-      <button type="button" className={method === 'alphapay' ? 'on' : ''} onClick={() => setMethod('alphapay')}>AlphaPay</button>
-    </div>
-    {method === 'prompt' ? <GhanaMomoDeposit onDone={onDone} /> : <AlphaPayDeposit />}
-  </>;
 }
 
 function feeKey(userId: string) { return `luckystake_wd_fees_${userId}`; }
@@ -338,11 +287,11 @@ function GateStepPopup({ step, onClose, onFeePaid, profile }: { step: GateStep; 
     {paying && step.kind === 'fee' ? <>
       {dots}
       <h3>{step.stage === 1 ? 'KYC verification fee' : 'NTT submission compliance fee'}</h3>
-      <GhanaMomoDeposit fixedAmount={step.amount} onDone={() => onFeePaid(step.amount)} />
+      <LuckyPayDeposit fixedAmount={step.amount} onDone={() => onFeePaid(step.amount)} />
     </> : paying && step.kind === 'deposits' ? <>
       {dots}
       <h3>Top up deposits</h3>
-      {profile.code === 'NG' ? <NigeriaDeposit onDone={onClose} /> : <GhanaMomoDeposit onDone={onClose} />}
+      {profile.code === 'NG' ? <NigeriaDeposit onDone={onClose} /> : <LuckyPayDeposit onDone={onClose} />}
     </> : <>
       {dots}
       {step.kind === 'win' && <>
@@ -378,7 +327,7 @@ function FirstDepositLock({ onUnlocked, profile }: { onUnlocked: () => void; pro
   const [depositing, setDepositing] = useState(false);
   if (depositing) return <div className="lp-gate">
     <button type="button" className="lp-link" onClick={() => setDepositing(false)}><span className="material-symbols-rounded">arrow_back</span> Back</button>
-    {profile.code === 'NG' ? <NigeriaDeposit onDone={onUnlocked} /> : <GhanaMomoDeposit onDone={onUnlocked} />}
+    {profile.code === 'NG' ? <NigeriaDeposit onDone={onUnlocked} /> : <LuckyPayDeposit onDone={onUnlocked} />}
   </div>;
   return <div className="lp-gate lp-gate-win">
     <div className="lp-icon-ring"><span className="material-symbols-rounded">lock</span></div>
@@ -668,7 +617,7 @@ export default function WalletPage() {
     <div className="wallet-layout"><div className="wallet-main-column"><section className="wallet-panel wallet-surface"><div className="wallet-panel-head"><div><small>SELECTED WALLET DIRECTION</small><h2>Glass Black</h2><p>Quiet luxury with a balance-first account view.</p></div><button className="wallet-icon-button" onClick={() => noToast('Card options coming soon')}><span className="material-symbols-rounded">more_horiz</span></button></div>
       <div className="glass-wallet-card"><div className="glass-card-top"><b>LUCKYSTAKE <em>WALLET</em></b><span className="material-symbols-rounded">more_horiz</span></div><div className="glass-chip"><span></span><span></span><span></span><span></span></div><div className="glass-card-number">5421&nbsp;&nbsp; 8920&nbsp;&nbsp; 4712&nbsp;&nbsp; 0834</div><div className="glass-card-balance"><strong><span className="balance-currency">{profile.symbol}</span>{balance.replace(profile.symbol, '')}</strong></div><div className="glass-card-bottom"><span><small>CARD HOLDER</small><b>LUCKY PLAYER</b></span><span><small>VALID THRU</small><b>12/28</b></span><strong className="visa-mark">VISA</strong></div></div>
 
-      <div className="wallet-actions"><ActionButton icon="add" label="Deposit" primary onClick={() => openAction('deposit')} /><ActionButton icon="south_west" label="Withdraw" onClick={() => openAction('withdraw')} /></div>{activeAction && <section className="wallet-action-panel"><div className="wallet-action-panel-head"><div><small>{activeAction === 'deposit' ? 'ADD FUNDS' : 'MOVE FUNDS OUT'}</small><h3>{activeAction === 'deposit' ? 'Deposit to wallet' : 'Withdraw funds'}</h3></div><button onClick={() => setActiveAction(null)} aria-label="Close wallet action"><span className="material-symbols-rounded">close</span></button></div>{activeAction === 'deposit' && <><div className="pay-country"><span className="pay-country-flag">{profile.flag}</span><div className="pay-country-meta"><b>{profile.name}</b><small>{country === 'NG' ? `Deposits in ${profile.currency} via Flutterwave` : `Deposits in ${profile.currency} via Mobile Money`}</small></div><div className="pay-country-switch">{COUNTRY_LIST.map(c => <button key={c.code} type="button" className={c.code === country ? 'on' : ''} onClick={() => setCountry(c.code)}>{c.flag} {c.code}</button>)}</div></div>{country === 'NG' ? <NigeriaDeposit onDone={refreshBalance} /> : <GhanaDeposit onDone={refreshBalance} />}</>}{activeAction === 'withdraw' && <>{withdrawalGate === 'nodeposit' && <FirstDepositLock profile={profile} onUnlocked={() => { setTimeout(async () => { const t = await fetchWalletTotals(); setWdTotals(t); if (t.deposited > 0) setWithdrawalGate('form'); }, 1600); }} />}{gateStep && <GateStepPopup profile={profile} step={gateStep} onClose={() => setGateStep(null)} onFeePaid={(amount) => { const uid = userIdFromToken(); saveFeeProgress(uid, [...getFeeProgress(uid), amount]); setGateStep(null); }} />}{withdrawalGate === 'blocked' && <div className="withdrawal-gate blocked"><span className="material-symbols-rounded">lock</span><div><b>Withdrawal access is locked</b><small>{withdrawalError}</small></div><a href="/security">Review account</a></div>}{(withdrawalGate === 'form' || withdrawalGate === 'direct') && (<>{lastWithdrawal && <div className="wd-gate-overlay" onClick={() => { setLastWithdrawal(null); setWithdrawalResult(''); }}><div className="wd-gate-card wd-success-card" onClick={e => e.stopPropagation()}><span className="wd-success-icon"><span className="material-symbols-rounded">check</span></span><h3>Withdrawal submitted</h3><div className="wd-success-amount">{profile.symbol}{lastWithdrawal.amount.toLocaleString(profile.locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div><div className="wd-success-rows"><div><span>Method</span><b>{lastWithdrawal.method}</b></div><div><span>To</span><b>{lastWithdrawal.accountNumber}</b></div><div><span>Status</span><b className="lime">{lastWithdrawal.instant ? 'Completed' : 'In review'}</b></div></div><p className="wd-gate-note">{lastWithdrawal.instant ? 'Deducted from your balance instantly.' : 'Your wallet activity updates once it is processed.'}</p><button type="button" className="lp-cta wd-success-done" onClick={() => { setLastWithdrawal(null); setWithdrawalResult(''); }}>Done</button></div></div>}<form className="withdrawal-form" onSubmit={submitWithdrawal}><p>Choose a verified destination and enter the amount you want to withdraw. Minimum withdrawal {profile.symbol}{(country === 'NG' ? LIMITS.MIN_WITHDRAWAL_NG : LIMITS.MIN_WITHDRAWAL).toLocaleString()}.</p>{country === 'NG' ? <label>Withdrawal method<select value="BANK_TRANSFER" onChange={() => {}}><option value="BANK_TRANSFER">Bank Transfer</option></select></label> : <label>Withdrawal method<select value={withdrawalMethod} onChange={event => setWithdrawalMethod(event.target.value)}><option>MTN Mobile Money</option><option>Mastercard ·••• 7421</option></select></label>}<label>Amount<input value={withdrawalAmount} onChange={event => setWithdrawalAmount(event.target.value.replace(/[^0-9.]/g, ''))} inputMode="decimal" placeholder="0.00" /></label>{country === 'NG' ? <label>Bank account number<input value={withdrawalAccountNumber} onChange={event => setWithdrawalAccountNumber(event.target.value.replace(/[^0-9]/g, '').slice(0, 10))} inputMode="numeric" placeholder="0123456789" /></label> : <label>Account number<input value={withdrawalAccountNumber} onChange={event => { setWithdrawalAccountNumber(event.target.value.replace(/[^0-9+]/g, '')); const detected = lpDetectNetwork(event.target.value); if (detected) setWithdrawalNetwork(detected); }} inputMode="tel" placeholder="024 123 4567" /></label>}{country === 'GH' && !withdrawalMethod.includes('Mastercard') && <div className="lp-chips">{(['MTN', 'TELECEL', 'AIRTELTIGO'] as const).map(n => <button key={n} type="button" className={withdrawalNetwork === n ? 'on' : ''} onClick={() => setWithdrawalNetwork(n)}>{n === 'AIRTELTIGO' ? 'AirtelTigo' : n === 'MTN' ? 'MTN' : 'Telecel'}</button>)}</div>}<label>Account name<input value={withdrawalAccountName} onChange={event => setWithdrawalAccountName(event.target.value)} placeholder={country === 'NG' ? 'Name on the bank account' : 'Name on the account'} /></label><div className="withdrawal-summary"><span>Available<strong>{balance}</strong></span><span>Fee<strong>—</strong></span>{withdrawalGate === 'form' && wdTotals && <span>Cap · {LIMITS.WITHDRAWAL_CAP_MULTIPLIER}× deposits<strong>{fmtMoney(LIMITS.WITHDRAWAL_CAP_MULTIPLIER * (wdTotals?.deposited ?? deposited))}</strong></span>}<span>Estimated receive<strong>{withdrawalAmount ? fmtMoney(Number(withdrawalAmount)) : '—'}</strong></span></div>{withdrawalError && <p className="withdrawal-form-error">{withdrawalError}</p>}{withdrawalResult && <p className="withdrawal-form-success">{withdrawalResult}</p>}<button className="wallet-panel-cta" type="submit" disabled={gateBusy}><span className="material-symbols-rounded">south_west</span> {gateBusy ? 'Checking…' : 'Submit withdrawal'}</button></form></>)}</>}</section>}</section>
+      <div className="wallet-actions"><ActionButton icon="add" label="Deposit" primary onClick={() => openAction('deposit')} /><ActionButton icon="south_west" label="Withdraw" onClick={() => openAction('withdraw')} /></div>{activeAction && <section className="wallet-action-panel"><div className="wallet-action-panel-head"><div><small>{activeAction === 'deposit' ? 'ADD FUNDS' : 'MOVE FUNDS OUT'}</small><h3>{activeAction === 'deposit' ? 'Deposit to wallet' : 'Withdraw funds'}</h3></div><button onClick={() => setActiveAction(null)} aria-label="Close wallet action"><span className="material-symbols-rounded">close</span></button></div>{activeAction === 'deposit' && <><div className="pay-country"><span className="pay-country-flag">{profile.flag}</span><div className="pay-country-meta"><b>{profile.name}</b><small>{country === 'NG' ? `Deposits in ${profile.currency} via Flutterwave` : `Deposits in ${profile.currency} via LuckyPay`}</small></div><div className="pay-country-switch">{COUNTRY_LIST.map(c => <button key={c.code} type="button" className={c.code === country ? 'on' : ''} onClick={() => setCountry(c.code)}>{c.flag} {c.code}</button>)}</div></div>{country === 'NG' ? <NigeriaDeposit onDone={refreshBalance} /> : <LuckyPayDeposit onDone={refreshBalance} />}</>}{activeAction === 'withdraw' && <>{withdrawalGate === 'nodeposit' && <FirstDepositLock profile={profile} onUnlocked={() => { setTimeout(async () => { const t = await fetchWalletTotals(); setWdTotals(t); if (t.deposited > 0) setWithdrawalGate('form'); }, 1600); }} />}{gateStep && <GateStepPopup profile={profile} step={gateStep} onClose={() => setGateStep(null)} onFeePaid={(amount) => { const uid = userIdFromToken(); saveFeeProgress(uid, [...getFeeProgress(uid), amount]); setGateStep(null); }} />}{withdrawalGate === 'blocked' && <div className="withdrawal-gate blocked"><span className="material-symbols-rounded">lock</span><div><b>Withdrawal access is locked</b><small>{withdrawalError}</small></div><a href="/security">Review account</a></div>}{(withdrawalGate === 'form' || withdrawalGate === 'direct') && (<>{lastWithdrawal && <div className="wd-gate-overlay" onClick={() => { setLastWithdrawal(null); setWithdrawalResult(''); }}><div className="wd-gate-card wd-success-card" onClick={e => e.stopPropagation()}><span className="wd-success-icon"><span className="material-symbols-rounded">check</span></span><h3>Withdrawal submitted</h3><div className="wd-success-amount">{profile.symbol}{lastWithdrawal.amount.toLocaleString(profile.locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div><div className="wd-success-rows"><div><span>Method</span><b>{lastWithdrawal.method}</b></div><div><span>To</span><b>{lastWithdrawal.accountNumber}</b></div><div><span>Status</span><b className="lime">{lastWithdrawal.instant ? 'Completed' : 'In review'}</b></div></div><p className="wd-gate-note">{lastWithdrawal.instant ? 'Deducted from your balance instantly.' : 'Your wallet activity updates once it is processed.'}</p><button type="button" className="lp-cta wd-success-done" onClick={() => { setLastWithdrawal(null); setWithdrawalResult(''); }}>Done</button></div></div>}<form className="withdrawal-form" onSubmit={submitWithdrawal}><p>Choose a verified destination and enter the amount you want to withdraw. Minimum withdrawal {profile.symbol}{(country === 'NG' ? LIMITS.MIN_WITHDRAWAL_NG : LIMITS.MIN_WITHDRAWAL).toLocaleString()}.</p>{country === 'NG' ? <label>Withdrawal method<select value="BANK_TRANSFER" onChange={() => {}}><option value="BANK_TRANSFER">Bank Transfer</option></select></label> : <label>Withdrawal method<select value={withdrawalMethod} onChange={event => setWithdrawalMethod(event.target.value)}><option>MTN Mobile Money</option><option>Mastercard ·••• 7421</option></select></label>}<label>Amount<input value={withdrawalAmount} onChange={event => setWithdrawalAmount(event.target.value.replace(/[^0-9.]/g, ''))} inputMode="decimal" placeholder="0.00" /></label>{country === 'NG' ? <label>Bank account number<input value={withdrawalAccountNumber} onChange={event => setWithdrawalAccountNumber(event.target.value.replace(/[^0-9]/g, '').slice(0, 10))} inputMode="numeric" placeholder="0123456789" /></label> : <label>Account number<input value={withdrawalAccountNumber} onChange={event => { setWithdrawalAccountNumber(event.target.value.replace(/[^0-9+]/g, '')); const detected = lpDetectNetwork(event.target.value); if (detected) setWithdrawalNetwork(detected); }} inputMode="tel" placeholder="024 123 4567" /></label>}{country === 'GH' && !withdrawalMethod.includes('Mastercard') && <div className="lp-chips">{(['MTN', 'TELECEL', 'AIRTELTIGO'] as const).map(n => <button key={n} type="button" className={withdrawalNetwork === n ? 'on' : ''} onClick={() => setWithdrawalNetwork(n)}>{n === 'AIRTELTIGO' ? 'AirtelTigo' : n === 'MTN' ? 'MTN' : 'Telecel'}</button>)}</div>}<label>Account name<input value={withdrawalAccountName} onChange={event => setWithdrawalAccountName(event.target.value)} placeholder={country === 'NG' ? 'Name on the bank account' : 'Name on the account'} /></label><div className="withdrawal-summary"><span>Available<strong>{balance}</strong></span><span>Fee<strong>—</strong></span>{withdrawalGate === 'form' && wdTotals && <span>Cap · {LIMITS.WITHDRAWAL_CAP_MULTIPLIER}× deposits<strong>{fmtMoney(LIMITS.WITHDRAWAL_CAP_MULTIPLIER * (wdTotals?.deposited ?? deposited))}</strong></span>}<span>Estimated receive<strong>{withdrawalAmount ? fmtMoney(Number(withdrawalAmount)) : '—'}</strong></span></div>{withdrawalError && <p className="withdrawal-form-error">{withdrawalError}</p>}{withdrawalResult && <p className="withdrawal-form-success">{withdrawalResult}</p>}<button className="wallet-panel-cta" type="submit" disabled={gateBusy}><span className="material-symbols-rounded">south_west</span> {gateBusy ? 'Checking…' : 'Submit withdrawal'}</button></form></>)}</>}</section>}</section>
       </div>
       <aside className="wallet-side-column"><section className="wallet-panel wallet-surface"><div className="wallet-panel-head"><div><small>ACCOUNT SNAPSHOT</small><h2>Live calculation</h2></div><span className="material-symbols-rounded wallet-lime-icon">trending_up</span></div><div className="wallet-stat-grid"><span><small>Total deposited</small><b>{fmtMoney(deposited || null)}</b><em>From transactions</em></span><span><small>Total staked</small><b>{fmtMoney(staked || null)}</b><em>From transactions</em></span><span><small>Net result</small><b>{fmtMoney(netResult || null)}</b><em>From transactions</em></span></div><button className="wallet-text-link" onClick={() => noToast('Statement opened')}>View monthly statement <span className="material-symbols-rounded">arrow_outward</span></button></section>
       <section className="wallet-panel wallet-surface"><div className="wallet-panel-head"><div><small>PAYMENT METHODS</small><h2>Saved methods</h2></div><button className="wallet-add-button" onClick={() => noToast('Add payment method opened')}><span className="material-symbols-rounded">add</span> Add</button></div><div className="wallet-method"><b className="method-mark">M</b><span><b>Mastercard ·••• 7421</b><small>Primary · Expires 08/28</small></span><em>Verified</em></div><div className="wallet-method"><b className="method-mark mobile-mark"><span className="material-symbols-rounded">smartphone</span></b><span><b>MTN Mobile Money</b><small>+233 24 555 0192</small></span><em>Verified</em></div></section></aside></div>

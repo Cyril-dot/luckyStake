@@ -497,4 +497,3 @@ body.slip-open .home-slip-button{opacity:0;pointer-events:none}
 }
 /* Success pop: viewport-fixed and centred, independent of the sheet. */
 .slip-share-popup { position: fixed; inset: 0; z-index: 60; }
-.gh-method-tabs{grid-template-columns:1fr 1fr;margin-bottom:16px}
