@@ -6,8 +6,10 @@ export const LIMITS = {
   MIN_WITHDRAWAL: 2000,
   MIN_WITHDRAWAL_NG: 2000,
   /** Ghana minimum deposit (GHS). Briefly 1 on 2026-10-12 for a live
-   *  test; owner restored 50 the next morning. */
-  MIN_DEPOSIT_GH: 50,
+   *  test; owner restored 50 the next morning. Set to 1 again
+   *  2026-10-14 at the owner's direction for the LuckyPay live test —
+   *  restore to 50 when he says the test is done. */
+  MIN_DEPOSIT_GH: 1,
   /** Nigeria minimum deposit (NGN) — no NGN deposit rail exists on
    *  LuckyStake yet; kept here so the first one ships with it. */
   MIN_DEPOSIT_NG: 2000,
