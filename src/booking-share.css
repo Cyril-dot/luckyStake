@@ -486,3 +486,31 @@ body.slip-open .home-slip-button{opacity:0;pointer-events:none}
 }
 /* Success pop: viewport-fixed and centred, independent of the sheet. */
 .slip-share-popup { position: fixed; inset: 0; z-index: 60; }
+
+/* ——— BlizBet design language (owner, 2026-10-15): soft, rounded, airy.
+   Sits last in the shared cascade; component sheets keep their layout,
+   this layer sets the surface treatment. ——— */
+.box,.card,.game,.betslip{border-radius:16px;border-color:#e9e4f6;box-shadow:0 10px 30px rgba(23,20,43,.05)}
+.match{border-radius:14px;border-color:#e9e4f6;box-shadow:0 6px 18px rgba(23,20,43,.04)}
+.tile{border-radius:14px;border-color:#e9e4f6}
+.odds button{border-radius:10px;background:#f4f1fa;border-color:#e7e1f3}
+.odds button:hover{border-color:#7c3aed}
+.odd-selected{background:linear-gradient(135deg,#7c3aed,#5b21b6)!important;color:#fff!important;border-color:#7c3aed!important;box-shadow:0 8px 18px rgba(124,58,237,.35)!important}
+.primary,.signup{border-radius:12px}
+.primary{box-shadow:0 8px 20px rgba(124,58,237,.25)}
+input:not([type=checkbox]):not([type=radio]),select,textarea{border-radius:12px}
+.card input{background:#f7f4fc;border-color:#e3dcf2}
+.section-title h2,.aurora-section-heading h2{font-family:'DM Sans',sans-serif;font-weight:800;letter-spacing:-.01em}
+.mobile-wallet-rail{border-radius:999px;background:#f1edfa;border-color:#e7e1f3}
+.mobile-wallet-deposit{background:#ffc531!important;color:#17142b!important;font-weight:800}
+.country-wallet{border-radius:999px;background:#f1edfa}
+.mobile-bottom-item.active::before{content:"";position:absolute;top:-2px;left:50%;transform:translateX(-50%);width:26px;height:3px;border-radius:0 0 4px 4px;background:#7c3aed}
+.tabs{background:#f1edfa;border:1px solid #e9e4f6;border-radius:14px;padding:5px;gap:5px}
+.tabs>*{border-radius:10px}
+.tabs b{background:#7c3aed;color:#fff;border-bottom:0;box-shadow:0 6px 14px rgba(124,58,237,.3)}
+.tabs i{color:#fff}
+.wallet-action{border-radius:12px}
+.wd-gate-card{border-radius:20px}
+.slip-drawer{background:#ffffff}
+.filter button{border-radius:999px}
+.filter .active{box-shadow:0 6px 14px rgba(124,58,237,.3)}
