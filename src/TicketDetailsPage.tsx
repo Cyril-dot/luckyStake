@@ -120,7 +120,6 @@ export default function TicketDetailsPage({ id }: { id: string }) {
       <div className="ls-ticket-stat"><span>Total stake</span><b>{money(stake)}</b></div>
       <div className="ls-ticket-stat"><span>Total odds</span><b>{odds.toFixed(2)}×</b></div>
       <div className="ls-ticket-verify">Verify code: <strong>{verifyCode(id)}</strong></div>
-      {betShareCode(id) && <div className="ls-ticket-booking"><span className="material-symbols-rounded">confirmation_number</span><div><small>Booking code</small><strong>{betShareCode(id)}</strong></div><button type="button" onClick={() => { try { navigator.clipboard?.writeText(betShareCode(id)); } catch {} }}>Copy</button></div>}
       {won && <div className="ls-ticket-win-banner"><div className="ls-ticket-win-message"><span className="ls-ticket-win-trophy"><img src="/superbet-victory-trophy.png" alt="LuckyStake winning trophy" /></span><span>Congratulations!<br /><b>You won this ticket.</b></span></div><button type="button" onClick={() => setCelebrate(true)}>Show off</button></div>}
     </section>
     <section className="ls-ticket-legs">{legs.length ? legs.map((leg, index) => {
