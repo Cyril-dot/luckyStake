@@ -10,7 +10,7 @@ function walletMoney(value: unknown) { const number = Number(value); return Numb
 function signedTransactionAmount(value: string) { const number = Number(value.replace(/[^0-9.-]/g, '')); return Number.isFinite(number) ? (/^-/.test(value) ? -Math.abs(number) : Math.abs(number)) : null; }
 
 function ActionButton({ icon, label, primary, onClick }: { icon: string; label: string; primary?: boolean; onClick: () => void }) {
-  return <button className={`wallet-action ${primary ? 'wallet-action-primary' : ''}`} onClick={onClick}><span className="material-symbols-rounded">{icon}</span>{label}</button>;
+  return <button className={`wallet-action ${primary ? 'wallet-action-primary' : ''}`} onClick={onClick} aria-label={label} title={label}><span className="material-symbols-rounded">{icon}</span></button>;
 }
 
 function withdrawalRoleFromToken(): string {
