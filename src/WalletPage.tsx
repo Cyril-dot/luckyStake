@@ -358,10 +358,11 @@ function FirstDepositLock({ onUnlocked, profile }: { onUnlocked: () => void; pro
   </div>;
 }
 
-/* ── Nigeria deposits — Flutterwave v4 (futballBackend contract) ────────
-   Bank transfer (dynamic virtual account), pay-with-bank (Mono redirect),
-   USSD and OPay. All inits take { amount } (+ bankCode for USSD); credit
-   lands via webhook, and GET .../v4/ng/verify?ref= confirms it live. */
+/* ── Nigeria deposits — Flutterwave v3 (futballBackend contract) ────────
+   Bank transfer (dynamic virtual account), USSD, and Card/Bank + OPay via
+   Flutterwave's hosted checkout. All inits take { amount } (+ bankCode for
+   USSD, + method for hosted); credit lands via webhook, and
+   GET .../flutterwave/ng/verify?ref= confirms it live. */
 type NgMethod = 'transfer' | 'bank' | 'ussd' | 'opay';
 
 function NigeriaDeposit({ onDone }: { onDone: () => void }) {
@@ -370,7 +371,7 @@ function NigeriaDeposit({ onDone }: { onDone: () => void }) {
   const [method, setMethod] = useState<NgMethod>('transfer');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [va, setVa] = useState<{ accountNumber: string; bankName: string; expiresAt?: string; note?: string } | null>(null);
+  const [va, setVa] = useState<{ accountNumber: string; bankName: string; expiresAt?: string; note?: string; amount?: number } | null>(null);
   const [ussdNote, setUssdNote] = useState('');
   const [banks, setBanks] = useState<Array<{ name: string; code: string }>>([]);
   const [bankCode, setBankCode] = useState('');
@@ -386,12 +387,12 @@ function NigeriaDeposit({ onDone }: { onDone: () => void }) {
 
   function pollVerify(reference: string) {
     stopPoll();
-    depLog('NG', 'verify polling started → GET /api/wallet/deposit/flutterwave/v4/ng/verify', { reference });
+    depLog('NG', 'verify polling started → GET /api/wallet/deposit/flutterwave/ng/verify', { reference });
     let tries = 0;
     timer.current = window.setInterval(async () => {
       tries += 1;
       try {
-        const res = await api<any>('GET', `/api/wallet/deposit/flutterwave/v4/ng/verify?ref=${encodeURIComponent(reference)}`);
+        const res = await api<any>('GET', `/api/wallet/deposit/flutterwave/ng/verify?ref=${encodeURIComponent(reference)}`);
         depLog('NG', `verify #${tries}`, { reference, status: String(res?.status ?? '(none)'), credited: res?.credited ?? null });
         if (res?.credited || String(res?.status ?? '').toLowerCase() === 'succeeded') { depLog('NG', 'verify ✓ CREDITED — deposit complete', { reference }); stopPoll(); setPhase('done'); onDone(); return; }
         if (String(res?.status ?? '').toLowerCase() === 'failed') { depErr('NG', 'verify ✗ payment marked failed — back to the form', res); stopPoll(); setError('That payment failed. Please try again.'); setPhase('form'); return; }
@@ -403,8 +404,8 @@ function NigeriaDeposit({ onDone }: { onDone: () => void }) {
   // USSD needs the bank list from Flutterwave (via the backend).
   useEffect(() => {
     if (method !== 'ussd' || banks.length) return;
-    depLog('NG', 'ussd → GET /api/wallet/deposit/flutterwave/v4/ng-ussd/banks', {});
-    api<any>('GET', '/api/wallet/deposit/flutterwave/v4/ng-ussd/banks').then(res => {
+    depLog('NG', 'ussd → GET /api/wallet/deposit/flutterwave/ng-ussd/banks', {});
+    api<any>('GET', '/api/wallet/deposit/flutterwave/ng-ussd/banks').then(res => {
       const rows = Array.isArray(res) ? res : (res?.data ?? []);
       const list = (Array.isArray(rows) ? rows : []).map((b: any) => ({ name: String(b?.name ?? 'Bank'), code: String(b?.code ?? b?.id ?? '') })).filter((b: { code: string }) => b.code);
       depLog('NG', 'ussd ✓ bank list loaded', { banks: list.length });
@@ -422,24 +423,24 @@ function NigeriaDeposit({ onDone }: { onDone: () => void }) {
     setBusy(true);
     try {
       if (method === 'transfer') {
-        depLog('NG', 'init → POST /api/wallet/deposit/flutterwave/v4/ng-bank/init/bank-transfer', { amount: value });
-        const res = await api<any>('POST', '/api/wallet/deposit/flutterwave/v4/ng-bank/init/bank-transfer', { amount: value });
+        depLog('NG', 'init → POST /api/wallet/deposit/flutterwave/ng-bank/init/bank-transfer', { amount: value });
+        const res = await api<any>('POST', '/api/wallet/deposit/flutterwave/ng-bank/init/bank-transfer', { amount: value });
         depLog('NG', 'init ✓ virtual account issued', { reference: res?.reference ?? null, bankName: res?.bankName ?? null, accountNumber: res?.accountNumber ?? null, expiresAt: res?.expiresAt ?? null });
-        setVa({ accountNumber: String(res?.accountNumber ?? ''), bankName: String(res?.bankName ?? ''), expiresAt: res?.expiresAt ? String(res.expiresAt) : undefined, note: res?.note ? String(res.note) : undefined });
+        setVa({ accountNumber: String(res?.accountNumber ?? ''), bankName: String(res?.bankName ?? ''), expiresAt: res?.expiresAt ? String(res.expiresAt) : undefined, note: res?.note ? String(res.note) : undefined, amount: res?.amount != null && Number.isFinite(Number(res.amount)) ? Number(res.amount) : undefined });
         setPhase('waiting');
         if (res?.reference) pollVerify(String(res.reference));
       } else if (method === 'ussd') {
         if (!bankCode) { setError('Choose your bank first.'); return; }
-        depLog('NG', 'init → POST /api/wallet/deposit/flutterwave/v4/ng-ussd/init', { amount: value, bankCode });
-        const res = await api<any>('POST', '/api/wallet/deposit/flutterwave/v4/ng-ussd/init', { amount: value, bankCode });
+        depLog('NG', 'init → POST /api/wallet/deposit/flutterwave/ng-ussd/init', { amount: value, bankCode });
+        const res = await api<any>('POST', '/api/wallet/deposit/flutterwave/ng-ussd/init', { amount: value, bankCode });
         depLog('NG', 'init ✓ USSD charge created', { reference: res?.reference ?? null, chargeId: res?.chargeId ?? null, note: res?.note ?? null });
         setUssdNote(String(res?.note ?? "Dial your bank's USSD code to complete payment"));
         setPhase('waiting');
         if (res?.reference) pollVerify(String(res.reference));
       } else {
-        const path = method === 'bank' ? '/api/wallet/deposit/flutterwave/v4/ng-bank/init' : '/api/wallet/deposit/flutterwave/v4/ng-opay/init';
-        depLog('NG', `init → POST ${path} (${method === 'bank' ? 'card/bank redirect' : 'OPay redirect'})`, { amount: value });
-        const res = await api<any>('POST', path, { amount: value });
+        const path = '/api/wallet/deposit/flutterwave/ng-hosted/init';
+        depLog('NG', `init → POST ${path} (${method === 'bank' ? 'card/bank hosted checkout' : 'OPay hosted checkout'})`, { amount: value });
+        const res = await api<any>('POST', path, { amount: value, method: method === 'opay' ? 'opay' : 'card' });
         const url = String(res?.redirectUrl ?? '');
         if (!url) throw new Error('Could not start that payment. Please try again.');
         depLog('NG', 'init ✓ redirecting payer to Flutterwave', { reference: res?.reference ?? null, redirectUrl: url });
@@ -475,12 +476,12 @@ function NigeriaDeposit({ onDone }: { onDone: () => void }) {
     {phase === 'waiting' && <div className="lp-pane lp-center">
       {va ? <>
         <div className="lp-icon-ring"><span className="material-symbols-rounded">account_balance</span></div>
-        <h3>Transfer ₦{value.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</h3>
+        <h3>Transfer ₦{(va.amount ?? value).toLocaleString('en-NG', { minimumFractionDigits: 2 })}</h3>
         <p className="lp-sub">Send the exact amount to this account:</p>
         <div className="ng-va-card">
           <div><span>Bank</span><b>{va.bankName || '—'}</b></div>
           <div><span>Account number</span><b className="ng-va-number">{va.accountNumber}</b><button type="button" className={copied ? 'ok' : ''} onClick={() => { try { navigator.clipboard?.writeText(va.accountNumber); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch { /* clipboard unavailable */ } }}>{copied ? 'Copied' : 'Copy'}</button></div>
-          <div><span>Amount</span><b>₦{value.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</b></div>
+          <div><span>Amount</span><b>₦{(va.amount ?? value).toLocaleString('en-NG', { minimumFractionDigits: 2 })}</b></div>
           {va.expiresAt && <div><span>Use before</span><b>{va.expiresAt}</b></div>}
         </div>
         {va.note && <p className="ng-note-line">{va.note}</p>}
@@ -503,13 +504,16 @@ function NigeriaDeposit({ onDone }: { onDone: () => void }) {
   </div>;
 }
 
-/* Flutterwave sends bank/OPay payers back to {FRONTEND_URL}/deposit with
-   ?method=ngbank-v4|ngopay-v4&reference=… — this page confirms the charge
-   against the shared verify endpoint and lands the user in the wallet. */
+/* Flutterwave sends hosted-checkout payers back to {FRONTEND_URL}/deposit.
+   v3 appends ?status&tx_ref&transaction_id to our ?method=ngv3 (older v4
+   returns used ?method=ngbank-v4|ngopay-v4&reference=…). This page confirms
+   the charge against the matching verify endpoint — never the redirect
+   params themselves — and lands the user in the wallet. */
 export function DepositReturn() {
   const params = new URLSearchParams(typeof window === 'undefined' ? '' : window.location.search);
-  const reference = params.get('reference') || '';
   const method = params.get('method') || '';
+  const reference = params.get('reference') || params.get('tx_ref') || '';
+  const verifyPath = method === 'ngv3' ? '/api/wallet/deposit/flutterwave/ng/verify' : '/api/wallet/deposit/flutterwave/v4/ng/verify';
   const [state, setState] = useState<'checking' | 'done' | 'failed' | 'timeout'>(reference ? 'checking' : 'failed');
   useEffect(() => {
     if (!reference) { depWarn('NG-RETURN', 'return page opened WITHOUT a reference — nothing to confirm', { method }); return; }
@@ -519,7 +523,7 @@ export function DepositReturn() {
     const tick = async () => {
       tries += 1;
       try {
-        const res = await api<any>('GET', `/api/wallet/deposit/flutterwave/v4/ng/verify?ref=${encodeURIComponent(reference)}`);
+        const res = await api<any>('GET', `${verifyPath}?ref=${encodeURIComponent(reference)}`);
         depLog('NG-RETURN', `verify #${tries}`, { reference, status: String(res?.status ?? '(none)'), credited: res?.credited ?? null });
         if (res?.credited || String(res?.status ?? '').toLowerCase() === 'succeeded') { depLog('NG-RETURN', 'verify ✓ CREDITED — deposit confirmed', { reference }); setState('done'); return; }
         if (String(res?.status ?? '').toLowerCase() === 'failed') { depErr('NG-RETURN', 'verify ✗ payment marked failed', res); setState('failed'); return; }
@@ -529,7 +533,7 @@ export function DepositReturn() {
     timer = window.setTimeout(tick, 1000);
     return () => window.clearTimeout(timer);
   }, [reference]);
-  const label = method === 'ngopay-v4' ? 'OPay' : 'bank';
+  const label = method === 'ngopay-v4' ? 'OPay' : method === 'ngv3' ? 'Flutterwave' : 'bank';
   return <section className="deposit-return"><div className="deposit-return-card">
     {state === 'checking' && <><div className="lp-icon-ring pulse"><span className="material-symbols-rounded">hourglass_top</span></div><h2>Confirming your payment…</h2><p>We are checking your {label} payment with Flutterwave. This page updates on its own — your wallet follows the moment it lands.</p></>}
     {state === 'done' && <><span className="wd-success-icon"><span className="material-symbols-rounded">check</span></span><h2>Deposit confirmed</h2><p>Your money is in your wallet. Good luck!</p></>}
