@@ -57,7 +57,7 @@ body { overscroll-behavior-y: auto; }
 .admin-sidebar::-webkit-scrollbar { width: 5px; }
 .admin-sidebar::-webkit-scrollbar-thumb { background: #dcd7e5; border-radius: 4px; }
 .admin-brand { display: flex; align-items: center; gap: 10px; padding: 0 10px 10px; }
-.admin-brand-mark { display: grid; place-items: center; width: 38px; height: 38px; flex-shrink: 0; border-radius: 12px; background: rgba(124, 58, 237, .13); border: 1px solid rgba(124, 58, 237, .28); color: var(--lime); font: 900 20px/1 'Barlow Condensed'; }
+.admin-brand-mark { display: grid; place-items: center; width: 38px; height: 38px; flex-shrink: 0; border-radius: 12px; background: rgba(124, 53, 238, .13); border: 1px solid rgba(124, 53, 238, .28); color: var(--lime); font: 900 20px/1 'Barlow Condensed'; }
 .admin-brand-text { flex: 1; min-width: 0; }
 .admin-brand-text strong { display: block; font: 800 17px/1.1 'Barlow Condensed'; letter-spacing: .02em; color: #292633; white-space: nowrap; }
 .admin-brand-text strong span { color: var(--lime); }
@@ -65,7 +65,7 @@ body { overscroll-behavior-y: auto; }
 .admin-role { display: flex; align-items: center; gap: 7px; padding: 9px 11px; border-radius: 10px; background: rgba(255, 255, 255, .04); color: #c4cbd6; font: 600 11px 'Rajdhani'; }
 .admin-role .material-symbols-rounded { font-size: 15px; color: var(--lime); }
 .admin-role-pill { flex-shrink: 0; padding: 5px 10px; border-radius: 999px; font: 800 9px 'Rajdhani'; letter-spacing: .12em; text-transform: uppercase; background: rgba(120, 170, 255, .13); border: 1px solid rgba(120, 170, 255, .38); color: #a9c6ff; white-space: nowrap; }
-.admin-role-pill.super { background: rgba(124, 58, 237, .12); border-color: rgba(124, 58, 237, .42); color: var(--lime); }
+.admin-role-pill.super { background: rgba(124, 53, 238, .12); border-color: rgba(124, 53, 238, .42); color: var(--lime); }
 .admin-drawer-close { display: none; }
 .admin-sidebar .admin-nav { display: grid; gap: 4px; padding: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; }
 .admin-sidebar .admin-nav::-webkit-scrollbar { display: none; }
@@ -159,12 +159,12 @@ button.admin-stat:hover { transform: translateY(-2px); border-color: var(--lime)
 .admin-toolbar input:focus, .admin-toolbar select:focus,
 .admin-status-list input:focus, .admin-modal input:focus {
   border-color: var(--lime); background: #f0eaf8;
-  box-shadow: 0 0 0 3px rgba(124, 58, 237, .14), 0 4px 14px rgba(0, 0, 0, .25);
+  box-shadow: 0 0 0 3px rgba(124, 53, 238, .14), 0 4px 14px rgba(0, 0, 0, .25);
 }
 .admin-panel input:disabled, .admin-toolbar input:disabled { opacity: .5; cursor: not-allowed; }
 .admin-panel select, .admin-toolbar select, .admin-modal select {
   appearance: none; -webkit-appearance: none; cursor: pointer; padding-right: 36px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%237c3aed' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%237c35ee' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
   background-repeat: no-repeat; background-position: right 12px center;
 }
 .admin-panel select option, .admin-toolbar select option { background: #f0eaf8; color: #292633; }
@@ -189,7 +189,7 @@ button.admin-stat:hover { transform: translateY(-2px); border-color: var(--lime)
 
 /* Pills + referral cards */
 .admin-pill { display: inline-flex; align-items: center; padding: 5px 11px; border-radius: 999px; font: 800 10px 'Rajdhani'; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
-.admin-pill.ok { background: rgba(124, 58, 237, .14); border: 1px solid rgba(124, 58, 237, .4); color: var(--lime); }
+.admin-pill.ok { background: rgba(124, 53, 238, .14); border: 1px solid rgba(124, 53, 238, .4); color: var(--lime); }
 .admin-pill.wait { background: rgba(255, 255, 255, .06); border: 1px solid #e8e3ef; color: #777281; }
 .ref-link-card { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 12px; margin-bottom: 10px; border: 1px solid #e8e3ef; border-radius: 12px; background: #ffffff; min-width: 0; }
 .ref-link-info { display: flex; align-items: center; gap: 10px; flex: 1 1 220px; min-width: 0; }
@@ -212,7 +212,7 @@ button.admin-stat:hover { transform: translateY(-2px); border-color: var(--lime)
 .admin-score-dash { padding-bottom: 12px; color: #777281; font-weight: 800; }
 
 /* Random games */
-.rnd-library-strip { display: grid; grid-template-columns: repeat(3, minmax(0, auto)) 1fr; gap: 10px 22px; align-items: center; margin-bottom: 16px; padding: 15px 17px; border: 1px solid rgba(124, 58, 237, .25); border-radius: 14px; background: linear-gradient(120deg, rgba(124, 58, 237, .08), rgba(118, 68, 197, .10)); min-width: 0; }
+.rnd-library-strip { display: grid; grid-template-columns: repeat(3, minmax(0, auto)) 1fr; gap: 10px 22px; align-items: center; margin-bottom: 16px; padding: 15px 17px; border: 1px solid rgba(124, 53, 238, .25); border-radius: 14px; background: linear-gradient(120deg, rgba(124, 53, 238, .08), rgba(118, 68, 197, .10)); min-width: 0; }
 .rnd-library-strip > div { display: grid; gap: 1px; }
 .rnd-library-strip strong { font: 800 24px/1 'Barlow Condensed'; color: var(--lime); }
 .rnd-library-strip span { color: #777281; font: 700 9px 'Rajdhani'; letter-spacing: .14em; text-transform: uppercase; }
@@ -286,7 +286,7 @@ button.admin-stat:hover { transform: translateY(-2px); border-color: var(--lime)
     font-size: 12.5px; font-weight: 700; white-space: nowrap;
     transform: none !important;
   }
-  .admin-sidebar .admin-nav-btn:hover { background: rgba(124, 58, 237, .16); color: #292633; transform: none !important; }
+  .admin-sidebar .admin-nav-btn:hover { background: rgba(124, 53, 238, .16); color: #292633; transform: none !important; }
   .admin-nav-label { flex: 0 0 auto; white-space: nowrap; overflow: visible; }
   .admin-nav-chev { display: none; }
   .admin-sidebar .admin-nav-btn.active { background: var(--lime); border-color: var(--lime); color: #ffffff; box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .18); }

@@ -24,12 +24,12 @@ function CashoutStyles() {
     .ls-cashout-head h3{margin:0;font-size:18px;font-weight:800}
     .ls-cashout-x{border:0;background:transparent;color:#777281;font-size:20px;cursor:pointer;line-height:1}
     .ls-cashout-body{padding:18px;display:grid;gap:14px}
-    .ls-cashout-amount{text-align:center;padding:14px;border-radius:10px;background:rgba(124,58,237,.08);border:1px solid rgba(124,58,237,.25)}
+    .ls-cashout-amount{text-align:center;padding:14px;border-radius:10px;background:rgba(124,53,238,.08);border:1px solid rgba(124,53,238,.25)}
     .ls-cashout-amount small{display:block;color:#777281;font-size:11px;letter-spacing:.08em;text-transform:uppercase}
     .ls-cashout-amount strong{display:block;margin-top:4px;font-size:34px;color:#7c35ee;font-weight:800}
     .ls-cashout-modes{display:grid;grid-template-columns:1fr 1fr;gap:8px}
     .ls-cashout-modes button{padding:11px;border:1px solid #e8e3ef;border-radius:8px;background:#f0eaf8;color:#777281;font:800 13px 'Rajdhani';cursor:pointer}
-    .ls-cashout-modes button.active{border-color:#7c35ee;background:rgba(124,58,237,.12);color:#7c35ee}
+    .ls-cashout-modes button.active{border-color:#7c35ee;background:rgba(124,53,238,.12);color:#7c35ee}
     .ls-cashout-slider label{display:flex;justify-content:space-between;color:#777281;font-size:12px;margin-bottom:6px}
     .ls-cashout-slider label b{color:#7c35ee}
     .ls-cashout-slider input{width:100%;accent-color:#7c35ee}
