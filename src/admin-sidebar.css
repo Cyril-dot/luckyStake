@@ -358,7 +358,7 @@ button.admin-stat:hover { transform: translateY(-2px); border-color: var(--lime)
 
 /* Booking-code builder (msport flow): draft legs + correct-score editor */
 .code-draft-list{display:grid;gap:8px;margin-top:12px}
-.code-draft-row{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--adm-panel-2,#171021);border:1px solid var(--adm-line,#f1edfa);border-radius:12px;padding:10px 12px}
+.code-draft-row{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--adm-panel-2,#f7f4fc);border:1px solid var(--adm-line,#f1edfa);border-radius:12px;padding:10px 12px}
 .code-draft-row b{display:block;font-size:13.5px;color:var(--adm-text,#f4eefc)}
 .code-draft-row small{display:block;margin-top:2px;font-size:12px;color:var(--adm-dim,#a794c4)}
 .code-cs-edit{display:flex;align-items:center;gap:8px}

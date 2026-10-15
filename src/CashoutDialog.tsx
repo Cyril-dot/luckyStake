@@ -19,7 +19,7 @@ export async function fetchCashoutPreview(betId: string): Promise<number | null>
 function CashoutStyles() {
   return <style>{`
     .ls-cashout-scrim{position:fixed;inset:0;z-index:90;display:grid;place-items:center;padding:18px;background:rgba(10,6,16,.72);backdrop-filter:blur(3px)}
-    .ls-cashout-dialog{width:min(420px,100%);border:1px solid #e3dcf2;border-radius:14px;background:linear-gradient(145deg,#2b2138,#f1edfa);color:#17142b;box-shadow:0 24px 60px rgba(0,0,0,.5);overflow:hidden;font-family:'Rajdhani',Manrope,system-ui,sans-serif}
+    .ls-cashout-dialog{width:min(420px,100%);border:1px solid #e3dcf2;border-radius:14px;background:linear-gradient(145deg,#ffffff,#f5f1ff);color:#17142b;box-shadow:0 24px 60px rgba(0,0,0,.5);overflow:hidden;font-family:'Rajdhani',Manrope,system-ui,sans-serif}
     .ls-cashout-head{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid #e3dcf2}
     .ls-cashout-head h3{margin:0;font-size:18px;font-weight:800}
     .ls-cashout-x{border:0;background:transparent;color:#756f8c;font-size:20px;cursor:pointer;line-height:1}
@@ -35,7 +35,7 @@ function CashoutStyles() {
     .ls-cashout-slider input{width:100%;accent-color:#7c3aed}
     .ls-cashout-meta{display:flex;justify-content:space-between;color:#756f8c;font-size:12px}
     .ls-cashout-meta b{color:#17142b}
-    .ls-cashout-confirm{padding:14px;border:0;border-radius:8px;background:#7c3aed;color:#17142b;font:800 15px 'Rajdhani';cursor:pointer}
+    .ls-cashout-confirm{padding:14px;border:0;border-radius:8px;background:#7c3aed;color:#ffffff;font:800 15px 'Rajdhani';cursor:pointer}
     .ls-cashout-confirm:disabled{opacity:.55;cursor:wait}
     .ls-cashout-error{padding:10px 12px;border-radius:8px;background:rgba(174,64,91,.16);border:1px solid #854459;color:#ffb7c5;font-size:12px}
     .ls-cashout-success{text-align:center;padding:26px 18px;display:grid;gap:10px;justify-items:center}

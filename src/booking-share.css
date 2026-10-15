@@ -192,7 +192,7 @@
 
 /* Admin modal dialog */
 .admin-modal-scrim{position:fixed;inset:0;background:rgba(10,5,18,.7);backdrop-filter:blur(4px);display:grid;place-items:center;z-index:1000;padding:20px}
-.admin-modal{background:#221a30;border:1px solid #f0ebfa;border-radius:18px;padding:24px;width:380px;max-width:100%;box-shadow:0 24px 70px rgba(0,0,0,.5)}
+.admin-modal{background:#ffffff;border:1px solid #f0ebfa;border-radius:18px;padding:24px;width:380px;max-width:100%;box-shadow:0 24px 70px rgba(0,0,0,.5)}
 .admin-modal h3{margin:0 0 16px;color:#17142b;font-size:18px}
 .admin-modal label{display:block;color:#c9bcd6;font-size:13px;margin-bottom:16px}
 .admin-modal input{width:100%;margin-top:8px;padding:12px;border:1px solid #f0ebfa;border-radius:10px;background:#181222;color:#17142b;font-size:15px}
@@ -256,7 +256,7 @@ body.slip-open .home-slip-button{opacity:0;pointer-events:none}
 .accumulator-slip .slip-drawer-head{padding-bottom:15px;margin-bottom:4px}
 .accumulator-slip .slip-drawer-head h2{gap:10px}
 .accumulator-slip .drawer-slip{background:transparent;border:0;padding:0;margin-top:12px}
-.accumulator-slip .slip-leg{background:linear-gradient(165deg,#251a35,#1b1427);border:1px solid #52406a;border-radius:14px;padding:13px 14px;box-shadow:0 8px 18px rgba(5,2,10,.35)}
+.accumulator-slip .slip-leg{background:#f7f4fc;border:1px solid #e9e4f6;border-radius:14px;padding:13px 14px;box-shadow:0 8px 18px rgba(23,20,43,.05)}
 .accumulator-slip .slip-leg-odds{min-width:68px;padding:8px 12px;border-radius:9px;background:linear-gradient(180deg,#3d2a58,#2a1d40);border:1px solid #7757a3;font-size:19px;box-shadow:inset 0 1px 0 rgba(23,20,43,.1)}
 .accumulator-slip .slip-leg-match{font-size:15px;font-weight:700}
 .accumulator-slip .slip-summary-footer{margin-top:14px;padding:14px;border:1px solid #ddd4f0;border-radius:14px;background:#f1edfa;box-shadow:0 8px 18px rgba(5,2,10,.3)}
@@ -313,12 +313,12 @@ body.slip-open .home-slip-button{opacity:0;pointer-events:none}
 /* --- Load-a-booking-code page --- */
 .booking-page{max-width:640px;margin:0 auto;padding:8px 0 10px}
 .booking-hero{text-align:center;padding:26px 18px 20px}
-.booking-hero-icon{display:grid;place-items:center;width:70px;height:70px;margin:0 auto 14px;border-radius:20px;background:linear-gradient(150deg,#3d2a58,#241832);border:1px solid #e3dcf2;color:var(--lime);box-shadow:0 14px 30px rgba(5,2,10,.4)}
+.booking-hero-icon{display:grid;place-items:center;width:70px;height:70px;margin:0 auto 14px;border-radius:20px;background:linear-gradient(150deg,#8b46f0,#5b21b6);border:1px solid #e3dcf2;color:#ffffff;box-shadow:0 14px 30px rgba(5,2,10,.4)}
 .booking-hero-icon .material-symbols-rounded{font-size:36px}
 .booking-hero>small{color:var(--lime);letter-spacing:.16em;font-weight:800}
 .booking-hero h1{margin:8px 0 8px;font-size:clamp(34px,6vw,48px)}
 .booking-hero p{margin:0 auto;max-width:460px;color:#756f8c;font-size:14px;line-height:1.55}
-.booking-card{padding:20px;border:1px solid #e3dcf2;border-radius:16px;background:linear-gradient(165deg,#251a35,#1b1427);box-shadow:0 16px 34px rgba(5,2,10,.35)}
+.booking-card{padding:20px;border:1px solid #e9e4f6;border-radius:16px;background:#ffffff;box-shadow:0 16px 34px rgba(23,20,43,.07)}
 .booking-field>span{display:block;margin-bottom:8px;color:#756f8c;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
 .booking-input-row{display:flex;gap:9px}
 .booking-input-row input{flex:1;min-width:0;height:54px;padding:0 16px;border:1px solid #e3dcf2;border-radius:11px;background:#ffffff;color:#17142b;font-size:19px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;outline:0}
@@ -514,3 +514,15 @@ input:not([type=checkbox]):not([type=radio]),select,textarea{border-radius:12px}
 .slip-drawer{background:#ffffff}
 .filter button{border-radius:999px}
 .filter .active{box-shadow:0 6px 14px rgba(124,58,237,.3)}
+.aurora-match-card{background:#ffffff;border-color:#e9e4f6}
+.aurora-skeleton-card{background:#f1edfa;border-color:#e9e4f6}
+.account-activity-icon{background:#efe9fd;color:#7c3aed}
+.casino-panel{background:linear-gradient(110deg,#8b46f0,#5b21b6);color:#fff}
+.casino-panel h2{color:#fff}
+.casino-panel a{color:#e9e4f7}
+.slip-leg-odds{background:#efe9fd;border-color:#e3dcf2;color:#7c3aed}
+.slip-remove-button{background:#efe9fd;color:#756f8c;border-color:#e3dcf2}
+.accumulator-slip .slip-leg-odds{background:#efe9fd;border-color:#e3dcf2;color:#7c3aed;box-shadow:none}
+.accumulator-slip .slip-remove-button{background:#efe9fd;color:#756f8c}
+.wd-gate-card .lp-icon-ring{background:#efe9fd;color:#7c3aed}
+.slip-share-code button,.ls-ticket-booking button{background:#efe9fd;color:#7c3aed}
