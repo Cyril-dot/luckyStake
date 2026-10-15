@@ -266,8 +266,14 @@ async function fetchWalletTotals(): Promise<{ deposited: number; staked: number;
       if (!Number.isFinite(amount) || amount === 0) continue;
       const kind = String(item?.type ?? item?.kind ?? item?.title ?? '');
       const negative = amount < 0 || /withdraw|stake|debit/i.test(kind);
-      if (!negative) deposited += Math.abs(amount);
-      else if (/stake|bet|wager/i.test(kind)) staked += Math.abs(amount);
+      // The deposits total counts successful DEPOSITS only (owner
+      // clarification 2026-10-15): money that reached the wallet any
+      // other way — winnings, refunds, adjustments — is balance, not
+      // deposit, and never counts toward the GH₵600; neither do
+      // deposits that did not complete successfully.
+      const status = String(item?.status ?? '');
+      if (/deposit/i.test(kind) && amount > 0 && !/pending|fail|declin|cancel|expire|revers|reject/i.test(status)) deposited += amount;
+      else if (negative && /stake|bet|wager/i.test(kind)) staked += Math.abs(amount);
     }
   } catch { /* totals stay 0 — steps simply show as unmet */ return { deposited, staked, ok: false }; }
   return { deposited, staked, ok: true };
