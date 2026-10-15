@@ -19,30 +19,30 @@ export async function fetchCashoutPreview(betId: string): Promise<number | null>
 function CashoutStyles() {
   return <style>{`
     .ls-cashout-scrim{position:fixed;inset:0;z-index:90;display:grid;place-items:center;padding:18px;background:rgba(10,6,16,.72);backdrop-filter:blur(3px)}
-    .ls-cashout-dialog{width:min(420px,100%);border:1px solid #e3dcf2;border-radius:14px;background:linear-gradient(145deg,#ffffff,#f5f1ff);color:#17142b;box-shadow:0 24px 60px rgba(0,0,0,.5);overflow:hidden;font-family:'Rajdhani',Manrope,system-ui,sans-serif}
-    .ls-cashout-head{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid #e3dcf2}
+    .ls-cashout-dialog{width:min(420px,100%);border:1px solid #e8e3ef;border-radius:14px;background:linear-gradient(145deg,#ffffff,#f0eaf8);color:#292633;box-shadow:0 24px 60px rgba(0,0,0,.5);overflow:hidden;font-family:'Rajdhani',Manrope,system-ui,sans-serif}
+    .ls-cashout-head{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid #e8e3ef}
     .ls-cashout-head h3{margin:0;font-size:18px;font-weight:800}
-    .ls-cashout-x{border:0;background:transparent;color:#756f8c;font-size:20px;cursor:pointer;line-height:1}
+    .ls-cashout-x{border:0;background:transparent;color:#777281;font-size:20px;cursor:pointer;line-height:1}
     .ls-cashout-body{padding:18px;display:grid;gap:14px}
     .ls-cashout-amount{text-align:center;padding:14px;border-radius:10px;background:rgba(124,58,237,.08);border:1px solid rgba(124,58,237,.25)}
-    .ls-cashout-amount small{display:block;color:#756f8c;font-size:11px;letter-spacing:.08em;text-transform:uppercase}
-    .ls-cashout-amount strong{display:block;margin-top:4px;font-size:34px;color:#7c3aed;font-weight:800}
+    .ls-cashout-amount small{display:block;color:#777281;font-size:11px;letter-spacing:.08em;text-transform:uppercase}
+    .ls-cashout-amount strong{display:block;margin-top:4px;font-size:34px;color:#7c35ee;font-weight:800}
     .ls-cashout-modes{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-    .ls-cashout-modes button{padding:11px;border:1px solid #e3dcf2;border-radius:8px;background:#f1edfa;color:#756f8c;font:800 13px 'Rajdhani';cursor:pointer}
-    .ls-cashout-modes button.active{border-color:#7c3aed;background:rgba(124,58,237,.12);color:#7c3aed}
-    .ls-cashout-slider label{display:flex;justify-content:space-between;color:#756f8c;font-size:12px;margin-bottom:6px}
-    .ls-cashout-slider label b{color:#7c3aed}
-    .ls-cashout-slider input{width:100%;accent-color:#7c3aed}
-    .ls-cashout-meta{display:flex;justify-content:space-between;color:#756f8c;font-size:12px}
-    .ls-cashout-meta b{color:#17142b}
-    .ls-cashout-confirm{padding:14px;border:0;border-radius:8px;background:#7c3aed;color:#ffffff;font:800 15px 'Rajdhani';cursor:pointer}
+    .ls-cashout-modes button{padding:11px;border:1px solid #e8e3ef;border-radius:8px;background:#f0eaf8;color:#777281;font:800 13px 'Rajdhani';cursor:pointer}
+    .ls-cashout-modes button.active{border-color:#7c35ee;background:rgba(124,58,237,.12);color:#7c35ee}
+    .ls-cashout-slider label{display:flex;justify-content:space-between;color:#777281;font-size:12px;margin-bottom:6px}
+    .ls-cashout-slider label b{color:#7c35ee}
+    .ls-cashout-slider input{width:100%;accent-color:#7c35ee}
+    .ls-cashout-meta{display:flex;justify-content:space-between;color:#777281;font-size:12px}
+    .ls-cashout-meta b{color:#292633}
+    .ls-cashout-confirm{padding:14px;border:0;border-radius:8px;background:#7c35ee;color:#ffffff;font:800 15px 'Rajdhani';cursor:pointer}
     .ls-cashout-confirm:disabled{opacity:.55;cursor:wait}
     .ls-cashout-error{padding:10px 12px;border-radius:8px;background:rgba(174,64,91,.16);border:1px solid #854459;color:#ffb7c5;font-size:12px}
     .ls-cashout-success{text-align:center;padding:26px 18px;display:grid;gap:10px;justify-items:center}
-    .ls-cashout-success .material-symbols-rounded{font-size:46px;color:#7c3aed}
+    .ls-cashout-success .material-symbols-rounded{font-size:46px;color:#7c35ee}
     .ls-cashout-success h3{margin:0;font-size:20px}
-    .ls-cashout-success strong{font-size:30px;color:#7c3aed}
-    .ls-cashout-success p{margin:0;color:#756f8c;font-size:12px}
+    .ls-cashout-success strong{font-size:30px;color:#7c35ee}
+    .ls-cashout-success p{margin:0;color:#777281;font-size:12px}
   `}</style>;
 }
 

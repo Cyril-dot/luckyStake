@@ -13,11 +13,11 @@ const SPORTS: Sport[] = [
 ];
 
 const MATCHES: Match[] = [
-  { league: 'England · Premier League', time: '18:30', home: 'Arsenal', away: 'Brighton', homeOdd: '1.62', drawOdd: '4.10', awayOdd: '5.70', accent: '#7c3aed' },
+  { league: 'England · Premier League', time: '18:30', home: 'Arsenal', away: 'Brighton', homeOdd: '1.62', drawOdd: '4.10', awayOdd: '5.70', accent: '#7c35ee' },
   { league: 'Spain · La Liga', time: '20:00', home: 'Real Madrid', away: 'Villarreal', homeOdd: '1.44', drawOdd: '4.80', awayOdd: '6.90', accent: '#a879ff' },
   { league: 'Italy · Serie A', time: '20:45', home: 'Inter Milan', away: 'Napoli', homeOdd: '2.05', drawOdd: '3.40', awayOdd: '3.35', accent: '#6cc4ff' },
   { league: 'NBA · Regular season', time: '21:00', home: 'Boston Celtics', away: 'Miami Heat', homeOdd: '1.76', awayOdd: '2.14', accent: '#ff9b6b' },
-  { league: 'ATP · Tokyo Open', time: '22:30', home: 'A. Zverev', away: 'F. Tiafoe', homeOdd: '1.58', awayOdd: '2.38', accent: '#7c3aed' },
+  { league: 'ATP · Tokyo Open', time: '22:30', home: 'A. Zverev', away: 'F. Tiafoe', homeOdd: '1.58', awayOdd: '2.38', accent: '#7c35ee' },
 ];
 
 function Odds({ match, compact = false }: { match: Match; compact?: boolean }) {

@@ -208,7 +208,7 @@ function AdminOverview({ onNavigate }: { onNavigate: (page: AdminPageKey) => voi
         </div>
       </Panel>
       <Panel title="Referral links" action={<Button onClick={createLink}><span className="material-symbols-rounded">add_link</span>New link</Button>}>
-        {links.length ? links.slice(0, 5).map((l, i) => <ReferralLinkCard key={i} link={l} onCopied={() => setMessage('Link copied to clipboard.')} />) : <p style={{ color: '#756f8c', fontSize: 12 }}>No referral links yet. Create one to start earning.</p>}
+        {links.length ? links.slice(0, 5).map((l, i) => <ReferralLinkCard key={i} link={l} onCopied={() => setMessage('Link copied to clipboard.')} />) : <p style={{ color: '#777281', fontSize: 12 }}>No referral links yet. Create one to start earning.</p>}
       </Panel>
     </div>
   </div>;
@@ -887,7 +887,7 @@ function AdminAffiliate() {
     </div>
     <div className="admin-two-col">
       <Panel title="Referral links" action={<Button onClick={createLink}><span className="material-symbols-rounded">add_link</span>New link</Button>}>
-        {links.length ? links.map((l, i) => { const url = referralUrlFor(l); return <div className="admin-status-list" key={i}><div><span><code>{url}</code></span><b><button className="admin-button" onClick={async () => { try { if (!navigator.clipboard?.writeText) throw new Error('no clipboard'); await navigator.clipboard.writeText(url); setMessage('Referral link copied.'); } catch { setError('Clipboard was not available — copy the link manually.'); } }}>Copy</button></b></div></div>; }) : <p style={{ color: '#756f8c', fontSize: 12 }}>No links yet.</p>}
+        {links.length ? links.map((l, i) => { const url = referralUrlFor(l); return <div className="admin-status-list" key={i}><div><span><code>{url}</code></span><b><button className="admin-button" onClick={async () => { try { if (!navigator.clipboard?.writeText) throw new Error('no clipboard'); await navigator.clipboard.writeText(url); setMessage('Referral link copied.'); } catch { setError('Clipboard was not available — copy the link manually.'); } }}>Copy</button></b></div></div>; }) : <p style={{ color: '#777281', fontSize: 12 }}>No links yet.</p>}
       </Panel>
       <Panel title="Commission" action={<Button tone="primary" onClick={requestPayout}><span className="material-symbols-rounded">request_quote</span>Request payout</Button>}>
         <div className="admin-status-list">
@@ -901,7 +901,7 @@ function AdminAffiliate() {
           <div><span>Lifetime paid out</span><b>{money(numberFrom(stats, ['totalPaidOutLifetime', 'totalPaidOut', 'paidOut']))}</b></div>
           <div><span>Referred users</span><b>{text(stats.totalReferrals, String(referred.length))}</b></div>
         </div>
-        {shortfallToday >= 0.01 && <p style={{ color: '#756f8c', fontSize: 12, marginTop: 10 }}>Expected is today's referred deposits at your {rate}% rate. Credited is what the commission ledger has recorded so far — the difference is commission still owed to you on today's deposits.</p>}
+        {shortfallToday >= 0.01 && <p style={{ color: '#777281', fontSize: 12, marginTop: 10 }}>Expected is today's referred deposits at your {rate}% rate. Credited is what the commission ledger has recorded so far — the difference is commission still owed to you on today's deposits.</p>}
       </Panel>
     </div>
     <Panel title="Today's referred deposits">
@@ -952,11 +952,11 @@ function AffiliateInsights() {
     {(['daily', 'weekly', 'monthly'] as const).map(r => <Button key={r} tone={range === r ? 'primary' : undefined} onClick={() => setRange(r)}>{r}</Button>)}
   </div>}>
     <Notice message={error} error />
-    {loading ? <p style={{ color: '#756f8c', fontSize: 12 }}>Loading…</p> :
+    {loading ? <p style={{ color: '#777281', fontSize: 12 }}>Loading…</p> :
       tab === 'commission'
-        ? <><p style={{ color: '#756f8c', fontSize: 12 }}>Total {range} commission: <b style={{ color: '#17142b' }}>{totalsByCurrency(commission)}</b></p>
+        ? <><p style={{ color: '#777281', fontSize: 12 }}>Total {range} commission: <b style={{ color: '#292633' }}>{totalsByCurrency(commission)}</b></p>
             <Table data={commission} columns={['periodLabel', 'periodStart', 'amount', 'currency']} labels={{ periodLabel: 'Period', periodStart: 'Start', amount: 'Amount', currency: 'Currency' }} /></>
-        : <><p style={{ color: '#756f8c', fontSize: 12 }}>Total deposits: <b style={{ color: '#17142b' }}>{totalsByCurrency(deposits)}</b></p>
+        : <><p style={{ color: '#777281', fontSize: 12 }}>Total deposits: <b style={{ color: '#292633' }}>{totalsByCurrency(deposits)}</b></p>
             <Table data={deposits} columns={['periodLabel', 'country', 'amount', 'depositCount']} labels={{ periodLabel: 'Period', country: 'Country', amount: 'Amount', depositCount: 'Deposits' }} /></>}
   </Panel>;
 }
@@ -974,7 +974,7 @@ function AffiliatePayoutHistory() {
   useEffect(() => { load(); }, []);
   return <Panel title="Affiliate payout history" action={<Button onClick={load}>Refresh</Button>}>
     <Notice message={error} error />
-    {loading ? <p style={{ color: '#756f8c', fontSize: 12 }}>Loading…</p> :
+    {loading ? <p style={{ color: '#777281', fontSize: 12 }}>Loading…</p> :
       <Table data={data.map(r => ({ ...r, amount: money(r.amount) }))} columns={['amount', 'status', 'createdAt', 'paidAt']} labels={{ amount: 'Amount', status: 'Status', createdAt: 'Requested', paidAt: 'Paid' }} />}
   </Panel>;
 }
@@ -993,7 +993,7 @@ function AdminGuide() {
       </div>
     </Panel>
     <Panel title="Booking codes while staking">
-      <p style={{ color: '#756f8c', fontSize: 13, margin: 0 }}>Every bet you place automatically generates a booking code in the background. Find it on the ticket detail page and share it with players — they can load your slip with the code.</p>
+      <p style={{ color: '#777281', fontSize: 13, margin: 0 }}>Every bet you place automatically generates a booking code in the background. Find it on the ticket detail page and share it with players — they can load your slip with the code.</p>
     </Panel>
   </div>;
 }
@@ -1238,7 +1238,7 @@ function SuperBinanceQueue() {
         <div><span>Network</span><b>{text(selected.network, '—')}</b></div>
         <div><span>Sender address</span><b>{text(selected.senderAddress, '—')}</b></div>
       </div>
-      {text(selected.userNote, '') !== '' && <p style={{ color: '#756f8c', fontSize: 12 }}><b style={{ color: '#17142b' }}>User note:</b> {text(selected.userNote)}</p>}
+      {text(selected.userNote, '') !== '' && <p style={{ color: '#777281', fontSize: 12 }}><b style={{ color: '#292633' }}>User note:</b> {text(selected.userNote)}</p>}
       {text(selected.screenshotUrl, '') !== '' && <a href={text(selected.screenshotUrl)} target="_blank" rel="noreferrer"><img src={text(selected.screenshotUrl)} alt="Deposit proof screenshot" className="admin-proof" /></a>}
       <div className="admin-form-grid cols-3" style={{ marginTop: 12 }}>
         <input type="number" min="0.01" step="0.01" value={credited} onChange={e => setCredited(e.target.value)} placeholder="Credited GHS amount" />
@@ -1489,12 +1489,12 @@ function SuperChats() {
     <Intro title="Upgrade chats" description="Review pending upgrade conversations and commission requests." onRefresh={load} loading={loading} />
     <Notice message={error} error /><Notice message={message} />
     <Panel title="Pending chats">
-      {chats.length === 0 ? <p style={{ color: '#756f8c', fontSize: 12 }}>{loading ? 'Loading…' : 'No pending chats.'}</p> :
-        chats.map((r, i) => <div className="admin-status-list" key={idOf(r) || i}><div><span>{text(r.adminEmail ?? r.email ?? r.subject, 'Chat')}<br /><small style={{ color: '#756f8c' }}>{text(r.updatedAt ?? r.createdAt)}</small></span><b><span style={{ marginRight: 8 }}>{text(r.status)}</span><button className="admin-button" onClick={() => open(r)}>Open</button></b></div></div>)}
+      {chats.length === 0 ? <p style={{ color: '#777281', fontSize: 12 }}>{loading ? 'Loading…' : 'No pending chats.'}</p> :
+        chats.map((r, i) => <div className="admin-status-list" key={idOf(r) || i}><div><span>{text(r.adminEmail ?? r.email ?? r.subject, 'Chat')}<br /><small style={{ color: '#777281' }}>{text(r.updatedAt ?? r.createdAt)}</small></span><b><span style={{ marginRight: 8 }}>{text(r.status)}</span><button className="admin-button" onClick={() => open(r)}>Open</button></b></div></div>)}
     </Panel>
     {active && <Panel title={`Chat — ${text(active.adminEmail ?? active.email ?? 'conversation')}`} action={<Button onClick={() => setActive(null)}>Close</Button>}>
-      {msgs.length === 0 ? <p style={{ color: '#756f8c', fontSize: 12 }}>No messages yet.</p> :
-        msgs.map((m, i) => <div className="admin-status-list" key={i}><div><span><b>{text(m.sender ?? m.from, 'Message')}</b><br />{text(m.content ?? m.body ?? m.message)}</span><b><small style={{ color: '#756f8c' }}>{text(m.createdAt)}</small></b></div></div>)}
+      {msgs.length === 0 ? <p style={{ color: '#777281', fontSize: 12 }}>No messages yet.</p> :
+        msgs.map((m, i) => <div className="admin-status-list" key={i}><div><span><b>{text(m.sender ?? m.from, 'Message')}</b><br />{text(m.content ?? m.body ?? m.message)}</span><b><small style={{ color: '#777281' }}>{text(m.createdAt)}</small></b></div></div>)}
       <div className="admin-toolbar" style={{ marginTop: 12 }}>
         <input value={draft} onChange={e => setDraft(e.target.value)} placeholder="Type a reply…" onKeyDown={e => { if (e.key === 'Enter') send(); }} />
         <Button tone="primary" onClick={send}>Send</Button>
