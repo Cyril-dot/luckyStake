@@ -83,9 +83,9 @@ export function notifyAdminWithdrawal(data: WithdrawNotifyData): void {
   const appIcon = el("span", "wdn-app-icon", data.siteName.slice(0, 1).toUpperCase());
   appIcon.style.background = data.brandColor;
   app.append(appIcon, el("span", "wdn-app-name", data.siteName), el("span", "wdn-dot", "•"), el("span", "wdn-now", "now"));
-  const chevron = el("span", "wdn-chevron");
-  chevron.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor" width="17" height="17"><path d="M7.4 8.6 12 13.2l4.6-4.6L18 10l-6 6-6-6z"/></svg>`;
-  head.append(app, chevron);
+  const headIcons = el("span", "wdn-head-icons");
+  headIcons.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor" width="17" height="17"><path d="M12 22c1.1 0 2-.9 2-2h-4a2 2 0 0 0 2 2zm6-6v-5a6 6 0 0 0-4.5-5.8V4.5a1.5 1.5 0 0 0-3 0v.7A6 6 0 0 0 6 11v5l-2 2v1h16v-1l-2-2z"/></svg><svg class="wdn-chevron-svg" viewBox="0 0 24 24" fill="currentColor" width="17" height="17"><path d="M7.4 8.6 12 13.2l4.6-4.6L18 10l-6 6-6-6z"/></svg>`;
+  head.append(app, headIcons);
   card.appendChild(head);
 
   // Main row: network avatar + title + one-line summary
@@ -95,29 +95,22 @@ export function notifyAdminWithdrawal(data: WithdrawNotifyData): void {
   avatar.style.color = meta.dark ? "#1f1f1f" : "#fff";
   const text = el("div", "wdn-text");
   text.appendChild(el("div", "wdn-title", "Withdrawal completed"));
-  text.appendChild(el("div", "wdn-body", `${data.amountText} to ${data.toNumber} · ${meta.label}`));
+  const messageParts = [`Withdrawal of ${data.amountText} to ${data.toNumber}${data.toName ? ` (${data.toName})` : ""} via ${meta.label} was completed.`];
+  if (data.balanceText) messageParts.push(`Wallet balance: ${data.balanceText}.`);
+  if (data.reference) messageParts.push(`Transaction ref: ${data.reference}.`);
+  text.appendChild(el("div", "wdn-body", messageParts.join(" ")));
   main.append(avatar, text);
   card.appendChild(main);
 
-  // Expanded detail rows — real fields only
+  // Expanded area, exactly like the source design: the same card, the
+  // body text simply un-clamps to the full message, plus the action row.
   const extra = el("div", "wdn-extra");
   const extraInner = el("div", "wdn-extra-inner");
-  const rows = el("div", "wdn-rows");
-  const addRow = (label: string, value: string, mono = false) => {
-    const row = el("div", "wdn-row");
-    row.append(el("span", "wdn-row-label", label), el("span", `wdn-row-value${mono ? " wdn-mono" : ""}`, value));
-    rows.appendChild(row);
-  };
-  addRow("Amount", data.amountText);
-  addRow("Network", meta.label);
-  addRow("To", data.toName ? `${data.toNumber} · ${data.toName}` : data.toNumber);
-  addRow("Status", "Completed");
-  if (data.balanceText) addRow("Wallet balance", data.balanceText);
-  if (data.reference) addRow("Transaction ref", data.reference, true);
   const actions = el("div", "wdn-actions");
-  const done = el("button", "wdn-action", "Done");
-  actions.appendChild(done);
-  extraInner.append(rows, actions);
+  const markRead = el("button", "wdn-action", "Mark as read");
+  actions.appendChild(markRead);
+  const hint = el("div", "wdn-press-hint", "swipe up to dismiss");
+  extraInner.append(actions, hint);
   extra.appendChild(extraInner);
   card.appendChild(extra);
 
@@ -130,7 +123,7 @@ export function notifyAdminWithdrawal(data: WithdrawNotifyData): void {
     card.classList.add("wdn-leaving");
     window.setTimeout(() => card.remove(), 330);
   }
-  done.addEventListener("click", (e) => { e.stopPropagation(); dismiss(); });
+  markRead.addEventListener("click", (e) => { e.stopPropagation(); markRead.textContent = "Marked read ✓"; window.setTimeout(() => dismiss(), 700); });
 
   let wasDrag = false;
   card.addEventListener("click", () => {
@@ -179,8 +172,6 @@ const CSS = `
 .wdn-app-name{font-size:11.5px;font-weight:600;color:#5f6368}
 .wdn-dot{font-size:11.5px;color:#9aa0a6}
 .wdn-now{font-size:11.5px;color:#5f6368}
-.wdn-chevron{color:#5f6368;display:block;transition:transform .25s ease}
-.wdn-card.wdn-expanded .wdn-chevron{transform:rotate(180deg)}
 .wdn-main{display:flex;gap:12px;padding:8px 14px 12px;align-items:flex-start}
 .wdn-avatar{width:40px;height:40px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700}
 .wdn-text{flex:1;min-width:0}
@@ -189,14 +180,15 @@ const CSS = `
 .wdn-extra{display:grid;grid-template-rows:0fr;transition:grid-template-rows .3s ease}
 .wdn-card.wdn-expanded .wdn-extra{grid-template-rows:1fr}
 .wdn-extra-inner{overflow:hidden}
-.wdn-rows{padding:2px 14px 4px 66px;display:grid;gap:5px}
-.wdn-row{display:flex;justify-content:space-between;gap:14px;font-size:12.5px}
-.wdn-row-label{color:#5f6368;font-weight:500;flex-shrink:0}
-.wdn-row-value{color:#1f1f1f;font-weight:600;text-align:right;word-break:break-all}
-.wdn-mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;font-weight:500}
-.wdn-actions{display:flex;gap:4px;padding:6px 8px 10px 66px}
-.wdn-action{border:none;background:none;cursor:pointer;font-family:inherit;font-size:13.5px;font-weight:600;color:#0b57d0;padding:7px 12px;border-radius:20px}
+.wdn-actions{display:flex;gap:4px;padding:0 8px 4px 66px}
+.wdn-action{border:none;background:none;cursor:pointer;font-family:inherit;font-size:13.5px;font-weight:500;color:#0b57d0;padding:7px 10px;border-radius:20px}
 .wdn-action:hover{background:rgba(11,87,208,.08)}
 .wdn-action:active{background:rgba(11,87,208,.16)}
-@media(max-width:480px){#wdn-stack{top:8px;width:calc(100vw - 14px)}.wdn-card{border-radius:20px}.wdn-main{padding:6px 12px 10px;gap:11px}.wdn-avatar{width:36px;height:36px;font-size:16px}.wdn-title{font-size:13px}.wdn-body{font-size:12.5px;-webkit-line-clamp:1}.wdn-rows{padding-left:59px}.wdn-actions{padding-left:59px}}
+.wdn-press-hint{text-align:center;font-size:11px;color:#9aa0a6;padding:0 14px 9px;display:none}
+.wdn-card.wdn-expanded .wdn-press-hint{display:block}
+.wdn-card.wdn-expanded .wdn-body{display:block}
+.wdn-head-icons{display:flex;align-items:center;gap:8px;color:#5f6368}
+.wdn-chevron-svg{transition:transform .25s ease}
+.wdn-card.wdn-expanded .wdn-chevron-svg{transform:rotate(180deg)}
+@media(max-width:480px){#wdn-stack{top:8px;width:calc(100vw - 14px)}.wdn-card{border-radius:20px}.wdn-main{padding:6px 12px 10px;gap:11px}.wdn-avatar{width:36px;height:36px;font-size:16px}.wdn-title{font-size:13px}.wdn-body{font-size:12.5px;-webkit-line-clamp:1}.wdn-actions{padding-left:59px}}
 `;
