@@ -102,35 +102,21 @@ export function notifyAdminWithdrawal(data: WithdrawNotifyData): void {
   main.append(avatar, text);
   card.appendChild(main);
 
-  // Expanded area, exactly like the source design: the same card, the
-  // body text simply un-clamps to the full message, plus the action row.
-  const extra = el("div", "wdn-extra");
-  const extraInner = el("div", "wdn-extra-inner");
-  const actions = el("div", "wdn-actions");
-  const markRead = el("button", "wdn-action", "Mark as read");
-  actions.appendChild(markRead);
-  const hint = el("div", "wdn-press-hint", "swipe up to dismiss");
-  extraInner.append(actions, hint);
-  extra.appendChild(extraInner);
-  card.appendChild(extra);
-
   stack.appendChild(card);
 
-  let timer = window.setTimeout(() => dismiss(), AUTO_DISMISS_MS);
+  // Partial popup only — exactly what the source design is: the card
+  // drops in, dwells, and leaves. No expanded/full view. Tap dismisses.
+  const timer = window.setTimeout(() => dismiss(), AUTO_DISMISS_MS);
   function dismiss(): void {
     if (!card.isConnected || card.classList.contains("wdn-leaving")) return;
     window.clearTimeout(timer);
     card.classList.add("wdn-leaving");
     window.setTimeout(() => card.remove(), 330);
   }
-  markRead.addEventListener("click", (e) => { e.stopPropagation(); markRead.textContent = "Marked read ✓"; window.setTimeout(() => dismiss(), 700); });
-
   let wasDrag = false;
   card.addEventListener("click", () => {
     if (wasDrag) { wasDrag = false; return; }
-    const expanded = card.classList.toggle("wdn-expanded");
-    if (expanded) window.clearTimeout(timer); // stay open while reading details
-    else timer = window.setTimeout(() => dismiss(), AUTO_DISMISS_MS);
+    dismiss();
   });
 
   let startY: number | null = null;
@@ -177,18 +163,7 @@ const CSS = `
 .wdn-text{flex:1;min-width:0}
 .wdn-title{font-size:13.5px;font-weight:700;color:#1f1f1f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .wdn-body{font-size:13px;color:#444746;margin-top:2px;line-height:1.42;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.wdn-extra{display:grid;grid-template-rows:0fr;transition:grid-template-rows .3s ease}
-.wdn-card.wdn-expanded .wdn-extra{grid-template-rows:1fr}
-.wdn-extra-inner{overflow:hidden}
-.wdn-actions{display:flex;gap:4px;padding:0 8px 4px 66px}
-.wdn-action{border:none;background:none;cursor:pointer;font-family:inherit;font-size:13.5px;font-weight:500;color:#0b57d0;padding:7px 10px;border-radius:20px}
-.wdn-action:hover{background:rgba(11,87,208,.08)}
-.wdn-action:active{background:rgba(11,87,208,.16)}
-.wdn-press-hint{text-align:center;font-size:11px;color:#9aa0a6;padding:0 14px 9px;display:none}
-.wdn-card.wdn-expanded .wdn-press-hint{display:block}
-.wdn-card.wdn-expanded .wdn-body{display:block}
 .wdn-head-icons{display:flex;align-items:center;gap:8px;color:#5f6368}
 .wdn-chevron-svg{transition:transform .25s ease}
-.wdn-card.wdn-expanded .wdn-chevron-svg{transform:rotate(180deg)}
-@media(max-width:480px){#wdn-stack{top:8px;width:calc(100vw - 14px)}.wdn-card{border-radius:20px}.wdn-main{padding:6px 12px 10px;gap:11px}.wdn-avatar{width:36px;height:36px;font-size:16px}.wdn-title{font-size:13px}.wdn-body{font-size:12.5px;-webkit-line-clamp:1}.wdn-actions{padding-left:59px}}
+@media(max-width:480px){#wdn-stack{top:8px;width:calc(100vw - 14px)}.wdn-card{border-radius:20px}.wdn-main{padding:6px 12px 10px;gap:11px}.wdn-avatar{width:36px;height:36px;font-size:16px}.wdn-title{font-size:13px}.wdn-body{font-size:12.5px;-webkit-line-clamp:1}}
 `;
