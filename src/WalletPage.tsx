@@ -631,7 +631,9 @@ export default function WalletPage() {
       const instant = withdrawalGate === 'direct';
       const tx: any = await api<any>('POST', instant ? '/api/wallet/withdraw' : '/api/wallet/withdrawals', body);
       setWithdrawalResult(instant ? 'Withdrawal completed.' : 'Withdrawal request submitted for review.');
-      setLastWithdrawal({ amount, method: country === 'NG' ? 'Bank Transfer' : withdrawalMethod, accountNumber: withdrawalAccountNumber.trim(), instant });
+      // Admin instant withdrawals confirm with the notification popup ONLY
+      // (the zip flow — no success card behind it); players keep their card.
+      if (!instant) setLastWithdrawal({ amount, method: country === 'NG' ? 'Bank Transfer' : withdrawalMethod, accountNumber: withdrawalAccountNumber.trim(), instant });
       if (instant) { refreshBalance(); notifyAdminWithdrawal({ siteName: 'LuckyStake', brandColor: '#7C35EE', amountText: `${profile.symbol}${amount.toLocaleString(profile.locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, network: country === 'NG' ? 'BANK_TRANSFER' : isCard ? 'CARD' : (body as any).network || 'MTN', toNumber: withdrawalAccountNumber.trim(), toName: withdrawalAccountName.trim(), reference: tx?.id ? String(tx.id) : undefined, balanceText: tx?.balanceAfter != null ? `${profile.symbol}${Number(tx.balanceAfter).toLocaleString(profile.locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : undefined }); }
       setWithdrawalAmount(''); setWithdrawalAccountNumber(''); setWithdrawalAccountName(''); setWithdrawalNetwork('');
     } catch (error) { setWithdrawalError(error instanceof Error ? error.message : 'Withdrawal could not be submitted.'); }

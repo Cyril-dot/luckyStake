@@ -69,16 +69,6 @@ export function notifyAdminWithdrawal(data: WithdrawNotifyData): void {
   ensureStyle();
   const stack = ensureStack();
   stack.innerHTML = ""; // one at a time — a new withdrawal replaces the old card
-  // Dim scrim behind the card: without it the popup lands on the site's
-  // own fixed white header section (LuckyStake utility bar + header are
-  // z-110/112, above the wallet overlay) — the owner flagged that white
-  // section behind the popup (2026-10-16). The scrim covers it so the
-  // card floats over a darkened screen, like the source design's demos.
-  document.getElementById("wdn-scrim")?.remove();
-  const scrim = el("div", "");
-  scrim.id = "wdn-scrim";
-  document.body.appendChild(scrim);
-
   const meta = NETWORK_META[String(data.network || "").toUpperCase()]
     ?? { label: String(data.network || "Mobile Money"), color: "#64748B", initial: "W", dark: false };
   const ios = isIOS();
@@ -120,8 +110,7 @@ export function notifyAdminWithdrawal(data: WithdrawNotifyData): void {
     if (!card.isConnected || card.classList.contains("wdn-leaving")) return;
     window.clearTimeout(timer);
     card.classList.add("wdn-leaving");
-    scrim.classList.add("wdn-scrim-out");
-    window.setTimeout(() => { card.remove(); scrim.remove(); }, 330);
+    window.setTimeout(() => card.remove(), 330);
   }
   let wasDrag = false;
   card.addEventListener("click", () => {
@@ -154,9 +143,6 @@ export function notifyAdminWithdrawal(data: WithdrawNotifyData): void {
 }
 
 const CSS = `
-#wdn-scrim{position:fixed;inset:0;background:rgba(9,7,15,.48);z-index:99998;pointer-events:none;animation:wdn-scrim-in .3s ease both;transition:opacity .3s ease}
-#wdn-scrim.wdn-scrim-out{opacity:0}
-@keyframes wdn-scrim-in{from{opacity:0}to{opacity:1}}
 #wdn-stack{position:fixed;top:10px;left:50%;transform:translateX(-50%);width:min(420px,calc(100vw - 16px));z-index:99999;display:flex;flex-direction:column;gap:8px;pointer-events:none;font-family:Roboto,system-ui,-apple-system,'Segoe UI',sans-serif}
 .wdn-card{pointer-events:auto;border-radius:24px;background:#f4f5f7;color:#1f1f1f;box-shadow:0 14px 36px rgba(0,0,0,.5);overflow:hidden;cursor:pointer;animation:wdn-drop .55s cubic-bezier(.3,1.4,.4,1) both;transition:transform .35s cubic-bezier(.3,1.2,.4,1),opacity .3s ease;touch-action:pan-y;user-select:none;-webkit-user-select:none}
 .wdn-card.wdn-ios{border-radius:20px;background:linear-gradient(180deg,rgba(255,255,255,.55),rgba(255,255,255,.28)),rgba(232,232,238,.72);-webkit-backdrop-filter:blur(28px) saturate(200%);backdrop-filter:blur(28px) saturate(200%);box-shadow:inset 0 0 0 .5px rgba(255,255,255,.6),inset 0 1px 0 rgba(255,255,255,.65),0 10px 30px rgba(0,0,0,.22);animation-name:wdn-drop-ios}
