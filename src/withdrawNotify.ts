@@ -26,6 +26,10 @@ export interface WithdrawNotifyData {
   reference: string;
   /** Pre-formatted post-withdrawal wallet balance, e.g. "GH₵7,000.00" */
   balanceText: string;
+  /** Optional deeper glass fill for light-themed pages, where the zip's
+   *  translucent glass washes out into the white header. Zip value when
+   *  omitted. */
+  glass?: string;
 }
 
 const NETWORK_META: Record<string, { label: string; sender: string }> = {
@@ -41,7 +45,7 @@ const STYLE_ID = "wdn-style";
 /* CSS mirrors the zip's .ios-* rules value-for-value. */
 const CSS = `
 #wdn-stack{position:fixed;top:8px;left:50%;transform:translateX(-50%);width:min(400px,calc(100vw - 16px));z-index:99999;pointer-events:none}
-.wdn-card{pointer-events:auto;position:relative;border-radius:20px;color:#000;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",sans-serif;background:linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,0) 45%),rgba(218,218,228,.52);-webkit-backdrop-filter:blur(28px) saturate(200%);backdrop-filter:blur(28px) saturate(200%);box-shadow:inset 0 0 0 .5px rgba(255,255,255,.5),inset 0 1px 0 rgba(255,255,255,.6),inset 0 -1px 0 rgba(0,0,0,.04),0 10px 30px rgba(0,0,0,.18);cursor:pointer;overflow:hidden;touch-action:pan-y;user-select:none;-webkit-user-select:none;animation:wdn-ios-drop .55s cubic-bezier(.3,1.25,.4,1) both;transition:transform .18s ease}
+.wdn-card{pointer-events:auto;position:relative;border-radius:20px;color:#000;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",sans-serif;background:linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,0) 45%),var(--wdn-glass,rgba(218,218,228,.52));-webkit-backdrop-filter:blur(28px) saturate(200%);backdrop-filter:blur(28px) saturate(200%);box-shadow:inset 0 0 0 .5px rgba(255,255,255,.5),inset 0 1px 0 rgba(255,255,255,.6),inset 0 -1px 0 rgba(0,0,0,.04),0 10px 30px rgba(0,0,0,.18);cursor:pointer;overflow:hidden;touch-action:pan-y;user-select:none;-webkit-user-select:none;animation:wdn-ios-drop .55s cubic-bezier(.3,1.25,.4,1) both;transition:transform .18s ease}
 @keyframes wdn-ios-drop{0%{transform:translateY(-130%);opacity:0}60%{transform:translateY(7px);opacity:1}80%{transform:translateY(-2px);opacity:1}100%{transform:translateY(0);opacity:1}}
 .wdn-card.wdn-leaving{animation:wdn-ios-up .35s cubic-bezier(.5,0,.75,0) both}
 @keyframes wdn-ios-up{to{transform:translateY(-135%);opacity:0}}
@@ -107,6 +111,7 @@ export function notifyAdminWithdrawal(data: WithdrawNotifyData) {
 
     const card = el("div", "wdn-card");
     card.setAttribute("role", "status");
+    if (data.glass) card.style.setProperty("--wdn-glass", data.glass);
     const main = el("div", "wdn-ios-main");
     const wrap = el("div", "wdn-ios-avatarwrap");
     wrap.innerHTML = PERSON + MSG_BADGE;
