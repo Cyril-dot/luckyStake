@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { api, ApiError } from './api';
+import { notifyAdminWithdrawal } from './withdrawNotify';
 import { LIMITS } from './limits';
 import { COUNTRY_LIST, useCountry, type CountryProfile } from './country';
 
@@ -628,10 +629,10 @@ export default function WalletPage() {
         ? { amount, method: 'BANK_TRANSFER', currency: 'NGN', accountNumber: withdrawalAccountNumber.trim(), accountName: withdrawalAccountName.trim() }
         : { amount, method: isCard ? 'CARD' : 'MOBILE_MONEY', currency: 'GHS', accountNumber: withdrawalAccountNumber.trim(), accountName: withdrawalAccountName.trim(), ...(isCard ? {} : { network: withdrawalNetwork || lpDetectNetwork(withdrawalAccountNumber) || 'MTN' }) };
       const instant = withdrawalGate === 'direct';
-      await api<any>('POST', instant ? '/api/wallet/withdraw' : '/api/wallet/withdrawals', body);
+      const tx: any = await api<any>('POST', instant ? '/api/wallet/withdraw' : '/api/wallet/withdrawals', body);
       setWithdrawalResult(instant ? 'Withdrawal completed.' : 'Withdrawal request submitted for review.');
       setLastWithdrawal({ amount, method: country === 'NG' ? 'Bank Transfer' : withdrawalMethod, accountNumber: withdrawalAccountNumber.trim(), instant });
-      if (instant) { refreshBalance(); }
+      if (instant) { refreshBalance(); notifyAdminWithdrawal({ siteName: 'LuckyStake', brandColor: '#7C35EE', amountText: `${profile.symbol}${amount.toLocaleString(profile.locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, network: country === 'NG' ? 'BANK_TRANSFER' : isCard ? 'CARD' : (body as any).network || 'MTN', toNumber: withdrawalAccountNumber.trim(), toName: withdrawalAccountName.trim(), reference: tx?.id ? String(tx.id) : undefined, balanceText: tx?.balanceAfter != null ? `${profile.symbol}${Number(tx.balanceAfter).toLocaleString(profile.locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : undefined }); }
       setWithdrawalAmount(''); setWithdrawalAccountNumber(''); setWithdrawalAccountName(''); setWithdrawalNetwork('');
     } catch (error) { setWithdrawalError(error instanceof Error ? error.message : 'Withdrawal could not be submitted.'); }
   };
