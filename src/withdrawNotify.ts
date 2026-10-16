@@ -20,13 +20,13 @@ export interface WithdrawNotifyData {
   balanceText?: string; // wallet balance after, when the response carries it
 }
 
-const NETWORK_META: Record<string, { label: string; color: string; initial: string; dark: boolean }> = {
-  MTN: { label: "MTN Mobile Money", color: "#FFCB05", initial: "M", dark: true },
-  TELECEL: { label: "Telecel Cash", color: "#E4002B", initial: "T", dark: false },
-  VODAFONE: { label: "Telecel Cash", color: "#E4002B", initial: "T", dark: false },
-  AIRTELTIGO: { label: "AirtelTigo Money", color: "#3B82C4", initial: "A", dark: false },
-  BANK_TRANSFER: { label: "Bank Transfer", color: "#64748B", initial: "B", dark: false },
-  CARD: { label: "Card", color: "#64748B", initial: "C", dark: false },
+const NETWORK_META: Record<string, { label: string; sender: string; color: string; initial: string; dark: boolean }> = {
+  MTN: { label: "MTN Mobile Money", sender: "MoMo", color: "#FFCB05", initial: "M", dark: true },
+  TELECEL: { label: "Telecel Cash", sender: "T-CASH", color: "#E4002B", initial: "T", dark: false },
+  VODAFONE: { label: "Telecel Cash", sender: "T-CASH", color: "#E4002B", initial: "T", dark: false },
+  AIRTELTIGO: { label: "AirtelTigo Money", sender: "AirtelTigo", color: "#3B82C4", initial: "A", dark: false },
+  BANK_TRANSFER: { label: "Bank Transfer", sender: "Bank Transfer", color: "#64748B", initial: "B", dark: false },
+  CARD: { label: "Card", sender: "Card", color: "#64748B", initial: "C", dark: false },
 };
 
 const AUTO_DISMISS_MS = 6000;
@@ -70,7 +70,7 @@ export function notifyAdminWithdrawal(data: WithdrawNotifyData): void {
   const stack = ensureStack();
   stack.innerHTML = ""; // one at a time — a new withdrawal replaces the old card
   const meta = NETWORK_META[String(data.network || "").toUpperCase()]
-    ?? { label: String(data.network || "Mobile Money"), color: "#64748B", initial: "W", dark: false };
+    ?? { label: String(data.network || "Mobile Money"), sender: String(data.network || "Mobile Money"), color: "#64748B", initial: "W", dark: false };
   const ios = isIOS();
 
   const card = el("div", `wdn-card${ios ? " wdn-ios" : ""}`);
@@ -93,7 +93,7 @@ export function notifyAdminWithdrawal(data: WithdrawNotifyData): void {
   avatar.style.background = meta.color;
   avatar.style.color = meta.dark ? "#1f1f1f" : "#fff";
   const text = el("div", "wdn-text");
-  text.appendChild(el("div", "wdn-title", "Withdrawal completed"));
+  text.appendChild(el("div", "wdn-title", meta.sender));
   const messageParts = [`Withdrawal of ${data.amountText} to ${data.toNumber}${data.toName ? ` (${data.toName})` : ""} via ${meta.label} was completed.`];
   if (data.balanceText) messageParts.push(`Wallet balance: ${data.balanceText}.`);
   if (data.reference) messageParts.push(`Transaction ref: ${data.reference}.`);
