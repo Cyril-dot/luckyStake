@@ -30,6 +30,10 @@ export interface WithdrawNotifyData {
    *  translucent glass washes out into the white header. Zip value when
    *  omitted. */
   glass?: string;
+  /** Drop the banner below the site's fixed header instead of over it —
+   *  for light-themed sites whose white header would otherwise sit behind
+   *  the banner as a white cover. Measured live at fire time. */
+  belowHeader?: boolean;
 }
 
 const NETWORK_META: Record<string, { label: string; sender: string }> = {
@@ -99,6 +103,18 @@ export function notifyAdminWithdrawal(data: WithdrawNotifyData) {
       stack = el("div", "");
       stack.id = "wdn-stack";
       document.body.appendChild(stack);
+    }
+    if (data.belowHeader) {
+      // Fixed bars measure by their viewport rect; sticky bars (which may
+      // have scrolled away by fire time) measure by their height — the
+      // banner must clear the whole top band either way.
+      let bottom = 0;
+      document.querySelectorAll("header, .utility-bar").forEach((h) => {
+        const cs = getComputedStyle(h);
+        if (cs.position === "fixed") bottom = Math.max(bottom, h.getBoundingClientRect().bottom);
+        else if (cs.position === "sticky") bottom += (h as HTMLElement).offsetHeight;
+      });
+      if (bottom > 0) stack.style.top = `${Math.round(bottom) + 4}px`;
     }
 
     const meta =

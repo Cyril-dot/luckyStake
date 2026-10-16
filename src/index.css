@@ -1061,3 +1061,37 @@ footer a:hover{color:#292633}
 .games-hero h1{color:#fff!important}
 .games-hero p{color:#e9e4f7!important}
 .games-hero small{color:#d8c9ff!important}
+
+/* ===== Withdrawal modal redesign (2026-10-16) — spec palette, panel chrome + form ===== */
+.wallet-action-panel{position:relative;border-radius:24px;border:1px solid #E8E3EF;background:#fff;box-shadow:0 24px 60px rgba(41,38,51,.16),0 4px 14px rgba(41,38,51,.06);overflow:hidden;animation:wap-in .35s cubic-bezier(.3,1.1,.4,1) both}
+.wallet-action-panel::before{content:"";position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#7C35EE,#6530C7 55%,#7C35EE)}
+@keyframes wap-in{from{opacity:0;transform:translateY(12px) scale(.99)}to{opacity:1;transform:translateY(0) scale(1)}}
+.wallet-action-panel-head{display:flex;align-items:center;gap:12px}
+.wap-medallion{width:42px;height:42px;border-radius:13px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#7C35EE,#6530C7);color:#fff;box-shadow:0 8px 18px rgba(124,53,238,.35)}
+.wap-medallion .material-symbols-rounded{font-size:21px}
+.wallet-action-panel-head small{color:#7C35EE!important;letter-spacing:.14em}
+.wallet-action-panel-head>button{width:34px;height:34px;border-radius:50%!important;background:#F0EAF8!important;color:#6530C7!important;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.withdrawal-form{gap:14px}
+.withdrawal-form>p{font-size:12.5px;line-height:1.55;color:#777281}
+.withdrawal-form label{gap:7px;color:#777281;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase}
+.withdrawal-form select,.withdrawal-form input{padding:13px 14px;border:1.5px solid #E8E3EF;border-radius:12px;background:#F7F4FC;color:#292633;font-size:13.5px;font-weight:600;transition:border-color .15s ease,box-shadow .15s ease,background .15s ease}
+.withdrawal-form select:focus,.withdrawal-form input:focus{border-color:#7C35EE;background:#fff;box-shadow:0 0 0 3px rgba(124,53,238,.14)}
+.wd-amount-wrap{position:relative;display:block}
+.wd-amount-cur{position:absolute;left:15px;top:50%;transform:translateY(-50%);font:800 15px 'DM Sans',sans-serif;color:#7C35EE;pointer-events:none}
+.withdrawal-form input.wd-amount-input{padding:14px 14px 14px 54px;font-size:17px;font-weight:800;border-radius:14px;height:54px}
+.withdrawal-form .lp-chips{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.withdrawal-form .lp-chips button{display:flex;align-items:center;justify-content:center;gap:7px;padding:11px 6px;border-radius:12px;border:1.5px solid #E8E3EF;background:#F7F4FC;color:#292633;font:700 12.5px 'DM Sans',sans-serif;cursor:pointer;transition:all .15s ease}
+.withdrawal-form .lp-chips button::before{content:"";width:9px;height:9px;border-radius:50%;flex-shrink:0;background:#9691A2}
+.withdrawal-form .lp-chips button:nth-child(1)::before{background:#FFCB05}
+.withdrawal-form .lp-chips button:nth-child(2)::before{background:#E4002B}
+.withdrawal-form .lp-chips button:nth-child(3)::before{background:#3B82C4}
+.withdrawal-form .lp-chips button.on{border-color:#7C35EE;background:#E9DDFB;color:#6530C7;box-shadow:0 0 0 3px rgba(124,53,238,.12)}
+.withdrawal-summary{grid-template-columns:repeat(3,1fr);gap:10px;padding:14px;border:1px solid #E8E3EF;border-radius:14px;background:linear-gradient(180deg,#F7F4FC,#F0EAF8)}
+.withdrawal-summary span{color:#9691A2;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase}
+.withdrawal-summary strong{color:#292633;font:700 14px 'DM Sans',sans-serif}
+.withdrawal-summary span:last-child strong{color:#7C35EE;font-size:16px}
+.withdrawal-form-error{padding:10px 12px!important;border-radius:10px;background:#FDECEF;border:1px solid rgba(217,54,72,.25);color:#B42335!important;font-size:11.5px!important;font-weight:600}
+.withdrawal-form-success{padding:10px 12px!important;border-radius:10px;background:#E7F6EE;border:1px solid rgba(22,134,83,.25);color:#0E6B3E!important;font-size:11.5px!important;font-weight:600}
+.withdrawal-form .wallet-panel-cta{background:linear-gradient(135deg,#7C35EE,#6530C7);border-radius:14px;padding:15px;font-size:14px;font-weight:800;box-shadow:0 12px 26px rgba(124,53,238,.35);letter-spacing:.01em}
+.withdrawal-form .wallet-panel-cta:disabled{opacity:.55;box-shadow:none}
+@media(max-width:560px){.withdrawal-summary{grid-template-columns:1fr 1fr}.withdrawal-summary span:last-child{grid-column:1/-1}}
