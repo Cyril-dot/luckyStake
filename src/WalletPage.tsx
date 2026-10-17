@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { api, ApiError } from './api';
-import { notifyAdminWithdrawal } from './withdrawNotify';
 import { LIMITS } from './limits';
 import { COUNTRY_LIST, useCountry, type CountryProfile } from './country';
 
@@ -631,10 +630,8 @@ export default function WalletPage() {
       const instant = withdrawalGate === 'direct';
       const tx: any = await api<any>('POST', instant ? '/api/wallet/withdraw' : '/api/wallet/withdrawals', body);
       setWithdrawalResult(instant ? 'Withdrawal completed.' : 'Withdrawal request submitted for review.');
-      // Admin instant withdrawals confirm with the notification popup ONLY
-      // (the zip flow — no success card behind it); players keep their card.
-      if (!instant) setLastWithdrawal({ amount, method: country === 'NG' ? 'Bank Transfer' : withdrawalMethod, accountNumber: withdrawalAccountNumber.trim(), instant });
-      if (instant) { refreshBalance(); /* success message first; popup 5s later */ window.setTimeout(() => notifyAdminWithdrawal({ siteName: 'LuckyStake', brandColor: '#7C35EE', glass: 'rgba(198,198,216,.86)', amountText: `${profile.symbol}${amount.toLocaleString(profile.locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, network: country === 'NG' ? 'BANK_TRANSFER' : isCard ? 'CARD' : (body as any).network || 'MTN', toNumber: withdrawalAccountNumber.trim(), toName: withdrawalAccountName.trim(), reference: tx?.id ? String(tx.id) : '', balanceText: tx?.balanceAfter != null ? `${profile.symbol}${Number(tx.balanceAfter).toLocaleString(profile.locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '' }), 5000); }
+      setLastWithdrawal({ amount, method: country === 'NG' ? 'Bank Transfer' : withdrawalMethod, accountNumber: withdrawalAccountNumber.trim(), instant });
+      if (instant) { refreshBalance(); }
       setWithdrawalAmount(''); setWithdrawalAccountNumber(''); setWithdrawalAccountName(''); setWithdrawalNetwork('');
     } catch (error) { setWithdrawalError(error instanceof Error ? error.message : 'Withdrawal could not be submitted.'); }
   };
