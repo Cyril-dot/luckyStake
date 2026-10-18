@@ -902,7 +902,7 @@ function AdminAffiliate() {
           <div><span>Deposits today ({text(daily.totalDepositCount, '0')})</span><b>{money(depositsToday)}</b></div>
           <div><span>Your rate</span><b>{rate !== null ? `${rate}%` : '—'}</b></div>
           {expectedToday !== null && <div><span>Expected today (deposits × rate)</span><b>{money(expectedToday)}</b></div>}
-          {shortfallToday >= 0.01 && <div><span>Not yet credited</span><b style={{ color: '#ffb020' }}>{money(shortfallToday)}</b></div>}
+          {shortfallToday >= 0.01 && <div><span>Not yet credited</span><b style={{ color: '#a86e00' }}>{money(shortfallToday)}</b></div>}
           <div><span>Balance owed</span><b>{money(numberFrom(stats, ['commissionBalance', 'availableBalance', 'availableCommission', 'withdrawableBalance']))}</b></div>
           <div><span>Lifetime earned</span><b>{money(numberFrom(stats, ['totalEarnedLifetime', 'lifetimeCommission', 'totalCommission']))}</b></div>
           <div><span>Lifetime paid out</span><b>{money(numberFrom(stats, ['totalPaidOutLifetime', 'totalPaidOut', 'paidOut']))}</b></div>
@@ -1450,7 +1450,7 @@ function SuperCommission() {
       <Table data={visibleData} columns={['adminName', 'adminEmail', 'commissionPercent', 'totalDeposits', 'expected', 'commissionEarned', 'commissionBalance', 'depositCount']}
         labels={{ adminName: 'Admin', adminEmail: 'Email', commissionPercent: 'Rate', totalDeposits: 'Deposits', expected: 'Expected at rate', commissionEarned: 'Earned', commissionBalance: 'Unpaid', depositCount: 'Deposit count' }}
         actions={row => { const short = numberValue(row.expectedRaw) - numberValue(row.earnedRaw); return <span style={{ display: 'inline-flex', gap: 6, flexWrap: 'wrap' }}>{short >= 0.01 && <Button onClick={() => topUp(row)} disabled={settling}>{settling ? '…' : `Top up ${money(short)}`}</Button>}{numberValue(row.unpaidRaw) > 0 && <Button onClick={() => markPaid(row)} disabled={settling}>{settling ? '…' : 'Mark paid'}</Button>}</span>; }} />
-      {totals.mismatched > 0 && <p style={{ color: '#ffb020', fontSize: 12, marginTop: 10 }}>{totals.mismatched} admin{totals.mismatched === 1 ? ' has' : 's have'} less commission credited than their deposits × rate — {money(totals.shortfall)} not yet recorded in the commission ledger for {date}. Use a row's Top up button to credit the difference into their balance.</p>}
+      {totals.mismatched > 0 && <p style={{ color: '#a86e00', fontSize: 12, marginTop: 10 }}>{totals.mismatched} admin{totals.mismatched === 1 ? ' has' : 's have'} less commission credited than their deposits × rate — {money(totals.shortfall)} not yet recorded in the commission ledger for {date}. Use a row's Top up button to credit the difference into their balance.</p>}
     </Panel>
   </div>;
 }
