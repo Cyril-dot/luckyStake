@@ -56,7 +56,7 @@ body { overscroll-behavior-y: auto; }
 }
 .admin-sidebar::-webkit-scrollbar { width: 5px; }
 .admin-sidebar::-webkit-scrollbar-thumb { background: #3d2f66; border-radius: 4px; }
-.admin-brand { display: flex; align-items: center; gap: 10px; padding: 0 10px 10px; }
+.admin-brand { display: flex; align-items: center; gap: 10px; padding: 0 10px 10px; border-bottom: 0; }
 .admin-brand-mark { display: grid; place-items: center; width: 38px; height: 38px; flex-shrink: 0; border-radius: 12px; background: linear-gradient(135deg, #7c35ee, #6530c7); border: 1px solid rgba(255, 255, 255, .22); color: #ffffff; font: 900 20px/1 'Barlow Condensed'; box-shadow: 0 6px 16px rgba(124, 53, 238, .45); }
 .admin-brand-text { flex: 1; min-width: 0; }
 .admin-brand-text strong { display: block; font: 800 17px/1.1 'Barlow Condensed'; letter-spacing: .02em; color: #ffffff; white-space: nowrap; }
