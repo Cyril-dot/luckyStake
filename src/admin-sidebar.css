@@ -183,7 +183,7 @@ button.admin-stat:hover { transform: translateY(-2px); border-color: var(--lime)
 .admin-table tbody tr:last-child td { border-bottom: 0; }
 .admin-table tr:hover td { background: #f7f3fd; }
 .admin-table code { color: #7c35ee; font-size: 11px; overflow-wrap: anywhere; }
-.admin-empty { text-align: center !important; padding: 30px !important; color: #9691a2 !important; }
+.admin-empty { text-align: center !important; padding: 30px !important; color: #777281 !important; font-size: 12.5px; }
 .admin-actions { display: flex; gap: 5px; flex-wrap: wrap; }
 .admin-actions .admin-button { min-height: 30px; padding: 0 9px; font-size: 11px; }
 
