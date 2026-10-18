@@ -89,6 +89,13 @@ const superPages: { id: SuperPageKey; label: string; icon: string; group: string
 ];
 
 function Notice({ message, error }: { message: string; error?: boolean }) { return message ? <div className={`admin-notice ${error ? 'is-error' : 'is-success'}`}><span className="material-symbols-rounded">{error ? 'error' : 'check_circle'}</span>{message}</div> : null; }
+// Branded loading placeholder: while a tab's data is in flight the
+// panel keeps its shape (palette rows + shimmer) instead of collapsing
+// to a lone grey 'Loading…' line that reads as an unstyled page.
+function RowsSkeleton({ rows = 4 }: { rows?: number }) {
+  return <div className="admin-skel" aria-hidden="true">{Array.from({ length: rows }).map((_, i) => <div className="admin-skel-row" key={i}><span className="admin-skel-bar" style={{ width: `${54 + (i * 13) % 32}%` }} /><span className="admin-skel-chip" /></div>)}</div>;
+}
+
 function Intro({ title, description, onRefresh, loading }: { title: string; description: string; onRefresh: () => void; loading: boolean }) { return <div className="admin-intro"><div><span className="admin-eyebrow">LUCKYSTAKE CONTROL ROOM</span><h1>{title}</h1><p>{description}</p></div><button className="admin-refresh" onClick={onRefresh} aria-label="Refresh data"><span className={`material-symbols-rounded ${loading ? 'admin-spin' : ''}`}>refresh</span></button></div>; }
 function Panel({ title, action, children }: { title: string; action?: React.ReactNode; children: React.ReactNode }) { return <section className="admin-panel"><div className="admin-panel-title"><h2>{title}</h2>{action}</div>{children}</section>; }
 /** Raw database IDs mean nothing to a super admin — id/userId/adminId/walletId
@@ -952,7 +959,7 @@ function AffiliateInsights() {
     {(['daily', 'weekly', 'monthly'] as const).map(r => <Button key={r} tone={range === r ? 'primary' : undefined} onClick={() => setRange(r)}>{r}</Button>)}
   </div>}>
     <Notice message={error} error />
-    {loading ? <p style={{ color: '#777281', fontSize: 12 }}>Loading…</p> :
+    {loading ? <RowsSkeleton /> :
       tab === 'commission'
         ? <><p style={{ color: '#777281', fontSize: 12 }}>Total {range} commission: <b style={{ color: '#292633' }}>{totalsByCurrency(commission)}</b></p>
             <Table data={commission} columns={['periodLabel', 'periodStart', 'amount', 'currency']} labels={{ periodLabel: 'Period', periodStart: 'Start', amount: 'Amount', currency: 'Currency' }} /></>
@@ -974,7 +981,7 @@ function AffiliatePayoutHistory() {
   useEffect(() => { load(); }, []);
   return <Panel title="Affiliate payout history" action={<Button onClick={load}>Refresh</Button>}>
     <Notice message={error} error />
-    {loading ? <p style={{ color: '#777281', fontSize: 12 }}>Loading…</p> :
+    {loading ? <RowsSkeleton /> :
       <Table data={data.map(r => ({ ...r, amount: money(r.amount) }))} columns={['amount', 'status', 'createdAt', 'paidAt']} labels={{ amount: 'Amount', status: 'Status', createdAt: 'Requested', paidAt: 'Paid' }} />}
   </Panel>;
 }
@@ -1489,7 +1496,7 @@ function SuperChats() {
     <Intro title="Upgrade chats" description="Review pending upgrade conversations and commission requests." onRefresh={load} loading={loading} />
     <Notice message={error} error /><Notice message={message} />
     <Panel title="Pending chats">
-      {chats.length === 0 ? <p style={{ color: '#777281', fontSize: 12 }}>{loading ? 'Loading…' : 'No pending chats.'}</p> :
+      {chats.length === 0 ? (loading ? <RowsSkeleton rows={3} /> : <p style={{ color: '#777281', fontSize: 12 }}>No pending chats.</p>) :
         chats.map((r, i) => <div className="admin-status-list" key={idOf(r) || i}><div><span>{text(r.adminEmail ?? r.email ?? r.subject, 'Chat')}<br /><small style={{ color: '#777281' }}>{text(r.updatedAt ?? r.createdAt)}</small></span><b><span style={{ marginRight: 8 }}>{text(r.status)}</span><button className="admin-button" onClick={() => open(r)}>Open</button></b></div></div>)}
     </Panel>
     {active && <Panel title={`Chat — ${text(active.adminEmail ?? active.email ?? 'conversation')}`} action={<Button onClick={() => setActive(null)}>Close</Button>}>

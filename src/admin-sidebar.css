@@ -413,3 +413,10 @@ button.admin-stat:hover { transform: translateY(-2px); border-color: var(--lime)
 .rnd-cs-fields { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) minmax(0, 1.3fr); gap: 8px; align-items: end; }
 .rnd-cs-fields label { display: flex; flex-direction: column; gap: 6px; font: 800 9px 'Rajdhani'; letter-spacing: .13em; text-transform: uppercase; color: #777281; min-width: 0; }
 .rnd-cs-fields input { height: 42px; text-align: center; }
+
+/* Loading skeleton (spec palette shimmer rows) */
+.admin-skel { display: flex; flex-direction: column; gap: 10px; padding: 4px 0; }
+.admin-skel-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: #f7f3fd; border: 1px solid #e8e3ef; border-radius: 12px; padding: 15px 14px; }
+.admin-skel-bar { height: 12px; border-radius: 6px; background: linear-gradient(90deg, #e9ddfb 25%, #f5f0fd 50%, #e9ddfb 75%); background-size: 200% 100%; animation: admin-skel-wave 1.15s linear infinite; }
+.admin-skel-chip { width: 58px; height: 12px; border-radius: 6px; background: #e9ddfb; flex: none; }
+@keyframes admin-skel-wave { to { background-position: -200% 0; } }

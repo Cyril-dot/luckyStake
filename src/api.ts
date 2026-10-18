@@ -8,8 +8,21 @@ function token() { return localStorage.getItem('accessToken') || localStorage.ge
 export function setToken(value: string) { if (value) localStorage.setItem('accessToken', value); else localStorage.removeItem('accessToken'); }
 export function setApiBase(value: string) { localStorage.setItem('luckystakeApiBaseUrl', value.replace(/\/$/, '')); }
 
+// No request may hang forever: a stalled backend call used to leave
+// pages (admin tabs worst) on an endless loading state. 20s is far
+// beyond a healthy response; on timeout the caller gets a clear,
+// actionable error instead of a permanent spinner.
+const API_TIMEOUT_MS = 20_000;
 export async function api<T>(method: string, path: string, body?: unknown): Promise<T> {
-  const res = await fetch(`${API_BASE().replace(/\/$/, '')}${path}`, { method, credentials: 'include', headers: { Accept: 'application/json', ...(body === undefined ? {} : { 'Content-Type': 'application/json' }), ...(token() ? { Authorization: `Bearer ${token()}` } : {}) }, body: body === undefined ? undefined : JSON.stringify(body) });
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), API_TIMEOUT_MS);
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE().replace(/\/$/, '')}${path}`, { method, credentials: 'include', signal: ctrl.signal, headers: { Accept: 'application/json', ...(body === undefined ? {} : { 'Content-Type': 'application/json' }), ...(token() ? { Authorization: `Bearer ${token()}` } : {}) }, body: body === undefined ? undefined : JSON.stringify(body) });
+  } catch (e) {
+    if (e instanceof DOMException && e.name === 'AbortError') throw new ApiError('The request took too long to answer. Check your connection and try again.', 0);
+    throw e;
+  } finally { clearTimeout(timer); }
   const text = await res.text(); let payload: unknown; try { payload = text ? JSON.parse(text) : undefined; } catch { payload = text; }
   if (!res.ok) { const p = payload as Record<string, unknown> | null; const rawMessage = String(p?.message || p?.error || p?.detail || `Request failed (${res.status})`); throw new ApiError(rawMessage.replace(/operationId=[0-9a-fA-F-]{36}\s*/g, '').trim() || rawMessage, res.status); }
   if (payload && typeof payload === 'object' && 'success' in payload && 'data' in payload) return (payload as { data: T }).data;
