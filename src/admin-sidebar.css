@@ -82,6 +82,7 @@ body { overscroll-behavior-y: auto; }
 .admin-exit:hover { color: #ffffff; }
 .admin-exit .material-symbols-rounded { font-size: 18px; }
 .admin-backdrop { display: none; }
+.admin-nav-progress { display: none; }
 .admin-mobile-bar { display: none; }
 
 /* ---- Page furniture ------------------------------------------------------ */
@@ -275,7 +276,8 @@ button.admin-stat:hover { transform: translateY(-2px); border-color: var(--lime)
     /* width:100% is load-bearing: as a flex item with nowrap row content
        the nav otherwise sizes to its 872px content and the pill row can
        never scroll — the extra tabs are simply clipped off-screen. */
-    flex: 1 1 auto; min-width: 0; width: 100%; max-width: 100%; padding: 4px 2px 8px;
+    flex: 1 1 auto; min-width: 0; width: 100%; max-width: 100%; padding: 4px 44px 8px 2px;
+    scroll-snap-type: x proximity; scroll-padding-left: 2px;
     overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain;
     scrollbar-width: none; -webkit-overflow-scrolling: touch;
     -webkit-mask-image: linear-gradient(to right, #292633 92%, transparent);
@@ -290,6 +292,9 @@ button.admin-stat:hover { transform: translateY(-2px); border-color: var(--lime)
   }
   .admin-sidebar .admin-nav-btn:hover { background: rgba(255, 255, 255, .13); color: #ffffff; transform: none !important; }
   .admin-nav-label { flex: 0 0 auto; white-space: nowrap; overflow: visible; }
+  .admin-sidebar .admin-nav-btn { scroll-snap-align: start; }
+  .admin-nav-progress { display: block; position: relative; height: 3px; margin: 1px 12px 5px; border-radius: 99px; background: rgba(255, 255, 255, .14); overflow: hidden; }
+  .admin-nav-progress i { position: absolute; top: 0; bottom: 0; left: 0; width: 22%; border-radius: 99px; background: linear-gradient(90deg, #7c35ee, #b79cff); transition: left .18s ease-out, width .18s ease-out; }
   .admin-nav-chev { display: none; }
   .admin-sidebar .admin-nav-btn.active { background: #ffffff; border-color: #ffffff; color: #6530c7; box-shadow: 0 8px 20px rgba(0, 0, 0, .28); }
   .admin-sidebar .admin-nav-btn.active .admin-nav-ico { color: #7c35ee; }

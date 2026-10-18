@@ -1563,6 +1563,21 @@ export default function AdminPanel({ role }: { role: Role }) {
       const target = btn.offsetLeft - nav.clientWidth / 2 + btn.clientWidth / 2;
       nav.scrollTo({ left: Math.max(0, target), behavior: 'smooth' });
     }
+    // Sliding-bar progress thumb: mirrors the tab row's scroll position
+    // (mobile strip only; the element is display:none on desktop).
+    const thumb = document.querySelector('.admin-nav-progress i') as HTMLElement | null;
+    if (!nav || !thumb) return;
+    const update = () => {
+      const max = nav.scrollWidth - nav.clientWidth;
+      const wPct = Math.min(100, (nav.clientWidth / Math.max(1, nav.scrollWidth)) * 100);
+      const frac = max > 0 ? nav.scrollLeft / max : 0;
+      thumb.style.width = `${wPct}%`;
+      thumb.style.left = `${frac * (100 - wPct)}%`;
+    };
+    update();
+    const settle = window.setTimeout(update, 380);
+    nav.addEventListener('scroll', update, { passive: true });
+    return () => { window.clearTimeout(settle); nav.removeEventListener('scroll', update); };
   }, [page]);
 
   const content = (() => {
@@ -1606,6 +1621,7 @@ export default function AdminPanel({ role }: { role: Role }) {
       <nav className="admin-nav">
         {pages.map(navBtn)}
       </nav>
+      <div className="admin-nav-progress" aria-hidden="true"><i /></div>
       <div className="admin-side-foot">
         <a className="admin-exit" href="/me"><span className="material-symbols-rounded">arrow_back</span>Back to account</a>
       </div>
