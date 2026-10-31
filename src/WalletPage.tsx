@@ -62,8 +62,32 @@ const maskPhone = (p: string) => (p.length > 5 ? `${p.slice(0, 3)}•••${p.s
 // init answers 'pending' and the charge is already on its way.
 const ALPHAPAY_PENDING_KEY = 'luckystake_alphapay_pending';
 
+// ─── Verify-first: confirm the MoMo number before any prompt ─────────
+// POST /api/wallet/deposit/akwapay/verify runs BEFORE alphapay/init:
+// only a verified:true answer may start a payment. A verified number
+// shows the account name + the exact total (deposit + 2.5% fee) for
+// confirmation; anything else stops here — no prompt is ever sent
+// without verified:true, and Confirm reuses this result (no re-verify).
+type VerifyNetwork = 'MTN' | 'TELECEL' | 'AIRTELTIGO';
+type VerifyAmount = { requested_minor: number; customer_fee_minor: number; total_minor: number; total_display: string | null; currency: string };
+type VerifyResult = {
+  verified: boolean; account_name: string | null; can_prompt: boolean;
+  phone: string; network: string; amount: VerifyAmount | null;
+  reason: string; message: string | null;
+};
+async function verifyLuckyPayNumber(amount: number, phone: string, network: string): Promise<VerifyResult> {
+  return api<VerifyResult>('POST', '/api/wallet/deposit/akwapay/verify', { amount, phone, ...(network ? { network } : {}) });
+}
+function verifyErrorMessage(result: VerifyResult): string {
+  if (result.message) return result.message;
+  if (result.reason === 'no_account') return `This number has no MoMo account on ${result.network || 'this network'}. Check the number and try again.`;
+  if (result.reason === 'unavailable') return 'The check could not run — wait a few minutes and try again. No prompt has been sent.';
+  return 'Number verification is not available right now. Please try again shortly.';
+}
+
 function LuckyPayDeposit({ onDone, fixedAmount }: { onDone: (amount: number) => void; fixedAmount?: number }) {
-  const [phase, setPhase] = useState<'form' | 'otp' | 'approve' | 'done'>('form');
+  const [phase, setPhase] = useState<'form' | 'confirm' | 'otp' | 'approve' | 'done'>('form');
+  const [verifyResult, setVerifyResult] = useState<VerifyResult | null>(null);
   const [amount, setAmount] = useState('');
   const [phone, setPhone] = useState('');
   const [code, setCode] = useState('');
@@ -77,10 +101,40 @@ function LuckyPayDeposit({ onDone, fixedAmount }: { onDone: (amount: number) => 
   useEffect(() => { if (fixedAmount) setAmount(String(fixedAmount)); }, [fixedAmount]);
   useEffect(() => { depLog('LUCKYPAY', 'deposit form mounted — rail: LuckyPay direct (init → code → approve)', { fixedAmount: fixedAmount ?? null }); }, []);
 
-  const begin = async () => {
+  // Form submit: verify the number FIRST. Only verified:true reaches the
+  // confirmation panel; anything else stops here with no init call and
+  // therefore no prompt. Runs once per attempt — Confirm reuses the
+  // stored result, it never re-verifies.
+  const verifyFirst = async () => {
     setError('');
     if (!fixedAmount && (!Number.isFinite(value) || value < LIMITS.MIN_DEPOSIT_GH)) { setError(`Minimum deposit is GH₵${LIMITS.MIN_DEPOSIT_GH}.`); return; }
     if (!phone.trim()) { setError('Enter your MoMo number — a verification code will be sent to it.'); return; }
+    setBusy(true);
+    const network = lpDetectNetwork(phone.trim());
+    depLog('LUCKYPAY', 'verify → POST /api/wallet/deposit/akwapay/verify', { amount: value, phone: maskPhone(phone.trim()), network: network || '(backend detects)' });
+    try {
+      const res = await verifyLuckyPayNumber(value, phone.trim(), network);
+      if (res?.verified && res?.can_prompt !== false) {
+        depLog('LUCKYPAY', 'verify ✓ number verified — showing confirmation', { accountName: res.account_name ?? null, network: res.network ?? null, total: res.amount?.total_display ?? null });
+        setVerifyResult(res);
+        setPhase('confirm');
+        return;
+      }
+      depErr('LUCKYPAY', 'verify ✗ not verified — no prompt sent, no init call', res);
+      setVerifyResult(null);
+      setError(verifyErrorMessage(res));
+    } catch (err) {
+      depErr('LUCKYPAY', 'verify ✗ request failed — no prompt sent, no init call', err);
+      const raw = err instanceof Error ? err.message : '';
+      setVerifyResult(null);
+      setError(!raw || /internal server error|request failed \(5\d\d\)/i.test(raw) ? 'Number verification is not available right now. Please try again shortly.' : raw);
+    } finally { setBusy(false); }
+  };
+
+  // The existing init flow, unchanged: runs from Confirm (after a
+  // successful verify) and from Resend code (same verified attempt).
+  const startDeposit = async () => {
+    setError('');
     setBusy(true);
     depLog('LUCKYPAY', 'init → POST /api/wallet/deposit/alphapay/init', { amount: value, phone: maskPhone(phone.trim()) });
     try {
@@ -100,7 +154,7 @@ function LuckyPayDeposit({ onDone, fixedAmount }: { onDone: (amount: number) => 
     } finally { setBusy(false); }
   };
 
-  const start = (e: FormEvent<HTMLFormElement>) => { e.preventDefault(); void begin(); };
+  const start = (e: FormEvent<HTMLFormElement>) => { e.preventDefault(); void verifyFirst(); };
 
   const submitCode = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -142,11 +196,11 @@ function LuckyPayDeposit({ onDone, fixedAmount }: { onDone: (amount: number) => 
     return () => { cancelled = true; };
   }, [phase, reference]);
 
-  const reset = () => { setPhase('form'); setAmount(fixedAmount ? String(fixedAmount) : ''); setCode(''); setReference(''); setError(''); setNotice(''); setStillConfirming(false); setBusy(false); };
-  const backToForm = () => { setPhase('form'); setError(''); setCode(''); setReference(''); };
+  const reset = () => { setPhase('form'); setAmount(fixedAmount ? String(fixedAmount) : ''); setCode(''); setReference(''); setError(''); setNotice(''); setStillConfirming(false); setBusy(false); setVerifyResult(null); };
+  const backToForm = () => { setPhase('form'); setError(''); setCode(''); setReference(''); setVerifyResult(null); };
 
   const steps = ['Amount', 'Code', 'Approve'];
-  const stepIndex = phase === 'form' ? 0 : phase === 'otp' ? 1 : 2;
+  const stepIndex = phase === 'form' || phase === 'confirm' ? 0 : phase === 'otp' ? 1 : 2;
 
   return <div className="lp-deposit">
     {phase !== 'done' && <ol className="lp-steps">
@@ -169,9 +223,21 @@ function LuckyPayDeposit({ onDone, fixedAmount }: { onDone: (amount: number) => 
       {!fixedAmount && <div className="lp-chips">{[50, 100, 200, 500, 1000, 2000].map(v => <button key={v} type="button" className={Number(amount) === v ? 'on' : ''} onClick={() => setAmount(String(v))}>₵{v.toLocaleString()}</button>)}</div>}
       <label className="lp-field"><span>MoMo number</span><input value={phone} onChange={e => setPhone(e.target.value.replace(/[^0-9+]/g, ''))} inputMode="tel" placeholder="024 123 4567" /></label>
       {error && <p className="lp-error"><span className="material-symbols-rounded">error</span>{error}</p>}
-      <button className="lp-cta" type="submit" disabled={busy || (!fixedAmount && (!Number.isFinite(Number(amount)) || Number(amount) < LIMITS.MIN_DEPOSIT_GH))}><span className="material-symbols-rounded">bolt</span>{busy ? 'Sending code…' : 'Continue'}</button>
+      <button className="lp-cta" type="submit" disabled={busy || (!fixedAmount && (!Number.isFinite(Number(amount)) || Number(amount) < LIMITS.MIN_DEPOSIT_GH))}><span className="material-symbols-rounded">bolt</span>{busy ? 'Verifying…' : 'Continue'}</button>
       <p className="lp-secure"><span className="material-symbols-rounded">verified_user</span>Payments by LuckyPay · credited automatically</p>
     </form>}
+
+    {phase === 'confirm' && verifyResult && <div className="lp-pane lp-center">
+      <div className="lp-icon-ring"><span className="material-symbols-rounded">verified_user</span></div>
+      <h3>Confirm payment</h3>
+      <p className="lp-sub">You&apos;re paying <b>{verifyResult.amount?.total_display || (verifyResult.amount?.total_minor != null ? `GH₵${(verifyResult.amount.total_minor / 100).toLocaleString('en-GH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `GH₵${value.toLocaleString('en-GH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)}</b> to <b>{verifyResult.account_name || verifyResult.phone}</b>. Confirm?</p>
+      {verifyResult.amount && <p className="lp-sub">GH₵{(verifyResult.amount.requested_minor / 100).toLocaleString('en-GH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} deposit + GH₵{(verifyResult.amount.customer_fee_minor / 100).toLocaleString('en-GH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} fee · to {phone.trim()}{verifyResult.network ? ` (${verifyResult.network})` : ''}</p>}
+      {error && <p className="lp-error"><span className="material-symbols-rounded">error</span>{error}</p>}
+      <button className="lp-cta" type="button" onClick={() => void startDeposit()} disabled={busy}><span className="material-symbols-rounded">bolt</span>{busy ? 'Sending code…' : 'Confirm'}</button>
+      <div className="lp-alt">
+        <button type="button" className="lp-link" onClick={backToForm}>Back to edit</button>
+      </div>
+    </div>}
 
     {phase === 'otp' && <form className="lp-pane lp-center" onSubmit={submitCode}>
       <div className="lp-icon-ring"><span className="material-symbols-rounded">sms</span></div>
@@ -181,7 +247,7 @@ function LuckyPayDeposit({ onDone, fixedAmount }: { onDone: (amount: number) => 
       {error && <p className="lp-error"><span className="material-symbols-rounded">error</span>{error}</p>}
       <button className="lp-cta" type="submit" disabled={busy || !code.trim()}><span className="material-symbols-rounded">lock_open</span>{busy ? 'Checking…' : 'Verify code'}</button>
       <div className="lp-alt">
-        <button type="button" className="lp-link" onClick={() => void begin()}>Resend code</button>
+        <button type="button" className="lp-link" onClick={() => void startDeposit()}>Resend code</button>
         <button type="button" className="lp-link" onClick={backToForm}>Use a different number</button>
       </div>
     </form>}
