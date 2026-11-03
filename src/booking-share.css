@@ -584,3 +584,13 @@ input:not([type=checkbox]):not([type=radio]),select,textarea{border-radius:12px}
 .slip-total-line strong{font-size:15px}
 .accumulator-slip .drawer-slip input{padding:10px}
 .accumulator-slip .drawer-place{margin-top:14px}
+
+/* Slip leg market icon (owner order 2026-11-03): the tiny caps market
+   label is replaced by one simple plum icon; the full market name
+   stays as the icon's tooltip + accessible label. */
+.accumulator-slip .slip-leg-type .slip-market-icon{font-size:17px;color:#7C35EE;line-height:1;font-weight:400;text-transform:none;letter-spacing:0}
+/* Staking labels go full ink (owner follow-up 2026-11-03): the soft
+   grey labels read washed out on the white card. */
+.accumulator-slip .slip-total-line span{color:#292633}
+.accumulator-slip .slip-stake-field{color:#292633}
+.accumulator-slip .slip-stake-hint{color:#292633}
