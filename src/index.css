@@ -1319,3 +1319,13 @@ header nav a{color:#E9DDFB;font-weight:700}
   .glass-odds-grid:has(>button:nth-child(3):last-child) button span{font-size:9px!important}
   .glass-odds-grid:has(>button:nth-child(3):last-child) .glass-odds-bookmaker{display:none!important}
 }
+
+/* Mobile 3-option odd cards, second pass (owner order 2026-11-03):
+   no team names on the buttons, less space around them, wider cards.
+   Buttons become centred value-only pills with tighter gaps/padding. */
+@media(max-width:520px){
+  .glass-odds-grid:has(>button:nth-child(3):last-child){gap:4px!important;padding:0 4px 8px!important}
+  .glass-odds-grid:has(>button:nth-child(3):last-child) button{min-height:44px!important;padding:8px 6px!important;align-items:center!important}
+  .glass-odds-grid:has(>button:nth-child(3):last-child) button span{display:none!important}
+  .glass-odds-grid:has(>button:nth-child(3):last-child) button b{margin-top:0!important;font-size:17px!important}
+}
