@@ -47,7 +47,6 @@ function MatchCard({ match }: { match: MatchRow }) {
       <button onClick={() => chooseOdd(match, match.homeTeam, match.homeOdds || '')}><span>{String(match.sport).toLowerCase() === 'baseball' ? 'Home' : '1'}</span><b>{match.homeOdds || '—'}</b></button>
       {String(match.sport).toLowerCase() !== 'baseball' && <button onClick={() => chooseOdd(match, 'Draw', match.drawOdds || '')}><span>X</span><b>{match.drawOdds || '—'}</b></button>}
       <button onClick={() => chooseOdd(match, match.awayTeam, match.awayOdds || '')}><span>{String(match.sport).toLowerCase() === 'baseball' ? 'Away' : '2'}</span><b>{match.awayOdds || '—'}</b></button>
-      <a href={`/match/${encodeURIComponent(match.id)}`} className="aurora-more">+ markets</a>
     </div>
   </article>;
 }

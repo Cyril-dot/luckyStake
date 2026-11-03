@@ -566,3 +566,21 @@ input:not([type=checkbox]):not([type=radio]),select,textarea{border-radius:12px}
 .accumulator-slip .slip-leg-type b{font-size:14px}
 .slip-total-line strong{font-size:18px}
 .slip-total-line-end strong{color:#7C35EE}
+
+/* Slip card compact pass (owner follow-up 2026-11-03): 16px team names
+   were too big and the card + its elements too large overall. Names
+   drop to 13.5px, the pill narrows, the pick row tightens, and the
+   sheet/head/totals/stake/button all shrink a step. */
+.slip-drawer.accumulator-slip{padding:16px}
+.slip-drawer.accumulator-slip .slip-drawer-head{padding-bottom:12px}
+.slip-drawer.accumulator-slip .slip-drawer-head h2{font-size:22px}
+.accumulator-slip .drawer-slip{padding:12px;margin-top:10px}
+.accumulator-slip .drawer-slip small{margin-bottom:10px}
+.accumulator-slip .slip-leg{padding:10px 12px}
+.accumulator-slip .slip-leg-match{font-size:13.5px;line-height:1.3}
+.accumulator-slip .slip-leg-odds{min-width:48px;padding:6px 10px;font-size:16px}
+.accumulator-slip .slip-leg-type{margin-top:6px;padding-top:6px;font-size:10px}
+.accumulator-slip .slip-leg-type b{font-size:12.5px}
+.slip-total-line strong{font-size:15px}
+.accumulator-slip .drawer-slip input{padding:10px}
+.accumulator-slip .drawer-place{margin-top:14px}
