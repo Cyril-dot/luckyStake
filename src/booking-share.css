@@ -541,3 +541,18 @@ input:not([type=checkbox]):not([type=radio]),select,textarea{border-radius:12px}
 .glass-detail-nav button{background:#e9ddfb;color:#292633}
 
 .slip-success-rows b.lime{color:#a77a25}
+
+/* Slip card container (owner order 2026-11-03): this file is imported
+   after index.css, so the card rule must live here to beat the flat
+   transparent rule above — white card, border, shadow, real padding, so
+   the teams / odds / selection rows never sit flush on the edge. */
+.accumulator-slip .drawer-slip{background:#fff;border:1px solid #E8E3EF;border-radius:16px;box-shadow:0 8px 24px rgba(21,12,31,.08);padding:16px;margin-top:14px}
+
+/* Slip legs must never clip (owner order 2026-11-03): the sheet's fixed
+   height + the legs scroll area were cutting the market/selection row
+   off the bottom of a single-leg slip. Let the sheet size to its
+   content (capped at 92vh, scrolling as a whole) and let the legs lay
+   out naturally instead of inside a capped scroll box. */
+.slip-drawer.accumulator-slip{height:auto !important;max-height:92vh !important;overflow-y:auto}
+.slip-drawer.accumulator-slip .drawer-slip{display:block;overflow:visible}
+.slip-drawer.accumulator-slip .slip-legs{flex:none;max-height:none;overflow:visible}

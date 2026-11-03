@@ -58,7 +58,9 @@ export default function AuroraSportsPage() {
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState('');
   const [, repaintClock] = useState(0);
-  useEffect(() => { const timer = window.setInterval(() => repaintClock(value => value + 1), 1000); return () => window.clearInterval(timer); }, []);
+  // Live clocks show minutes, so a 30s tick keeps them right without
+  // re-rendering the whole page every second (owner order 2026-11-03).
+  useEffect(() => { const timer = window.setInterval(() => repaintClock(value => value + 1), 30_000); return () => window.clearInterval(timer); }, []);
 
   // All feeds load together (owner order 2026-11-03): every game shows
   // at once, with no scroll gate and no 10-at-a-time reveal.
@@ -85,11 +87,15 @@ export default function AuroraSportsPage() {
     return [...enriched, ...normalized.slice(30)];
   }
 
-  async function loadMatches() {
+  // Background refresh (owner order 2026-11-03): a 30s tick must never
+  // flash, shrink or blank the list the user is looking at. Silent ticks
+  // skip the loading flag, commit one merged list at the end, and keep
+  // every row the fresh fetch did not return.
+  async function loadMatches(silent = false) {
     const sport = activeSport;
     const seq = ++loadSeqRef.current;
     const current = () => loadSeqRef.current === seq;
-    setLoading(true);
+    if (!silent) setLoading(true);
     // Phase 1: the live feed alone (plus the admin merge for football —
     // admin games live on their own endpoint and must never wait).
     const liveRows = await loadFeedRows(sport, ['live']).catch(() => [] as MatchRow[]);
@@ -100,22 +106,33 @@ export default function AuroraSportsPage() {
       if (!current()) return;
       phaseOne = [...liveRows, ...admin];
     }
-    setMatches(phaseOne);
-    setLastUpdated(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
-    setLoading(false);
+    if (!silent) {
+      setMatches(phaseOne);
+      setLastUpdated(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+      setLoading(false);
+    }
     // Phase 2: the remaining feeds load right away, no scroll gate.
     if (!current()) return;
     const preferred = TODAY_FEED[sport];
     const restFeeds = Array.from(new Set<Feed>([preferred, ...(preferred === 'today' ? ['upcoming' as Feed] : [])])).filter(feed => feed !== 'live');
     const restRows = await loadFeedRows(sport, restFeeds).catch(() => [] as MatchRow[]);
     if (!current()) return;
-    setMatches(prev => [...restRows, ...prev]);
+    if (silent) {
+      const fresh = [...restRows, ...phaseOne];
+      setMatches(prev => {
+        if (!fresh.length) return prev;
+        const seen = new Set(fresh.map(m => m.id));
+        return [...fresh, ...prev.filter(m => !seen.has(m.id))];
+      });
+    } else {
+      setMatches(prev => [...restRows, ...prev]);
+    }
     setLastUpdated(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
   }
 
   useEffect(() => {
     void loadMatches();
-    const refreshTimer = window.setInterval(() => void loadMatches(), 30_000);
+    const refreshTimer = window.setInterval(() => void loadMatches(true), 30_000);
     return () => window.clearInterval(refreshTimer);
   }, [activeSport]);
 

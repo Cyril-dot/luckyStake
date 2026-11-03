@@ -1187,3 +1187,48 @@ footer .legal{color:#8E8298}
 .home-slip-button{width:56px;height:56px;box-shadow:0 12px 30px rgba(76,29,149,.5)}
 .home-slip-button .slip-icon-svg{stroke:#fff}
 @media(max-width:560px){.home-slip-button{width:52px;height:52px}}
+
+/* Hero actions + live stats (owner follow-up 2026-11-03: hero must do
+   better — solid CTA, booking-code action, real match counts). */
+.hero .hero-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+.hero .hero-cta{display:inline-flex;align-items:center;min-height:46px;padding:12px 22px;border:0;border-radius:999px;background:#FFD21F;color:#292633;font-weight:800;font-size:14px}
+.hero .hero-ghost{display:inline-flex;align-items:center;min-height:46px;padding:12px 20px;border:1px solid rgba(255,255,255,.5);border-radius:999px;background:rgba(255,255,255,.12);color:#fff;font-weight:700;font-size:14px}
+.hero .hero-stats{display:flex;gap:16px;flex-wrap:wrap;margin-top:18px;color:#E9DDFB;font-size:12px;font-weight:700}
+.hero .hero-stats span{display:inline-flex;align-items:center;gap:6px}
+.hero .hero-live-dot{width:7px;height:7px;border-radius:50%;background:#FF4D5E;box-shadow:0 0 8px #FF4D5E}
+@media(max-width:560px){.hero .hero-stats{font-size:11px;gap:12px}}
+
+/* Hero must grow with its content (the fixed 292/300px height + hidden
+   overflow was clipping the second button and the stats row). */
+.hero{height:auto;min-height:320px}
+@media(max-width:560px){.hero .hero-cta{padding:10px 16px;font-size:13px;min-height:42px}.hero .hero-ghost{padding:10px 14px;font-size:13px;min-height:42px}}
+
+/* Bottom nav vivid pass (owner order 2026-11-03): the active tab was a
+   faint pill with a dark label that vanished on the dark bar. Active now
+   gets a solid plum pill + white icon + white label; labels grow to 10px. */
+@media(max-width:850px){
+  .mobile-bottom-item small{display:block;font-size:10px}
+  .mobile-bottom-item.active{background:transparent}
+  .mobile-bottom-item.active .material-symbols-rounded{background:linear-gradient(135deg,#7C35EE,#6530C7);color:#fff;border-radius:12px;padding:6px;font-variation-settings:'FILL' 1,'wght' 600,'GRAD' 0,'opsz' 24}
+  .mobile-bottom-item.active small{color:#fff;font-weight:800}
+}
+/* Slip card layout + vivid pass (owner order 2026-11-03): leg rows had
+   no layout rules, so match, odds and remove stacked loose. Drawer goes
+   white like the match cards; legs become proper rows with an odds pill. */
+.slip-drawer{background:#fff}
+.accumulator-slip .drawer-slip{background:#fff;border:1px solid #E8E3EF;border-radius:16px;box-shadow:0 8px 24px rgba(21,12,31,.08)}
+.slip-legs{display:flex;flex-direction:column;gap:12px}
+.slip-leg{display:flex;flex-direction:column;gap:6px;padding-bottom:12px;border-bottom:1px solid #E8E3EF}
+.slip-leg:last-child{padding-bottom:0;border-bottom:0}
+.slip-leg-top{display:flex;align-items:flex-start;gap:10px}
+.slip-leg-match{flex:1;font-weight:700;font-size:14px;color:#292633;line-height:1.35}
+.slip-leg-odds{flex:none;padding:5px 10px;border-radius:8px;background:#F0EAF8;color:#7C35EE;font-size:14px}
+.slip-leg-type{display:flex;align-items:center;gap:8px;font-size:11px}
+.slip-leg-type span{color:#777281;text-transform:uppercase;letter-spacing:.06em;font-weight:700}
+.slip-leg-type b{color:#292633;font-size:13px}
+.slip-total-line{display:flex;align-items:center;justify-content:space-between;padding:6px 0}
+.slip-total-line span{color:#777281;font-size:12px}
+.slip-total-line strong{color:#292633;font-size:16px}
+
+/* NOTE: the slip card's own container rule lives in booking-share.css
+   (imported after this file, so it wins ties) — see the card rule there. */
