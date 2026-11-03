@@ -1288,3 +1288,23 @@ header nav a{color:#E9DDFB;font-weight:700}
 .glass-odds-grid button.selected{background:linear-gradient(135deg,#7C35EE,#6530C7);border-color:transparent;color:#fff}
 .glass-odds-grid button.selected b,.glass-odds-grid button.selected small{color:#fff}
 .glass-detail-markets-empty{background:#fff;border-color:#E8E3EF;color:#777281}
+
+/* Mobile match details, simplified (owner order 2026-11-03: the mobile
+   page overflowed, the VS box looked bad, and the design was doing too
+   much). Team names wrap instead of truncating, the scorebox becomes
+   plain VS + time with no dark box, the update strip and the tiny
+   'odds' tags go away, and long odds labels wrap instead of clipping. */
+@media(max-width:520px){
+  .glass-detail-fixture{grid-template-columns:minmax(0,1fr) 64px minmax(0,1fr)!important}
+  .glass-detail-fixture>div:first-child{align-items:center!important;text-align:center!important}
+  .glass-detail-fixture>div:last-child{align-items:center!important;text-align:center!important}
+  .glass-detail-fixture>div>strong{white-space:normal!important;font-size:15px!important}
+  .glass-detail-logo,.glass-detail-fallback{width:40px!important;height:40px!important}
+  .glass-detail-scorebox{background:none!important;border:0!important;box-shadow:none!important;padding:0!important}
+  .glass-detail-scorebox>strong{order:1;color:#292633!important;font-size:20px!important}
+  .glass-detail-scorebox .glass-detail-timer{order:2}
+  .glass-detail-scorebox>b{display:none!important}
+  .glass-detail-update{display:none!important}
+  .glass-odds-grid button span{white-space:normal!important;overflow:visible!important;text-overflow:clip!important}
+  .glass-odds-grid button small{display:none!important}
+}
