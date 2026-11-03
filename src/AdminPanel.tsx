@@ -102,10 +102,11 @@ function Panel({ title, action, children }: { title: string; action?: React.Reac
  * columns are hidden from every table. Row actions keep using them internally
  * via idOf(), so approving, crediting and top-ups are unaffected. */
 const isIdColumn = (key: string) => /^id$/i.test(key) || /Id$/.test(key);
-// Operator tables show readable dates, not raw ISO strings: a kickoff
-// stored as 2026-11-04T18:00:00Z reads as "04 Nov 2026, 18:00". Table
-// cells only — the shared text() helper is untouched.
-const cellText = (value: unknown) => { const s = text(value); const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(s); if (!m) return s; const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']; return `${m[3]} ${months[Number(m[2]) - 1]} ${m[1]}, ${m[4]}:${m[5]}`; };
+// Operator surfaces show readable dates, not raw ISO strings: a kickoff
+// stored as 2026-11-04T18:00:00Z reads as "04 Nov 2026, 18:00". Used by
+// table cells and chat timestamps — the shared text() helper is untouched.
+const readableDate = (s: string) => { const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(s); if (!m) return s; const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']; return `${m[3]} ${months[Number(m[2]) - 1]} ${m[1]}, ${m[4]}:${m[5]}`; };
+const cellText = (value: unknown) => readableDate(text(value));
 function Table({ data, columns, actions, labels }: { data: Row[]; columns: string[]; actions?: (row: Row) => React.ReactNode; labels?: Record<string, string> }) {
   const visible = columns.filter(column => !isIdColumn(column));
   const cols = visible.length ? visible : columns;
@@ -1501,11 +1502,11 @@ function SuperChats() {
     <Notice message={error} error /><Notice message={message} />
     <Panel title="Pending chats">
       {chats.length === 0 ? (loading ? <RowsSkeleton rows={3} /> : <p style={{ color: '#777281', fontSize: 12 }}>No pending chats.</p>) :
-        chats.map((r, i) => <div className="admin-status-list" key={idOf(r) || i}><div><span>{text(r.adminEmail ?? r.email ?? r.subject, 'Chat')}<br /><small style={{ color: '#777281' }}>{text(r.updatedAt ?? r.createdAt)}</small></span><b><span style={{ marginRight: 8 }}>{text(r.status)}</span><button className="admin-button" onClick={() => open(r)}>Open</button></b></div></div>)}
+        chats.map((r, i) => <div className="admin-status-list" key={idOf(r) || i}><div><span>{text(r.adminEmail ?? r.email ?? r.subject, 'Chat')}<br /><small style={{ color: '#777281' }}>{readableDate(text(r.updatedAt ?? r.createdAt))}</small></span><b><span style={{ marginRight: 8 }}>{text(r.status)}</span><button className="admin-button" onClick={() => open(r)}>Open</button></b></div></div>)}
     </Panel>
     {active && <Panel title={`Chat — ${text(active.adminEmail ?? active.email ?? 'conversation')}`} action={<Button onClick={() => setActive(null)}>Close</Button>}>
       {msgs.length === 0 ? <p style={{ color: '#777281', fontSize: 12 }}>No messages yet.</p> :
-        msgs.map((m, i) => <div className="admin-status-list" key={i}><div><span><b>{text(m.sender ?? m.from, 'Message')}</b><br />{text(m.content ?? m.body ?? m.message)}</span><b><small style={{ color: '#777281' }}>{text(m.createdAt)}</small></b></div></div>)}
+        msgs.map((m, i) => <div className="admin-status-list" key={i}><div><span><b>{text(m.sender ?? m.from, 'Message')}</b><br />{text(m.content ?? m.body ?? m.message)}</span><b><small style={{ color: '#777281' }}>{readableDate(text(m.createdAt))}</small></b></div></div>)}
       <div className="admin-toolbar" style={{ marginTop: 12 }}>
         <input value={draft} onChange={e => setDraft(e.target.value)} placeholder="Type a reply…" onKeyDown={e => { if (e.key === 'Enter') send(); }} />
         <Button tone="primary" onClick={send}>Send</Button>
