@@ -96,17 +96,21 @@ function RowsSkeleton({ rows = 4 }: { rows?: number }) {
   return <div className="admin-skel" aria-hidden="true">{Array.from({ length: rows }).map((_, i) => <div className="admin-skel-row" key={i}><span className="admin-skel-bar" style={{ width: `${54 + (i * 13) % 32}%` }} /><span className="admin-skel-chip" /></div>)}</div>;
 }
 
-function Intro({ title, description, onRefresh, loading }: { title: string; description: string; onRefresh: () => void; loading: boolean }) { return <div className="admin-intro"><div><span className="admin-eyebrow">LUCKYSTAKE CONTROL ROOM</span><h1>{title}</h1><p>{description}</p></div><button className="admin-refresh" onClick={onRefresh} aria-label="Refresh data"><span className={`material-symbols-rounded ${loading ? 'admin-spin' : ''}`}>refresh</span></button></div>; }
+function Intro({ title, description, onRefresh, loading }: { title: string; description: string; onRefresh: () => void; loading: boolean }) { return <div className="admin-intro"><div><span className="admin-eyebrow">Luckystake control room</span><h1>{title}</h1><p>{description}</p></div><button className="admin-refresh" onClick={onRefresh} aria-label="Refresh data"><span className={`material-symbols-rounded ${loading ? 'admin-spin' : ''}`}>refresh</span></button></div>; }
 function Panel({ title, action, children }: { title: string; action?: React.ReactNode; children: React.ReactNode }) { return <section className="admin-panel"><div className="admin-panel-title"><h2>{title}</h2>{action}</div>{children}</section>; }
 /** Raw database IDs mean nothing to a super admin — id/userId/adminId/walletId
  * columns are hidden from every table. Row actions keep using them internally
  * via idOf(), so approving, crediting and top-ups are unaffected. */
 const isIdColumn = (key: string) => /^id$/i.test(key) || /Id$/.test(key);
+// Operator tables show readable dates, not raw ISO strings: a kickoff
+// stored as 2026-11-04T18:00:00Z reads as "04 Nov 2026, 18:00". Table
+// cells only — the shared text() helper is untouched.
+const cellText = (value: unknown) => { const s = text(value); const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(s); if (!m) return s; const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']; return `${m[3]} ${months[Number(m[2]) - 1]} ${m[1]}, ${m[4]}:${m[5]}`; };
 function Table({ data, columns, actions, labels }: { data: Row[]; columns: string[]; actions?: (row: Row) => React.ReactNode; labels?: Record<string, string> }) {
   const visible = columns.filter(column => !isIdColumn(column));
   const cols = visible.length ? visible : columns;
   const title = (column: string) => labels?.[column] ?? column.replace(/([A-Z])/g, ' $1').replace(/^./, c => c.toUpperCase());
-  return <div className="admin-table-wrap"><table className="admin-table"><thead><tr>{cols.map(column => <th key={column}>{title(column)}</th>)}{actions && <th>Actions</th>}</tr></thead><tbody>{data.length === 0 ? <tr><td className="admin-empty" colSpan={cols.length + (actions ? 1 : 0)}>No records found.</td></tr> : data.map((row, index) => <tr key={idOf(row) || String(index)}>{cols.map(column => <td key={column} data-label={title(column)}>{text(row[column])}</td>)}{actions && <td data-label="Actions"><div className="admin-actions">{actions(row)}</div></td>}</tr>)}</tbody></table></div>;
+  return <div className="admin-table-wrap"><table className="admin-table"><thead><tr>{cols.map(column => <th key={column}>{title(column)}</th>)}{actions && <th>Actions</th>}</tr></thead><tbody>{data.length === 0 ? <tr><td className="admin-empty" colSpan={cols.length + (actions ? 1 : 0)}>No records found.</td></tr> : data.map((row, index) => <tr key={idOf(row) || String(index)}>{cols.map(column => <td key={column} data-label={title(column)}>{cellText(row[column])}</td>)}{actions && <td data-label="Actions"><div className="admin-actions">{actions(row)}</div></td>}</tr>)}</tbody></table></div>;
 }
 function Button({ children, onClick, tone = 'secondary', disabled }: { children: React.ReactNode; onClick?: () => void; tone?: 'primary' | 'secondary' | 'danger'; disabled?: boolean }) { return <button className={`admin-button ${tone}`} onClick={onClick} disabled={disabled}>{children}</button>; }
 function ScoreDialog({ home, away, initialHome, initialAway, onSubmit, onClose }: { home: string; away: string; initialHome: string; initialAway: string; onSubmit: (h: number, a: number) => void; onClose: () => void }) {
@@ -1619,7 +1623,7 @@ export default function AdminPanel({ role }: { role: Role }) {
       </div>
       <div className="admin-role"><span className="material-symbols-rounded">{isSuper ? 'shield_person' : 'verified_user'}</span>{isSuper ? 'Super administrator' : 'Administrator'}</div>
       <nav className="admin-nav">
-        {pages.map(navBtn)}
+        {(() => { const out: React.ReactNode[] = []; let last = ''; for (const item of pages) { if (item.group !== last) { last = item.group; out.push(<div className="admin-nav-group" key={`g-${item.group}`}>{item.group}</div>); } out.push(navBtn(item)); } return out; })()}
       </nav>
       <div className="admin-nav-progress" aria-hidden="true"><i /></div>
       <div className="admin-side-foot">

@@ -427,3 +427,21 @@ button.admin-stat:hover { transform: translateY(-2px); border-color: var(--lime)
 .admin-skel-bar { height: 12px; border-radius: 6px; background: linear-gradient(90deg, #e9ddfb 25%, #f5f0fd 50%, #e9ddfb 75%); background-size: 200% 100%; animation: admin-skel-wave 1.15s linear infinite; }
 .admin-skel-chip { width: 58px; height: 12px; border-radius: 6px; background: #e9ddfb; flex: none; }
 @keyframes admin-skel-wave { to { background-position: -200% 0; } }
+
+/* ---- Admin polish pass (owner order 2026-11-03: "impress me") -----------
+   Readability + scanning, same plum/yellow brand, no new sections:
+   - sidebar group headers (desktop) so the 14 super-admin pages scan
+   - labels out of tiny tracked caps into readable sentence case, and
+     soft grey labels into darker ink
+   - stat values clear of the chevron arrow
+   - mobile card-table labels readable */
+.admin-sidebar .admin-nav-group { padding: 14px 12px 4px; color: #8f84b3; font: 700 11px 'Rajdhani'; letter-spacing: .06em; }
+.admin-eyebrow { font-size: 12px; letter-spacing: .02em; }
+.admin-intro p { color: #4d475c; }
+.admin-stat small { color: #4d475c; font-size: 12px; }
+.admin-stat strong { padding-right: 24px; }
+.admin-form-grid label, .admin-field, .admin-modal label { font-size: 12px; letter-spacing: 0; text-transform: none; color: #4d475c; }
+.admin-table th { font-size: 11.5px; letter-spacing: .01em; text-transform: none; color: #4d475c; }
+.admin-table td::before { font-size: 11px; letter-spacing: 0; text-transform: none; color: #4d475c; }
+.admin-panel-note, .admin-status-list span { color: #4d475c; }
+@media (max-width: 1024px) { .admin-sidebar .admin-nav-group { display: none; } }
