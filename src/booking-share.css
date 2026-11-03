@@ -556,3 +556,13 @@ input:not([type=checkbox]):not([type=radio]),select,textarea{border-radius:12px}
 .slip-drawer.accumulator-slip{height:auto !important;max-height:92vh !important;overflow-y:auto}
 .slip-drawer.accumulator-slip .drawer-slip{display:block;overflow:visible}
 .slip-drawer.accumulator-slip .slip-legs{flex:none;max-height:none;overflow:visible}
+
+/* Slip leg sizing (owner follow-up 2026-11-03): team names were small
+   and cramped next to the wide odds pill, and the pick read too small.
+   Names go to 16px, the pill narrows with a plum gradient + white
+   value, the pick goes to 14px, and the return total goes plum. */
+.accumulator-slip .slip-leg-match{font-size:16px;line-height:1.35}
+.accumulator-slip .slip-leg-odds{background:linear-gradient(135deg,#7C35EE,#6530C7);color:#fff;border-color:transparent;min-width:56px}
+.accumulator-slip .slip-leg-type b{font-size:14px}
+.slip-total-line strong{font-size:18px}
+.slip-total-line-end strong{color:#7C35EE}

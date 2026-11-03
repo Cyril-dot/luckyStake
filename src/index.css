@@ -1232,3 +1232,15 @@ footer .legal{color:#8E8298}
 
 /* NOTE: the slip card's own container rule lives in booking-share.css
    (imported after this file, so it wins ties) — see the card rule there. */
+
+/* Bottom nav, second pass (owner follow-up 2026-11-03): the plum pill
+   on the dark bar still read dull. Active tab now gets the yellow
+   action pill + dark icon + white label; inactive tabs go brighter
+   lavender so the whole bar reads at a glance. */
+@media(max-width:850px){
+  .mobile-bottom-nav{border-top:1px solid rgba(124,53,238,.35);box-shadow:0 -12px 30px rgba(10,6,16,.38)}
+  .mobile-bottom-item{color:#C9BFD6}
+  .mobile-bottom-item small{font-size:11px;color:#C9BFD6}
+  .mobile-bottom-item.active .material-symbols-rounded{background:#FFD21F;color:#292633}
+  .mobile-bottom-item.active small{color:#fff}
+}
