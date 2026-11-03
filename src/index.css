@@ -1308,3 +1308,14 @@ header nav a{color:#E9DDFB;font-weight:700}
   .glass-odds-grid button span{white-space:normal!important;overflow:visible!important;text-overflow:clip!important}
   .glass-odds-grid button small{display:none!important}
 }
+
+/* Odds labels carry the bookmaker after ' · '; it stays inline on desktop. */
+.glass-odds-bookmaker{font-style:normal}
+/* Mobile: a 3-option market (Match Result) shows its odds in one row
+   instead of 2 + 1, with the bookmaker suffix hidden so the pick names
+   fit without overflowing (owner order 2026-11-03). */
+@media(max-width:520px){
+  .glass-odds-grid:has(>button:nth-child(3):last-child){grid-template-columns:repeat(3,1fr)!important}
+  .glass-odds-grid:has(>button:nth-child(3):last-child) button span{font-size:9px!important}
+  .glass-odds-grid:has(>button:nth-child(3):last-child) .glass-odds-bookmaker{display:none!important}
+}
