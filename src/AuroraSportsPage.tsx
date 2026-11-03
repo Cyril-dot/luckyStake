@@ -39,9 +39,9 @@ function MatchCard({ match }: { match: MatchRow }) {
   return <article className={`aurora-match-card${live ? ' live' : ''}`}>
     <div className="aurora-card-meta"><span><i className="aurora-league-dot" />{match.league || `${match.sport || 'Sports'} market`}</span><b>{displayStatus(match)}</b></div>
     <a className="aurora-card-fixture" href={`/match/${encodeURIComponent(match.id)}`}>
-      <div className="aurora-team"><img src={match.displayHomeLogo || match.homeLogo || '/admin-logos/team-home-01.png'} alt="" /><strong>{match.homeTeam}</strong></div>
+      <div className="aurora-team"><img src={match.displayHomeLogo || match.homeLogo || '/admin-logos/team-home-01.png'} alt="" onError={e => { const t = e.currentTarget; if (!t.src.endsWith('team-home-01.png')) t.src = '/admin-logos/team-home-01.png'; }} /><strong>{match.homeTeam}</strong></div>
       <div className="aurora-score">{live ? <b>{match.scoreHome ?? 0}<small>—</small>{match.scoreAway ?? 0}</b> : <b>VS</b>}<small>{live ? 'LIVE' : 'KICKOFF'}</small></div>
-      <div className="aurora-team away"><img src={match.displayAwayLogo || match.awayLogo || '/admin-logos/team-away-01.png'} alt="" /><strong>{match.awayTeam}</strong></div>
+      <div className="aurora-team away"><img src={match.displayAwayLogo || match.awayLogo || '/admin-logos/team-away-01.png'} alt="" onError={e => { const t = e.currentTarget; if (!t.src.endsWith('team-away-01.png')) t.src = '/admin-logos/team-away-01.png'; }} /><strong>{match.awayTeam}</strong></div>
     </a>
     <div className={`aurora-odds-row ${String(match.sport).toLowerCase() === 'baseball' ? 'two-way' : ''}`}>
       <button onClick={() => chooseOdd(match, match.homeTeam, match.homeOdds || '')}><span>{String(match.sport).toLowerCase() === 'baseball' ? 'Home' : '1'}</span><b>{match.homeOdds || '—'}</b></button>

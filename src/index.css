@@ -458,13 +458,13 @@ html,body,#root{max-width:100%;overflow-x:hidden}img,video,svg{max-width:100%}pr
 /* Production game cards: Option 4 Rajdhani */
 .league-stack-team strong{font-family:'Rajdhani','DM Sans',sans-serif!important;font-size:15px!important;font-weight:700!important;letter-spacing:.015em!important;line-height:1.05!important}
 .league-stack-logo,.league-stack-logo-fallback{width:22px!important;height:22px!important;flex-basis:22px!important}
-.league-stack-odds button b{font-family:'Rajdhani','DM Sans',sans-serif!important;font-size:12px!important;font-weight:700!important}
-.league-stack-odds button small{font-size:9px!important}
+.league-stack-odds button b{font-family:'Rajdhani','DM Sans',sans-serif!important;font-size:14px!important;font-weight:700!important}
+.league-stack-odds button small{font-size:11px!important}
 @media(max-width:560px){
   .league-stack-team strong{font-size:14px!important}
   .league-stack-logo,.league-stack-logo-fallback{width:20px!important;height:20px!important;flex-basis:20px!important}
-  .league-stack-odds button b{font-size:11px!important}
-  .league-stack-odds button small{font-size:8px!important}
+  .league-stack-odds button b{font-size:13px!important}
+  .league-stack-odds button small{font-size:10px!important}
   .league-stack-team{gap:5px!important}
 }
 
@@ -473,7 +473,7 @@ html,body,#root{max-width:100%;overflow-x:hidden}img,video,svg{max-width:100%}pr
   .home-today-carousel>.league-stack-card,
   .home-live-carousel>.league-stack-card,
   .featured-matches-carousel>.league-stack-card{flex:0 0 100%!important;width:100%!important;max-width:100%!important}
-  .league-stack-card{border-radius:6px!important}
+  .league-stack-card{border-radius:16px!important}
   .league-stack-head{padding:7px 9px!important;min-height:30px!important}
   .league-stack-league,.league-stack-kickoff,.league-stack-featured,.league-stack-live,.league-stack-ended{font-size:9px!important}
   .league-stack-fixture{grid-template-columns:minmax(0,1fr) 62px minmax(0,1fr)!important;gap:5px!important;min-height:64px!important;padding:9px 9px!important}
@@ -486,8 +486,8 @@ html,body,#root{max-width:100%;overflow-x:hidden}img,video,svg{max-width:100%}pr
   .league-stack-market>span{font-size:8px!important;margin-bottom:5px!important}
   .league-stack-odds{gap:4px!important}
   .league-stack-odds button{padding:6px 7px!important;min-height:28px!important}
-  .league-stack-odds button b{font-size:10px!important}
-  .league-stack-odds button small{font-size:7px!important}
+  .league-stack-odds button b{font-size:12px!important}
+  .league-stack-odds button small{font-size:9px!important}
 }
 
 /* Final game-card alignment pass */
@@ -1099,3 +1099,91 @@ footer a:hover{color:#292633}
 /* Floating slip count badge (owner order 2026-11-03): when odds are
    selected, the floating slip button shows how many selections are in. */
 .home-slip-button span.home-slip-count:last-child{display:grid;place-items:center;position:absolute;top:-6px;right:-6px;min-width:20px;height:20px;padding:0 4px;border-radius:999px;border:2px solid #fff;background:#FFD21F;color:#292633;font-size:11px;font-weight:800;box-shadow:0 2px 8px rgba(0,0,0,.35);z-index:1}
+
+/* Homepage vivid refresh (owner order 2026-11-03; betprime card language,
+   LuckyStake plum identity kept — no betprime blue anywhere). */
+header{background:linear-gradient(135deg,#7C35EE 0%,#6530C7 100%);box-shadow:0 8px 28px rgba(76,29,149,.35)}
+header nav{background:#3D1A73;border-top:1px solid rgba(255,255,255,.14)}
+header nav a{color:#D9CFF0}
+header nav a:hover{color:#fff;background:rgba(255,255,255,.12)}
+header .nav-active{background:rgba(255,255,255,.16);color:#fff!important;box-shadow:inset 0 -3px 0 #FFD21F}
+header .text-brand{color:#fff}
+header .text-brand span{color:#FFD21F}
+header .search{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.28);color:#E9DDFB}
+header .search input{color:#fff}
+header .search input::placeholder{color:#CFC5D8}
+header .search .material-symbols-rounded{color:#E9DDFB}
+header .account-cluster{background:rgba(255,255,255,.10);border-color:rgba(255,255,255,.28)}
+header .account-cluster>a,header .wallet-balance{color:#fff}
+header .wallet-balance{border-color:rgba(255,255,255,.25)}
+header .account-cluster .material-symbols-rounded{color:#FFD21F}
+header .signup{background:#FFD21F;color:#292633}
+header .account-link{color:#fff!important}
+.utility-bar{background:#2A1546;border-bottom:1px solid rgba(255,255,255,.10);color:#CFC5D8}
+.utility-bar .material-symbols-rounded{color:#FFD21F}
+.utility-bar .utility-divider{background:#8E8298}
+.mobile-header-row{background:linear-gradient(135deg,#7C35EE,#6530C7)}
+.mobile-header-row .text-brand{color:#fff}
+.mobile-header-row .text-brand span{color:#FFD21F}
+.mobile-menu-button{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.28);color:#fff}
+.mobile-account-link{border-color:rgba(255,255,255,.30);color:#fff}
+.mobile-wallet-balance small{color:#CFC5D8}
+.mobile-wallet-balance strong{color:#fff}
+.mobile-wallet-deposit{background:#FFD21F!important;color:#292633}
+.mobile-wallet-deposit>.material-symbols-rounded{color:#292633}
+.mobile-wallet-deposit .mobile-wallet-arrow{color:#292633}
+footer{background:#1B1425;color:#CFC5D8;border-top:1px solid rgba(255,255,255,.08)}
+footer a{color:#CFC5D8}
+footer b{color:#fff}
+footer .footer-wordmark{color:#fff}
+footer .footer-wordmark span{color:#FFD21F}
+footer .legal{color:#8E8298}
+.box{border-radius:12px}
+.home-feed-list{gap:14px}
+.aurora-live-grid,.aurora-match-grid{gap:14px}
+.league-stack-card{background:#FFFFFF;border:1px solid #E8E3EF;border-radius:16px;box-shadow:0 6px 18px rgba(41,38,51,.08)}
+.league-stack-card:hover{border-color:#C9B8E8;box-shadow:0 12px 28px rgba(124,53,238,.18)}
+.league-stack-card.is-featured{background:#FFFFFF;border-color:#E8E3EF}
+.league-stack-featured-section .section-title h2{color:#fff}
+.league-stack-featured-section .section-state-icon{color:#FFD21F}
+.league-stack-head{background:#FFFFFF;border-bottom:1px solid #E8E3EF}
+.league-stack-league{color:#6B6577;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.league-stack-kickoff{color:#6B6577}
+.league-stack-live{display:inline-flex;align-items:center;gap:5px;background:#D93648;color:#fff;font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:4px 9px;border-radius:999px}
+.league-stack-live i{background:#fff;box-shadow:none}
+.league-stack-featured{background:#FFD21F;color:#292633;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:4px 9px;border-radius:999px}
+.league-stack-ended{color:#777281}
+.league-stack-center>strong{color:#292633}
+.league-stack-market{border-top:0;padding:0 12px 14px}
+.league-stack-odds{gap:6px}
+.league-stack-odds button{background:#EEF0F6;border:1px solid #E3E6EF;border-radius:10px;padding:10px 11px}
+.league-stack-odds button small{color:#6B6577;font-weight:700}
+.league-stack-odds button b{color:#292633}
+.league-stack-odds button.selected{background:linear-gradient(135deg,#7C35EE,#6530C7);border-color:#7C35EE;color:#fff}
+.league-stack-odds button.selected small,.league-stack-odds button.selected b{color:#fff}
+.aurora-match-card{background:#FFFFFF;border:1px solid #E8E3EF;border-radius:16px;box-shadow:0 6px 18px rgba(41,38,51,.08)}
+.aurora-match-card:hover{border-color:#C9B8E8}
+.aurora-card-meta{color:#777281;border-bottom:1px solid #E8E3EF}
+.aurora-card-meta>span{text-transform:uppercase;letter-spacing:.06em}
+.aurora-card-meta>b{color:#6B6577}
+.aurora-team strong{color:#292633;font-size:14px}
+.aurora-score b{color:#292633}
+.aurora-score>small{color:#777281}
+.aurora-odds-row button{background:#EEF0F6;border:1px solid #E3E6EF;color:#6B6577;border-radius:10px}
+.aurora-odds-row button b{color:#292633}
+.aurora-odds-row button:hover{border-color:#7C35EE;color:#292633;background:#E9DDFB}
+.aurora-more{color:#7C35EE;font-weight:700}
+.aurora-details-link{color:#777281;border-top:1px solid #E8E3EF}
+.aurora-details-link span{color:#7C35EE}
+@media(max-width:900px){.aurora-more{display:flex}.aurora-odds-row{grid-template-columns:repeat(3,1fr) auto}}
+
+/* Hero contrast + floating slip button (owner follow-up 2026-11-03):
+   purple-on-purple hero text was washing out, and the floating icon's
+   dark strokes were muddy on the purple button. */
+.hero small{color:#FFD21F}
+.hero h1 b{color:#FFD21F}
+.hero p{color:#E9DDFB}
+.hero a{color:#FFD21F;border-color:#FFD21F}
+.home-slip-button{width:56px;height:56px;box-shadow:0 12px 30px rgba(76,29,149,.5)}
+.home-slip-button .slip-icon-svg{stroke:#fff}
+@media(max-width:560px){.home-slip-button{width:52px;height:52px}}
