@@ -594,3 +594,10 @@ input:not([type=checkbox]):not([type=radio]),select,textarea{border-radius:12px}
 .accumulator-slip .slip-total-line span{color:#292633}
 .accumulator-slip .slip-stake-field{color:#292633}
 .accumulator-slip .slip-stake-hint{color:#292633}
+
+/* Slip leg cards (owner order 2026-11-03): smaller selection odds, wider
+   cards. Sheet padding drops so legs stretch nearer the sheet edges,
+   and the odds pill shrinks so team names get more room. */
+.slip-drawer.accumulator-slip{padding:10px}
+.slip-drawer.accumulator-slip .drawer-slip{padding:0}
+.slip-drawer.accumulator-slip .slip-leg-odds{min-width:40px;padding:4px 8px;font-size:14px}
