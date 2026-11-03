@@ -1095,3 +1095,7 @@ footer a:hover{color:#292633}
 .withdrawal-form .wallet-panel-cta{background:linear-gradient(135deg,#7C35EE,#6530C7);border-radius:14px;padding:15px;font-size:14px;font-weight:800;box-shadow:0 12px 26px rgba(124,53,238,.35);letter-spacing:.01em}
 .withdrawal-form .wallet-panel-cta:disabled{opacity:.55;box-shadow:none}
 @media(max-width:560px){.withdrawal-summary{grid-template-columns:1fr 1fr}.withdrawal-summary span:last-child{grid-column:1/-1}}
+
+/* Floating slip count badge (owner order 2026-11-03): when odds are
+   selected, the floating slip button shows how many selections are in. */
+.home-slip-button span.home-slip-count:last-child{display:grid;place-items:center;position:absolute;top:-6px;right:-6px;min-width:20px;height:20px;padding:0 4px;border-radius:999px;border:2px solid #fff;background:#FFD21F;color:#292633;font-size:11px;font-weight:800;box-shadow:0 2px 8px rgba(0,0,0,.35);z-index:1}

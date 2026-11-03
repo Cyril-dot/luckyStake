@@ -60,40 +60,9 @@ export default function AuroraSportsPage() {
   const [, repaintClock] = useState(0);
   useEffect(() => { const timer = window.setInterval(() => repaintClock(value => value + 1), 1000); return () => window.clearInterval(timer); }, []);
 
-  // Staged loading (owner, 2026-10-13): the live feed paints the board on
-  // its own; the heavier today/upcoming feeds wait behind a scroll gate
-  // under the grid (20s fallback) and merge in when it opens. Once opened,
-  // the gate stays open — refreshes and sport switches load everything.
-  const gateRef = useRef<{ promise: Promise<void>; open: () => void } | null>(null);
-  const unlockedRef = useRef(false);
+  // All feeds load together (owner order 2026-11-03): every game shows
+  // at once, with no scroll gate and no 10-at-a-time reveal.
   const loadSeqRef = useRef(0);
-  const restSentinelRef = useRef<HTMLDivElement | null>(null);
-  // The grid reveals its matches 10 at a time (owner, 2026-10-13) — more
-  // appear as the reader scrolls, instead of the whole board at once.
-  const [shown, setShown] = useState(10);
-  const revealSentinelRef = useRef<HTMLDivElement | null>(null);
-  const [livePainted, setLivePainted] = useState(false);
-  const makeGate = () => {
-    let open!: () => void;
-    const promise = new Promise<void>((resolve) => { open = () => { unlockedRef.current = true; resolve(); }; });
-    gateRef.current = { promise, open };
-    return promise;
-  };
-  useEffect(() => {
-    // Arm the watcher only once live rows are on screen — before that the
-    // board is still a short skeleton and the sentinel would sit next to
-    // the fold, opening the gate instantly.
-    if (!livePainted) return;
-    const node = restSentinelRef.current;
-    if (!node) return;
-    const observer = new IntersectionObserver(
-      (entries) => { if (entries[0]?.isIntersecting) gateRef.current?.open(); },
-      { rootMargin: '300px 0px' },
-    );
-    observer.observe(node);
-    const fallback = window.setTimeout(() => gateRef.current?.open(), 20_000);
-    return () => { observer.disconnect(); window.clearTimeout(fallback); };
-  }, [livePainted]);
 
   async function loadFeedRows(sport: Sport, feeds: Feed[]) {
     const rows: MatchRow[] = [];
@@ -134,10 +103,7 @@ export default function AuroraSportsPage() {
     setMatches(phaseOne);
     setLastUpdated(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
     setLoading(false);
-    setLivePainted(true);
-    // Phase 2: the remaining feeds, held until the reader scrolls towards
-    // them (or the fallback opens the gate).
-    if (!unlockedRef.current) await (gateRef.current?.promise ?? makeGate());
+    // Phase 2: the remaining feeds load right away, no scroll gate.
     if (!current()) return;
     const preferred = TODAY_FEED[sport];
     const restFeeds = Array.from(new Set<Feed>([preferred, ...(preferred === 'today' ? ['upcoming' as Feed] : [])])).filter(feed => feed !== 'live');
@@ -148,7 +114,6 @@ export default function AuroraSportsPage() {
   }
 
   useEffect(() => {
-    setShown(10);
     void loadMatches();
     const refreshTimer = window.setInterval(() => void loadMatches(), 30_000);
     return () => window.clearInterval(refreshTimer);
@@ -170,19 +135,8 @@ export default function AuroraSportsPage() {
   }, [activeSport, matches]);
   const groupedCount = new Set(visible.map(match => match.sport)).size;
 
-  useEffect(() => {
-    const node = revealSentinelRef.current;
-    if (!node || shown >= visible.length) return;
-    const observer = new IntersectionObserver(
-      (entries) => { if (entries[0]?.isIntersecting) setShown(value => Math.min(value + 10, visible.length)); },
-      { rootMargin: '400px 0px' },
-    );
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, [shown, visible.length]);
-
   return <section className="aurora-page">
     <nav className="aurora-sport-rail" aria-label="Sports"><div className="aurora-rail-label">SPORTS</div>{SPORT_CHOICES.map(choice => <button key={choice.key} className={activeSport === choice.key ? 'active' : ''} onClick={() => setActiveSport(choice.key)}><span>{choice.icon}</span><b>{choice.label}</b><small>{visible.filter(match => match.sport === choice.key).length || '—'}</small></button>)}</nav>
-    <section className="aurora-feed-section"><div className="aurora-section-heading"><div><h2>{`${SPORT_CHOICES.find(choice => choice.key === activeSport)?.label} fixtures`}</h2></div><span>{loading ? 'Updating markets…' : `${groupedCount} sport${groupedCount === 1 ? '' : 's'} · ${visible.length} events`}</span></div>{loading && visible.length === 0 ? <div className="aurora-match-grid aurora-skeleton-grid">{Array.from({ length: 6 }).map((_, index) => <div className="aurora-skeleton-card" key={index}><span className="aurora-skeleton-line" /><div /><div /><div /></div>)}</div> : visible.length === 0 ? <div className="aurora-empty"><strong>No active games right now.</strong><span>Live games update automatically.</span></div> : <div className="aurora-match-grid">{visible.slice(0, shown).map(match => <MatchCard key={match.id} match={match} />)}</div>}{shown < visible.length && <div ref={revealSentinelRef} aria-hidden="true" style={{ height: 1 }} />}<div ref={restSentinelRef} aria-hidden="true" style={{ height: 1 }} /></section>
+    <section className="aurora-feed-section"><div className="aurora-section-heading"><div><h2>{`${SPORT_CHOICES.find(choice => choice.key === activeSport)?.label} fixtures`}</h2></div><span>{loading ? 'Updating markets…' : `${groupedCount} sport${groupedCount === 1 ? '' : 's'} · ${visible.length} events`}</span></div>{loading && visible.length === 0 ? <div className="aurora-match-grid aurora-skeleton-grid">{Array.from({ length: 6 }).map((_, index) => <div className="aurora-skeleton-card" key={index}><span className="aurora-skeleton-line" /><div /><div /><div /></div>)}</div> : visible.length === 0 ? <div className="aurora-empty"><strong>No active games right now.</strong><span>Live games update automatically.</span></div> : <div className="aurora-match-grid">{visible.map(match => <MatchCard key={match.id} match={match} />)}</div>}</section>
   </section>;
 }
