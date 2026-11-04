@@ -1343,3 +1343,19 @@ header nav a{color:#E9DDFB;font-weight:700}
 .account-timeline-stats small{display:block;grid-column:2;grid-row:1;align-self:end}
 .account-timeline-stats strong{grid-column:2;grid-row:2;align-self:start;margin-top:4px}
 @media(max-width:760px){.account-timeline-stats div{grid-template-rows:17px 20px}}
+
+/* Bottom nav readability pass (owner order 2026-11-04 — decided per
+   frontend skills): probe showed the active label WHITE on the WHITE bar
+   (invisible) and all labels at 8.4px in pale lavender on white (barely
+   readable). Bar, yellow icon pill, dark icon, 5 equal columns and heights
+   all stay exactly as they were — only label/icon ink changes, flat colour,
+   no new shapes or motion. Active label goes full dark ink; inactive tabs
+   go the theme's secondary ink so they read without competing with active. */
+@media(max-width:850px){
+  .mobile-bottom-nav{background:#ffffff}
+  .mobile-bottom-item{color:#777281}
+  .mobile-bottom-item .material-symbols-rounded{color:#777281}
+  .mobile-bottom-item small{font-size:11px!important;color:#777281}
+  .mobile-bottom-item.active .material-symbols-rounded{background:#FFD21F;color:#292633}
+  .mobile-bottom-item.active small{color:#292633;font-weight:800}
+}
