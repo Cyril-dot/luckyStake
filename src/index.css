@@ -1359,3 +1359,25 @@ header nav a{color:#E9DDFB;font-weight:700}
   .mobile-bottom-item.active .material-symbols-rounded{background:#FFD21F;color:#292633}
   .mobile-bottom-item.active small{color:#292633;font-weight:800}
 }
+
+/* Bottom nav brand pass (owner order 2026-11-04 — "still too bad and
+   generic, do better"): the white bar on the near-white page had no
+   definition, so it read like a template. Full-width deep plum bar (the
+   header nav strip's own #3D1A73), active tab as a full yellow segment
+   with dark icon + dark label, inactive tabs in brighter lavender that
+   reads on plum. Flat colour only, no motion, no new shapes beyond the
+   segment radius. 5 equal columns, labels stay 11px from the readability
+   pass; the bar keeps its existing 54px height (an earlier !important
+   compact rule governs it) and the segment fits within it; content
+   clearance grows so nothing hides behind the bar. */
+@media(max-width:850px){
+  .mobile-bottom-nav{background:#3D1A73;border-top:1px solid rgba(255,255,255,.14);box-shadow:0 -12px 30px rgba(10,6,16,.38);padding:6px 8px max(6px,env(safe-area-inset-bottom));gap:6px}
+  .mobile-bottom-item{color:#C9BFD6}
+  .mobile-bottom-item .material-symbols-rounded{color:#C9BFD6}
+  .mobile-bottom-item small{color:#C9BFD6}
+  .mobile-bottom-item.active{background:#FFD21F;border-radius:12px;padding:4px 2px}
+  .mobile-bottom-item.active .material-symbols-rounded{background:transparent;padding:0;color:#292633}
+  .mobile-bottom-item.active small{color:#292633;font-weight:800}
+  .react-main{padding-bottom:96px}
+  footer{padding-bottom:96px}
+}
