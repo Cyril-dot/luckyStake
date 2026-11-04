@@ -1381,3 +1381,26 @@ header nav a{color:#E9DDFB;font-weight:700}
   .react-main{padding-bottom:96px}
   footer{padding-bottom:96px}
 }
+
+/* Auth pages pass (owner order 2026-11-04 — decide + frontend skills):
+   probe showed the login/register form buried below a huge story block
+   on phones, with 10px pale-lavender labels, 11px inputs, and a hardcoded
+   "LIVE NOW" score ticker presented as a live match. Changes: on phones
+   the card moves above the story (story stays below as supporting
+   content), the redundant broadcast header/footer hide on phones (the
+   site header/footer already cover them), and form ink goes readable —
+   labels dark ink at 12px, inputs 14px, submit sentence-case 14px. The
+   fake ticker element is removed from BroadcastAuth (its CSS stays
+   unused). Desktop layout untouched. */
+.broadcast-auth-story>p{color:#777281}
+.broadcast-auth-card label{color:#4d475c;font-size:12px;font-weight:600}
+.broadcast-auth-card input:not([type=checkbox]){font-size:14px}
+.broadcast-auth-card .broadcast-card-copy{color:#777281;font-size:12px}
+.broadcast-auth-tabs button{font-size:13px}
+.broadcast-submit{font-size:14px;letter-spacing:.01em;text-transform:none}
+.broadcast-forgot,.broadcast-switch,.broadcast-switch button{font-size:12px}
+@media(max-width:680px){
+  .broadcast-auth-header,.broadcast-auth-footer{display:none}
+  .broadcast-auth-layout{padding:24px 0 32px}
+  .broadcast-auth-card{order:-1}
+}
