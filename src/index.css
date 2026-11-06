@@ -1462,3 +1462,24 @@ header nav a{padding:12px 13px;font-size:13px}
 header .country-wallet .wallet-card-balance strong{font-size:16px;color:#fff}
 header .account-cluster>a.header-deposit{color:#292633}
 
+
+/* Header to the top (owner order 2026-11-06): the mobile header was
+   fixed at top:30px to sit below the utility strip, which the
+   recomposition removed — leaving a 30px gap at the top of every
+   mobile page. The strip is gone, so the header pins to top:0 and the
+   content + edge rail move up with it. Desktop was already sticky
+   top:0, untouched. Heights: logo row 64px + search row ~41px = 105px
+   (60px + 41px = 101px at <=560px, where the old 68px min-height on
+   the row is overridden too). */
+@media(max-width:850px){
+  header{top:0}
+  .mobile-header-row{height:64px;min-height:64px}
+  .react-main{padding-top:106px}
+  .mobile-edge-rail{top:106px}
+}
+@media(max-width:560px){
+  header{top:0}
+  .mobile-header-row{height:60px;min-height:60px}
+  .react-main{padding-top:102px}
+  .mobile-edge-rail{top:102px}
+}
