@@ -601,3 +601,12 @@ input:not([type=checkbox]):not([type=radio]),select,textarea{border-radius:12px}
 .slip-drawer.accumulator-slip{padding:10px}
 .slip-drawer.accumulator-slip .drawer-slip{padding:0}
 .slip-drawer.accumulator-slip .slip-leg-odds{min-width:40px;padding:4px 8px;font-size:14px}
+
+/* Stake section breathing room (owner order 2026-11-06): the totals,
+   stake input, minimum note and Place bet sat flush to the sheet's
+   edges — the sheet and the footer both carry padding:0, so the text
+   touched the card borders. The footer now carries the inset (16px
+   sides, 16px below the button); the leg cards keep their own padding
+   and stay full-width. 16px lines the stake text up with the leg
+   text inside the cards. */
+.slip-drawer.accumulator-slip .drawer-slip>.slip-summary-footer{padding:0 16px 16px}
