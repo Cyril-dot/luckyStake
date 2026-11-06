@@ -1404,3 +1404,61 @@ header nav a{color:#E9DDFB;font-weight:700}
   .broadcast-auth-layout{padding:24px 0 32px}
   .broadcast-auth-card{order:-1}
 }
+
+/* Header recomposition (owner order 2026-11-06: the header was bad on
+   laptop and mobile). One header, one left edge: a logo row on top, the
+   nav row below it, the utility strip folded into the nav row's right
+   end. Same plum/yellow brand, same elements and routes — the wallet
+   pill becomes a flat balance + yellow Deposit, the mobile row gains
+   the search it never had. Appended last so it wins the !important
+   sediment above. */
+header .top{height:64px;gap:20px}
+header .search{flex:1 1 240px;max-width:420px;min-width:180px;width:auto;margin-left:0;background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.30)}
+header .search input{font-size:13px}
+header .search input::placeholder{color:#E9DDFB}
+header .account-cluster{margin-left:auto;background:none;border:0;padding:0;gap:14px}
+header .country-wallet{min-width:0;flex-direction:row;align-items:center;gap:10px;padding:0;background:none;border:0;border-radius:0}
+header .country-wallet .wallet-country-line{gap:6px}
+header .country-wallet .wallet-country-line small{color:#E9DDFB;font-size:12px}
+header .wallet-card-balance{flex-direction:row;align-items:baseline}
+header .wallet-card-balance small{display:none}
+header .wallet-card-balance strong{font-size:16px;color:#fff}
+header .header-deposit{display:inline-flex;align-items:center;min-height:38px;padding:10px 18px;border-radius:999px;background:#FFD21F;color:#292633;font-weight:800;font-size:13px}
+header .account-link{font-size:13px;font-weight:700;color:#fff!important}
+header nav{justify-content:flex-start;min-height:48px;gap:2px}
+header nav a{padding:12px 13px;font-size:13px}
+.header-nav-right{margin-left:auto;display:flex;align-items:center;gap:18px;color:#D9CFF0;font-size:13px}
+.header-nav-right a{color:#D9CFF0}
+.header-nav-right a:hover{color:#fff}
+.header-nav-right .header-locale{display:inline-flex;align-items:center;gap:4px}
+.header-nav-right .material-symbols-rounded{font-size:16px}
+.mobile-search-row{display:none}
+@media(max-width:850px){
+  .mobile-header-row{height:64px;gap:12px}
+  .mobile-header-row .text-brand{font-size:22px}
+  .mobile-wallet-rail{min-width:0;max-width:none;background:#3D1A73;border-color:rgba(255,255,255,.18);border-radius:10px;box-shadow:none}
+  .mobile-wallet-rail:hover{transform:none;box-shadow:none;border-color:rgba(255,255,255,.18)}
+  .mobile-wallet-balance small{display:none}
+  .mobile-wallet-balance strong{font-size:15px}
+  .mobile-wallet-deposit{padding:0 12px}
+  .mobile-search-row{display:flex;align-items:center;gap:8px;padding:10px 14px;background:#3D1A73;border-top:1px solid rgba(255,255,255,.10)}
+  .mobile-search-row .material-symbols-rounded{color:#E9DDFB;font-size:20px}
+  .mobile-search-row input{flex:1;min-width:0;border:0;outline:0;background:none;color:#fff;font-size:14px}
+  .mobile-search-row input::placeholder{color:#CFC5D8}
+  .mobile-edge-rail-foot{display:none}
+  .mobile-edge-rail.expanded .mobile-edge-rail-foot{margin-top:auto;display:flex;flex-direction:column;gap:2px;padding:10px 8px 4px;border-top:1px solid #E8E3EF}
+  .mobile-edge-rail-foot a{color:#777281;font-size:12px;font-weight:700;min-height:32px;display:flex;align-items:center}
+  .mobile-edge-rail-foot span{color:#9691A2;font-size:12px;min-height:32px;display:flex;align-items:center}
+}
+@media(max-width:560px){
+  .mobile-header-row{height:60px}
+  .mobile-header-row .text-brand{font-size:21px}
+}
+
+/* Header fix-up: two sediment rules outranked the recomposition above
+   (.country-wallet .wallet-card-balance strong at 0,2,1, and
+   header .account-cluster>a at 0,1,2). These beat both, so the balance
+   reads white on plum and the yellow Deposit button keeps dark text. */
+header .country-wallet .wallet-card-balance strong{font-size:16px;color:#fff}
+header .account-cluster>a.header-deposit{color:#292633}
+
