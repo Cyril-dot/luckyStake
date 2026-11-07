@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { api, fetchAdminMatches, formatKickoff, formatKickoffDate, isFinishedMatch, isLiveStatus, isMatchLive, liveClock, normalizeMatches, primaryOdds, sportFeedPath, type Feed, type MatchRow, type Sport } from './api';
+import { slipSelectionMap, toggleSlipLeg } from './slip';
 
 type SportChoice = { key: Sport; label: string; icon: string };
 const SPORT_CHOICES: SportChoice[] = [
@@ -18,8 +19,8 @@ function displayStatus(match: MatchRow) {
 }
 
 function chooseOdd(match: MatchRow, selection: string, odds: string) {
-  localStorage.setItem('luckystakeSlip', JSON.stringify({
-    matchId: match.id,
+  toggleSlipLeg({
+    matchId: String(match.id),
     selection,
     odds,
     market: 'Match result',
@@ -29,12 +30,10 @@ function chooseOdd(match: MatchRow, selection: string, odds: string) {
     homeLogo: match.displayHomeLogo || match.homeLogo,
     awayLogo: match.displayAwayLogo || match.awayLogo,
     country: match.league?.split(' ')[0] || 'International',
-  }));
-  window.dispatchEvent(new Event('slip:open'));
-  window.dispatchEvent(new Event('slip:update'));
+  });
 }
 
-function MatchCard({ match }: { match: MatchRow }) {
+function MatchCard({ match, selected }: { match: MatchRow; selected?: string }) {
   const live = isMatchLive(match);
   return <article className={`aurora-match-card${live ? ' live' : ''}`}>
     <div className="aurora-card-meta"><span><i className="aurora-league-dot" />{match.league || `${match.sport || 'Sports'} market`}</span><b>{displayStatus(match)}</b></div>
@@ -44,9 +43,9 @@ function MatchCard({ match }: { match: MatchRow }) {
       <div className="aurora-team away"><img src={match.displayAwayLogo || match.awayLogo || '/admin-logos/team-away-01.png'} alt="" onError={e => { const t = e.currentTarget; if (!t.src.endsWith('team-away-01.png')) t.src = '/admin-logos/team-away-01.png'; }} /><strong>{match.awayTeam}</strong></div>
     </a>
     <div className={`aurora-odds-row ${String(match.sport).toLowerCase() === 'baseball' ? 'two-way' : ''}`}>
-      <button onClick={() => chooseOdd(match, match.homeTeam, match.homeOdds || '')}><span>{String(match.sport).toLowerCase() === 'baseball' ? 'Home' : '1'}</span><b>{match.homeOdds || '—'}</b></button>
-      {String(match.sport).toLowerCase() !== 'baseball' && <button onClick={() => chooseOdd(match, 'Draw', match.drawOdds || '')}><span>X</span><b>{match.drawOdds || '—'}</b></button>}
-      <button onClick={() => chooseOdd(match, match.awayTeam, match.awayOdds || '')}><span>{String(match.sport).toLowerCase() === 'baseball' ? 'Away' : '2'}</span><b>{match.awayOdds || '—'}</b></button>
+      <button className={selected === match.homeTeam ? 'selected' : ''} onClick={() => chooseOdd(match, match.homeTeam, match.homeOdds || '')}><span>{String(match.sport).toLowerCase() === 'baseball' ? 'Home' : '1'}</span><b>{match.homeOdds || '—'}</b></button>
+      {String(match.sport).toLowerCase() !== 'baseball' && <button className={selected === 'Draw' ? 'selected' : ''} onClick={() => chooseOdd(match, 'Draw', match.drawOdds || '')}><span>X</span><b>{match.drawOdds || '—'}</b></button>}
+      <button className={selected === match.awayTeam ? 'selected' : ''} onClick={() => chooseOdd(match, match.awayTeam, match.awayOdds || '')}><span>{String(match.sport).toLowerCase() === 'baseball' ? 'Away' : '2'}</span><b>{match.awayOdds || '—'}</b></button>
     </div>
   </article>;
 }
@@ -57,6 +56,8 @@ export default function AuroraSportsPage() {
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState('');
   const [, repaintClock] = useState(0);
+  const [selected, setSelected] = useState<Record<string, string>>(() => slipSelectionMap());
+  useEffect(() => { const sync = () => setSelected(slipSelectionMap()); addEventListener('slip:update', sync); return () => removeEventListener('slip:update', sync); }, []);
   // Live clocks show minutes, so a 30s tick keeps them right without
   // re-rendering the whole page every second (owner order 2026-11-03).
   useEffect(() => { const timer = window.setInterval(() => repaintClock(value => value + 1), 30_000); return () => window.clearInterval(timer); }, []);
@@ -153,6 +154,6 @@ export default function AuroraSportsPage() {
 
   return <section className="aurora-page">
     <nav className="aurora-sport-rail" aria-label="Sports"><div className="aurora-rail-label">SPORTS</div>{SPORT_CHOICES.map(choice => <button key={choice.key} className={activeSport === choice.key ? 'active' : ''} onClick={() => setActiveSport(choice.key)}><span>{choice.icon}</span><b>{choice.label}</b><small>{visible.filter(match => match.sport === choice.key).length || '—'}</small></button>)}</nav>
-    <section className="aurora-feed-section"><div className="aurora-section-heading"><div><h2>{`${SPORT_CHOICES.find(choice => choice.key === activeSport)?.label} fixtures`}</h2></div><span>{loading ? 'Updating markets…' : `${groupedCount} sport${groupedCount === 1 ? '' : 's'} · ${visible.length} events`}</span></div>{loading && visible.length === 0 ? <div className="aurora-match-grid aurora-skeleton-grid">{Array.from({ length: 6 }).map((_, index) => <div className="aurora-skeleton-card" key={index}><span className="aurora-skeleton-line" /><div /><div /><div /></div>)}</div> : visible.length === 0 ? <div className="aurora-empty"><strong>No active games right now.</strong><span>Live games update automatically.</span></div> : <div className="aurora-match-grid">{visible.map(match => <MatchCard key={match.id} match={match} />)}</div>}</section>
+    <section className="aurora-feed-section"><div className="aurora-section-heading"><div><h2>{`${SPORT_CHOICES.find(choice => choice.key === activeSport)?.label} fixtures`}</h2></div><span>{loading ? 'Updating markets…' : `${groupedCount} sport${groupedCount === 1 ? '' : 's'} · ${visible.length} events`}</span></div>{loading && visible.length === 0 ? <div className="aurora-match-grid aurora-skeleton-grid">{Array.from({ length: 6 }).map((_, index) => <div className="aurora-skeleton-card" key={index}><span className="aurora-skeleton-line" /><div /><div /><div /></div>)}</div> : visible.length === 0 ? <div className="aurora-empty"><strong>No active games right now.</strong><span>Live games update automatically.</span></div> : <div className="aurora-match-grid">{visible.map(match => <MatchCard key={match.id} match={match} selected={selected[String(match.id)]} />)}</div>}</section>
   </section>;
 }

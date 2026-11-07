@@ -1171,6 +1171,8 @@ footer .legal{color:#8E8298}
 .aurora-score>small{color:#777281}
 .aurora-odds-row button{background:#EEF0F6;border:1px solid #E3E6EF;color:#6B6577;border-radius:10px}
 .aurora-odds-row button b{color:#292633}
+.aurora-odds-row button.selected{background:linear-gradient(135deg,#7C35EE,#6530C7);border-color:#7C35EE;color:#fff}
+.aurora-odds-row button.selected b{color:#fff}
 .aurora-odds-row button:hover{border-color:#7C35EE;color:#292633;background:#E9DDFB}
 .aurora-more{color:#7C35EE;font-weight:700}
 .aurora-details-link{color:#777281;border-top:1px solid #E8E3EF}
